@@ -5,7 +5,7 @@ COPY . .
 
 RUN pip3 install -r requirements.txt
 
-ENV FLASK_APP=/app/python/server.py
+ENV FASTAPI_APP=/app/server.py
 EXPOSE 8000
-ENTRYPOINT ["python"]
-CMD ["-m", "flask", "run", "--host=0.0.0.0", "--port=8000"]
+ENTRYPOINT ["uvicorn"]
+CMD ["server:app", "--host=0.0.0.0", "--port=8000", "--reload"]
