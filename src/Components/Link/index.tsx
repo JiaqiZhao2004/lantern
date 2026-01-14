@@ -5,7 +5,7 @@ import Button from "plaid-threads/Button";
 import Context from "../../Context";
 
 const Link = () => {
-  const { linkToken, isPaymentInitiation, isCraProductsExclusively, dispatch } =
+  const { linkToken, dispatch } =
     useContext(Context);
 
   const onSuccess = React.useCallback(
@@ -41,20 +41,12 @@ const Link = () => {
         });
       };
 
-      // 'payment_initiation' products do not require the public_token to be exchanged for an access_token.
-      if (isPaymentInitiation) {
-        dispatch({ type: "SET_STATE", state: { isItemAccess: false } });
-      } else if (isCraProductsExclusively) {
-        // When only CRA products are enabled, only user_token is needed. access_token/public_token exchange is not needed.
-        dispatch({ type: "SET_STATE", state: { isItemAccess: false } });
-      } else {
-        exchangePublicTokenForAccessToken();
-      }
+      exchangePublicTokenForAccessToken();
 
       dispatch({ type: "SET_STATE", state: { linkSuccess: true } });
       window.history.pushState("", "", "/");
     },
-    [dispatch, isPaymentInitiation, isCraProductsExclusively]
+    [dispatch]
   );
 
   let isOauth = false;

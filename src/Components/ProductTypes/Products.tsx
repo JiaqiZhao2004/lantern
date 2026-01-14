@@ -41,7 +41,7 @@ import {
 } from "../../dataUtilities";
 
 const Products = () => {
-  const { products, isCraProductsExclusively } = useContext(Context);
+  const { products } = useContext(Context);
   return (
     <ProductTypesContainer productType="Products">
       {products.includes("payment_initiation") && (
@@ -95,7 +95,7 @@ const Products = () => {
           transformData={transformAssetsData}
         />
       )}
-      {!products.includes("payment_initiation") && !isCraProductsExclusively && (
+      {!products.includes("payment_initiation") && (
           <Endpoint
               endpoint="balance"
               name="Balance"

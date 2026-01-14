@@ -3,9 +3,9 @@ import { createContext, useReducer, Dispatch, ReactNode } from "react";
 interface QuickstartState {
   linkSuccess: boolean;
   isItemAccess: boolean;
-  isPaymentInitiation: boolean;
-  isUserTokenFlow: boolean;
-  isCraProductsExclusively: boolean;
+  // isPaymentInitiation: boolean;                    // Not supported in this app
+  // isUserTokenFlow: boolean;                    // Not supported in this app
+  // isCraProductsExclusively: boolean;                     // Not supported in this app
   linkToken: string | null;
   accessToken: string | null;
   userToken: string | null;
@@ -24,9 +24,9 @@ interface QuickstartState {
 const initialState: QuickstartState = {
   linkSuccess: false,
   isItemAccess: true,
-  isPaymentInitiation: false,
-  isCraProductsExclusively: false,
-  isUserTokenFlow: false,
+  // isPaymentInitiation: false,                    // Not supported in this app
+  // isCraProductsExclusively: false,                     // Not supported in this app
+  // isUserTokenFlow: false,                    // Not supported in this app
   linkToken: "", // Don't set to null or error message will show up briefly when site loads
   userToken: null,
   userId: null,
