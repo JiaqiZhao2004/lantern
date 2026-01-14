@@ -12,7 +12,6 @@ const Header = () => {
   const {
     itemId,
     accessToken,
-    userToken,
     userId,
     linkToken,
     linkSuccess,
@@ -105,10 +104,6 @@ const Header = () => {
                   </InlineLink>
                   .
                 </h4>
-              ) : userToken || userId ? (
-                <h4 className={styles.subtitle}>
-                  Congrats! You have successfully linked data to a User.
-                </h4>
               ) : (
                 <h4 className={styles.subtitle}>
                   <Callout warning>
@@ -131,13 +126,6 @@ const Header = () => {
                   </p>
                 )}
 
-                {userToken && (
-                  <p className={styles.itemAccessRow}>
-                    <span className={styles.idName}>user_token</span>
-                    <span className={styles.tokenText}>{userToken}</span>
-                  </p>
-                )}
-
                 {userId && (
                   <p className={styles.itemAccessRow}>
                     <span className={styles.idName}>user_id</span>
@@ -145,12 +133,10 @@ const Header = () => {
                   </p>
                 )}
               </div>
-              {(isItemAccess || userToken || userId) && (
+              {(isItemAccess || userId) && (
                 <p className={styles.requests}>
                   Now that you have {accessToken && "an access_token"}
-                  {accessToken && (userToken || userId) && " and "}
-                  {userToken && "a user_token"}
-                  {userToken && userId && " and "}
+                  {accessToken && userId && " and "}
                   {userId && "a user_id"}, you can make all of the following
                   requests:
                 </p>

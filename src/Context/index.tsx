@@ -8,7 +8,7 @@ interface QuickstartState {
   // isCraProductsExclusively: boolean;                     // Not supported in this app
   linkToken: string | null;
   accessToken: string | null;
-  userToken: string | null;
+  // userToken: string | null;
   userId: string | null;
   itemId: string | null;
   isError: boolean;
@@ -24,11 +24,7 @@ interface QuickstartState {
 const initialState: QuickstartState = {
   linkSuccess: false,
   isItemAccess: true,
-  // isPaymentInitiation: false,                    // Not supported in this app
-  // isCraProductsExclusively: false,                     // Not supported in this app
-  // isUserTokenFlow: false,                    // Not supported in this app
   linkToken: "", // Don't set to null or error message will show up briefly when site loads
-  userToken: null,
   userId: null,
   accessToken: null,
   itemId: null,
