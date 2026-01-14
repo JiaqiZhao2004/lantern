@@ -19,7 +19,6 @@ const Header = () => {
     isItemAccess,
     backend,
     linkTokenError,
-    isPaymentInitiation,
   } = useContext(Context);
 
   return (
@@ -93,28 +92,7 @@ const Header = () => {
         </>
       ) : (
         <>
-          {isPaymentInitiation ? (
-            <>
-              <h4 className={styles.subtitle}>
-                Congrats! Your payment is now confirmed.
-                <p />
-                <Callout>
-                  You can see information of all your payments in the{" "}
-                  <InlineLink
-                    href="https://dashboard.plaid.com/activity/payments"
-                    target="_blank"
-                  >
-                    Payments Dashboard
-                  </InlineLink>
-                  .
-                </Callout>
-              </h4>
-              <p className={styles.requests}>
-                Now that the 'payment_id' stored in your server, you can use it
-                to access the payment information:
-              </p>
-            </>
-          ) : (
+          {
             /* If not using the payment_initiation product, show the item_id and access_token information */ <>
               {isItemAccess ? (
                 <h4 className={styles.subtitle}>
@@ -173,12 +151,12 @@ const Header = () => {
                   {accessToken && (userToken || userId) && " and "}
                   {userToken && "a user_token"}
                   {userToken && userId && " and "}
-                  {userId && "a user_id"}, you can make all of the
-                  following requests:
+                  {userId && "a user_id"}, you can make all of the following
+                  requests:
                 </p>
               )}
             </>
-          )}
+          }
         </>
       )}
     </div>
