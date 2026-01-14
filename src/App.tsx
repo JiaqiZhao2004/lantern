@@ -26,35 +26,6 @@ const App = () => {
     });
   }, [dispatch]);
 
-  const generateUserToken = useCallback(async () => {
-    const response = await fetch("api/create_user_token", { method: "POST" });
-    if (!response.ok) {
-      dispatch({ type: "SET_STATE", state: { userToken: null, userId: null } });
-      return;
-    }
-    const data = await response.json();
-    if (data) {
-      if (data.error != null) {
-        dispatch({
-          type: "SET_STATE",
-          state: {
-            linkToken: null,
-            linkTokenError: data.error,
-          },
-        });
-        return;
-      }
-      dispatch({
-        type: "SET_STATE",
-        state: {
-          userToken: data.user_token || null,
-          userId: data.user_id || null,
-        },
-      });
-      return data.user_token || data.user_id;
-    }
-  }, [dispatch]);
-
   const generateToken = useCallback(async () => {
     // Link tokens for 'payment_initiation' use a different creation flow in your backend.
     const path = "/api/create_link_token";
@@ -100,7 +71,7 @@ const App = () => {
       generateToken();
     };
     init();
-  }, [dispatch, generateToken, generateUserToken, getInfo]);
+  }, [dispatch, generateToken, getInfo]);
 
   return (
     <div className={styles.App}>
