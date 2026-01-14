@@ -6,11 +6,13 @@ import Items from "./Components/ProductTypes/Items";
 import Context from "./Context";
 
 import styles from "./App.module.scss";
-import { Products as PlaidProducts } from "plaid";
+// import { Products as PlaidProducts } from "plaid";
 
 const App = () => {
   const { linkSuccess, isPaymentInitiation, itemId, dispatch } =
     useContext(Context);
+
+  console.log({linkSuccess, isPaymentInitiation, itemId});
 
   const getInfo = useCallback(async () => {
     const response = await fetch("/api/info", { method: "POST" });
