@@ -3,8 +3,8 @@ import Callout from "plaid-threads/Callout";
 import Button from "plaid-threads/Button";
 import InlineLink from "plaid-threads/InlineLink";
 
-import Link from "../Link";
-import Context from "../../Context";
+import Link from "../../features/plaid/Link";
+import Context from "../../features/plaid/Context";
 
 import styles from "./index.module.scss";
 

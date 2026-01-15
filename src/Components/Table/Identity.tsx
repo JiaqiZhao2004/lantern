@@ -1,6 +1,6 @@
 import React from "react";
 
-import { DataItem, Categories } from "../../dataUtilities";
+import { DataItem, Categories } from "../../features/plaid/dataUtilities";
 
 import styles from "./Identity.module.scss";
 

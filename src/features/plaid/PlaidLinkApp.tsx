@@ -1,14 +1,14 @@
 import React, { useEffect, useContext, useCallback } from "react";
 
-import Header from "./Components/Headers";
-import Products from "./Components/ProductTypes/Products";
-import Items from "./Components/ProductTypes/Items";
+import Header from "../../Components/Headers";
+import Products from "../../Components/ProductTypes/Products";
+import Items from "../../Components/ProductTypes/Items";
 import Context from "./Context";
 
-import styles from "./App.module.scss";
+// import styles from "./PlaidLinkApp.module.scss";
 // import { Products as PlaidProducts } from "plaid";
 
-const App = () => {
+const PlaidLinkApp = () => {
   const { linkSuccess, itemId, dispatch } = useContext(Context);
 
   const getInfo = useCallback(async () => {
@@ -54,28 +54,30 @@ const App = () => {
     localStorage.setItem("link_token", data.link_token);
   }, [dispatch]);
 
-  useEffect(() => {
-    const init = async () => {
-      getInfo();
-      // do not generate a new token for OAuth redirect; instead
-      // setLinkToken from localStorage
-      if (window.location.href.includes("?oauth_state_id=")) {
-        dispatch({
-          type: "SET_STATE",
-          state: {
-            linkToken: localStorage.getItem("link_token"),
-          },
-        });
-        return;
-      }
-      generateToken();
-    };
-    init();
-  }, [dispatch, generateToken, getInfo]);
+  // useEffect(() => {
+  const init = async () => {
+    await getInfo();
+    console.log("Initializing Plaid Link");
+    // do not generate a new token for OAuth redirect; instead
+    // setLinkToken from localStorage
+    if (window.location.href.includes("?oauth_state_id=")) {
+      dispatch({
+        type: "SET_STATE",
+        state: {
+          linkToken: localStorage.getItem("link_token"),
+        },
+      });
+      return;
+    }
+    generateToken();
+  };
+  // init();
+  // }, [dispatch, generateToken, getInfo]);
 
   return (
-    <div className={styles.App}>
-      <div className={styles.container}>
+    <div>
+      <button onClick={init}>Connect</button>
+      <div>
         <Header />
         {linkSuccess && (
           <>
@@ -88,4 +90,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default PlaidLinkApp;

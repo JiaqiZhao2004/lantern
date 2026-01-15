@@ -4,7 +4,12 @@ import Note from "plaid-threads/Note";
 
 import Table from "../Table";
 import Error from "../Error";
-import { DataItem, Categories, ErrorDataItem, Data } from "../../dataUtilities";
+import {
+  DataItem,
+  Categories,
+  ErrorDataItem,
+  Data,
+} from "../../features/plaid/dataUtilities";
 
 import styles from "./index.module.scss";
 
@@ -42,14 +47,14 @@ const Endpoint = (props: Props) => {
   };
 
   const getPdfName = () => {
-    switch(props.name) {
-      case 'Assets':
+    switch (props.name) {
+      case "Assets":
         return "Asset Report.pdf";
       case "CRA Base Report":
         return "Plaid Check Report.pdf";
       case "CRA Income Insights":
         return "Plaid Check Report with Insights.pdf";
-      default: 
+      default:
         return "Statement.pdf";
     }
   };
@@ -87,7 +92,7 @@ const Endpoint = (props: Props) => {
               wide
               className={styles.pdf}
               href={`data:application/pdf;base64,${pdf}`}
-              componentProps={{ download: getPdfName()}}
+              componentProps={{ download: getPdfName() }}
             >
               Download PDF
             </Button>
