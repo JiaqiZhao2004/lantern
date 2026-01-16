@@ -1,10 +1,13 @@
 // src/features/auth/pages/LoginPage.tsx
 import React, { useState, FormEvent, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginWithEmail } from "../auth.api"; // adjust path if needed
-import TextInput from "../../../Components/TextInput";
-import PrimaryButton from "../../../Components/PrimaryButton";
 import { AuthContext } from "../AuthContext";
+// Components
+import PrimaryButton from "../../../Components/PrimaryButton";
+import TextInput from "../../../Components/TextInput";
+// API calls
+import { loginWithEmail } from "../auth.api";
+import { isAppError } from "../../../app/apiErrors";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -23,32 +26,19 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const user = await loginWithEmail(email.trim(), password);
+      await loginWithEmail(email.trim(), password);
+      const emailVerified = ctx?.state.user?.emailVerified;
+      console.log("User logged in, emailVerified: ", emailVerified);
 
-      if (!ctx) {
-        throw new Error("LoginPage must be in AuthContext");
-      }
-      ctx.dispatch({
-        type: "SET_STATE",
-        payload: {
-          user: {
-            firebase_uid: user.uid,
-            email: user.email!,
-            emailVerified: user.emailVerified,
-          },
-        },
-      });
-      console.log("User logged in. Email verified:", user.emailVerified);
-
-      if (user.emailVerified) {
+      if (emailVerified) {
         navigate("/2fa", { replace: true });
       } else {
         navigate("/verify-email", { replace: true });
       }
-      
     } catch (err: any) {
-      // You can refine this to handle Firebase error codes
-      const message = err?.message || "Failed to sign in. Please try again.";
+      const message = isAppError(err)
+        ? err.message
+        : "Failed to sign in. Please try again.";
       setError(message);
       setIsSubmitting(false);
     }

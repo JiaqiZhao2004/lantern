@@ -4,6 +4,7 @@ import { AuthStateAction, AuthState } from "./auth.types";
 export const AuthContext = createContext<{
   state: AuthState;
   dispatch: React.Dispatch<AuthStateAction>;
+  refresh: Function;
 } | null>(null);
 
 export function useAuth(): AuthState {
