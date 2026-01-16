@@ -1,16 +1,17 @@
-// src/features/auth/pages/LoginPage.tsx
+// src/features/auth/pages/RegisterPage.tsx
 import React, { useState, FormEvent, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { loginWithEmail } from "../auth.api"; // adjust path if needed
+import { useNavigate, Link } from "react-router-dom";
+import { registerWithEmail } from "../auth.api"; // adjust path if needed
 import TextInput from "../../../Components/TextInput";
 import PrimaryButton from "../../../Components/PrimaryButton";
 import { AuthContext } from "../AuthContext";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,10 +21,16 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (password !== passwordConfirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const user = await loginWithEmail(email.trim(), password);
+      const user = await registerWithEmail(email.trim(), password);
 
       if (!ctx) {
         throw new Error("LoginPage must be in AuthContext");
@@ -38,17 +45,12 @@ export default function LoginPage() {
           },
         },
       });
-      console.log("User logged in. Email verified:", user.emailVerified);
-
-      if (user.emailVerified) {
-        navigate("/2fa", { replace: true });
-      } else {
-        navigate("/verify-email", { replace: true });
-      }
-      
+      // After successful registration, you can either:
+      // - navigate to "/" (if Firebase already signs them in)
+      // - or navigate to "/login" if you prefer explicit login
+      navigate("/2fa", { replace: true });
     } catch (err: any) {
-      // You can refine this to handle Firebase error codes
-      const message = err?.message || "Failed to sign in. Please try again.";
+      const message = err?.message || "Failed to register. Please try again.";
       setError(message);
       setIsSubmitting(false);
     }
@@ -76,7 +78,7 @@ export default function LoginPage() {
         }}
       >
         <h1 style={{ margin: 0, marginBottom: "1.25rem", fontSize: "1.5rem" }}>
-          Sign in
+          Create an account
         </h1>
 
         {error && (
@@ -109,18 +111,35 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={setPassword}
-            autoComplete="current-password"
+            autoComplete="new-password"
+            required
+          />
+
+          <TextInput
+            label="Confirm Password"
+            type="password"
+            value={passwordConfirm}
+            onChange={setPasswordConfirm}
+            autoComplete="new-password"
             required
           />
 
           <PrimaryButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Sign in"}
+            {isSubmitting ? "Creating account..." : "Register"}
           </PrimaryButton>
         </form>
 
-        {/* Optional: small extras */}
-        <div style={{ marginTop: "0.75rem", fontSize: "0.85rem" }}>
-          Don&apos;t have an account? <a href="/register">Register</a>
+        <div
+          style={{
+            marginTop: "0.75rem",
+            fontSize: "0.85rem",
+            textAlign: "center",
+          }}
+        >
+          Already have an account?{" "}
+          <Link to="/login" style={{ color: "#1976d2" }}>
+            Sign in
+          </Link>
         </div>
       </div>
     </div>
