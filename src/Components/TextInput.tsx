@@ -5,6 +5,7 @@ type TextInputProps = {
   onChange: (value: string) => void;
   autoComplete?: string;
   required?: boolean;
+  disabled?: boolean;
 };
 
 const TextInput: React.FC<TextInputProps> = ({
@@ -14,6 +15,7 @@ const TextInput: React.FC<TextInputProps> = ({
   onChange,
   autoComplete,
   required,
+  disabled,
 }) => {
   return (
     <div style={{ marginBottom: "0.75rem" }}>
@@ -33,6 +35,7 @@ const TextInput: React.FC<TextInputProps> = ({
         required={required}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
         style={{
           width: "100%",
           padding: "0.5rem 0.6rem",
