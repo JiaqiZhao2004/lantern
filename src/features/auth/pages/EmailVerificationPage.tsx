@@ -4,8 +4,8 @@ import { reload, sendEmailVerification } from "firebase/auth";
 
 import { AuthContext } from "../AuthContext";
 import { auth } from "../firebase";
-import TextInput from "../../../Components/TextInput";
 import PrimaryButton from "../../../Components/PrimaryButton";
+import TextInput from "../../../Components/TextInput";
 
 export default function EmailVerificationPage() {
   const navigate = useNavigate();
@@ -75,6 +75,7 @@ export default function EmailVerificationPage() {
       if (!fbUser) return;
 
       if (fbUser.emailVerified) {
+        console.log("Email verified, proceeding to 2FA.");
         navigate("/2fa", { replace: true });
       } else {
         setStatus(
@@ -103,9 +104,13 @@ export default function EmailVerificationPage() {
 
       await sendEmailVerification(fbUser);
       setStatus("Verification email sent. Please check your inbox.");
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setError("Failed to send verification email. Please try again.");
+      if (Object.hasOwn(e, "code") && e.code === "auth/too-many-requests") {
+        setError("Verification email sent. Please try again in a minute.");
+      } else {
+        setError("Failed to send verification email. Please try again.");
+      }
     } finally {
       setIsBusy(false);
     }
@@ -141,11 +146,11 @@ export default function EmailVerificationPage() {
         </h2>
 
         <p style={{ marginTop: 0, marginBottom: "0.75rem", color: "#444" }}>
-          We sent a verification link to your email. Click the link, then come
-          back and press “I have verified my email”.
+          We sent a verification link to your email. The email may be in your
+          junk folder. Click the link, then come back and press “I have verified
+          my email”.
         </p>
 
-        {/* Using TextInput as a read-only display of the email */}
         <TextInput
           label="Email"
           type="email"
@@ -154,13 +159,9 @@ export default function EmailVerificationPage() {
             // no-op (read-only display)
           }}
           autoComplete="email"
+          disabled={true}
           required
         />
-        <div style={{ marginTop: "-0.5rem", marginBottom: "0.75rem" }}>
-          <small style={{ color: "#777" }}>
-            (This field is read-only on this page.)
-          </small>
-        </div>
 
         {status && (
           <p style={{ margin: "0.75rem 0 0", color: "#1976d2" }}>{status}</p>
