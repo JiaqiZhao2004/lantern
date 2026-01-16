@@ -1,12 +1,13 @@
-export type PhoneNumber = {
-  countryCode: number;
-  number: number;
-};
+// export type PhoneNumber = {
+//   countryCode: number;
+//   number: number;
+// };
 
 export type User = {
   firebase_uid: string;
   email: string;
   emailVerified: boolean;
+  hasSms2FA: boolean;
 };
 
 export type AuthState = {
@@ -18,10 +19,12 @@ export type AuthState = {
   errorMessage?: string;
 };
 
-export type AuthStateAction = {
-  type: "SET_STATE";
-  payload?: Partial<AuthState>;
-};
+export type AuthStateAction =
+  | {
+      type: "SET_STATE";
+      payload?: Partial<AuthState>;
+    }
+  | { type: "RESET" };
 
 export const initialAuthState: AuthState = {
   user: null,

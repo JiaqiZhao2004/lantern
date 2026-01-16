@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { reload, sendEmailVerification } from "firebase/auth";
-
+import { isAppError } from "../../../app/apiErrors";
 import { AuthContext } from "../AuthContext";
-import { auth } from "../firebase";
+// Components
 import PrimaryButton from "../../../Components/PrimaryButton";
 import TextInput from "../../../Components/TextInput";
+// API calls
+import { sendVerificationEmail } from "../auth.api";
 
 export default function EmailVerificationPage() {
   const navigate = useNavigate();
@@ -32,37 +33,26 @@ export default function EmailVerificationPage() {
     }
   }, [ctx, navigate]);
 
-  const refreshUserInContext = async () => {
-    const fbUser = auth.currentUser;
-    if (!fbUser) {
-      ctx?.dispatch({
-        type: "SET_STATE",
-        payload: {
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          errorCode: "auth/no-current-user",
-          errorMessage: "Please log in again.",
-        },
-      });
-      navigate("/login", { replace: true });
-      return null;
+  const handleResend = async () => {
+    setIsBusy(true);
+    setStatus("");
+    setError("");
+
+    try {
+      await sendVerificationEmail();
+      console.log("Email sent");
+      setStatus("Verification email sent")
+    } catch (e) {
+      if (isAppError(e)) {
+        if (e.code === "auth/no-current-user") navigate("/login");
+        else if (e.code === "auth/too-many-requests")
+          setError("Verification email sent. Please try again in a minute.");
+        else setError(e.message);
+      } else {
+        setError("Unexpected error.");
+      }
     }
-
-    await reload(fbUser);
-
-    ctx?.dispatch({
-      type: "SET_STATE",
-      payload: {
-        user: {
-          firebase_uid: fbUser.uid,
-          email: fbUser.email!,
-          emailVerified: fbUser.emailVerified,
-        },
-      },
-    });
-
-    return fbUser;
+    setIsBusy(false);
   };
 
   const handleCheckVerified = async () => {
@@ -70,50 +60,17 @@ export default function EmailVerificationPage() {
     setStatus("");
     setError("");
 
-    try {
-      const fbUser = await refreshUserInContext();
-      if (!fbUser) return;
+    await ctx?.refresh();
 
-      if (fbUser.emailVerified) {
-        console.log("Email verified, proceeding to 2FA.");
-        navigate("/2fa", { replace: true });
-      } else {
-        setStatus(
-          "Still not verified yet. Click the link in your email, then try again."
-        );
-      }
-    } catch (e) {
-      console.error(e);
-      setError("Failed to refresh verification status. Please try again.");
-    } finally {
-      setIsBusy(false);
+    if (ctx?.state.user?.emailVerified) {
+      console.log("Email verified, proceeding to 2FA.");
+      navigate("/2fa", { replace: true });
+    } else {
+      setStatus(
+        "Still not verified yet. Click the link in your email, or click check again."
+      );
     }
-  };
-
-  const handleResend = async () => {
-    setIsBusy(true);
-    setStatus("");
-    setError("");
-
-    try {
-      const fbUser = auth.currentUser;
-      if (!fbUser) {
-        navigate("/login", { replace: true });
-        return;
-      }
-
-      await sendEmailVerification(fbUser);
-      setStatus("Verification email sent. Please check your inbox.");
-    } catch (e: any) {
-      console.error(e);
-      if (Object.hasOwn(e, "code") && e.code === "auth/too-many-requests") {
-        setError("Verification email sent. Please try again in a minute.");
-      } else {
-        setError("Failed to send verification email. Please try again.");
-      }
-    } finally {
-      setIsBusy(false);
-    }
+    setIsBusy(false);
   };
 
   // While redirect effect runs, keep UI stable.
