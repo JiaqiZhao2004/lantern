@@ -7,13 +7,19 @@ import DashboardPage from "../features/dashboard/pages/DashboardPage";
 // import AddPlaidItemPage from "../features/plaid/pages/AddPlaidItemPage";
 
 import { RequireAuth } from "../features/auth/RequireAuth";
+import RegisterPage from "../features/auth/pages/RegisterPage";
+import MFAPage from "../features/auth/pages/MFAPage";
+import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
 
 export function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
-
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<EmailVerificationPage />} />
+      <Route path="/2fa" element={<MFAPage />} />
+      
       {/* Protected */}
       <Route
         path="/"

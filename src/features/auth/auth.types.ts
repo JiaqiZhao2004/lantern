@@ -4,13 +4,27 @@ export type PhoneNumber = {
 };
 
 export type User = {
-  id: string;
+  firebase_uid: string;
   email: string;
-  phone: PhoneNumber;
+  emailVerified: boolean;
 };
 
 export type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
+
   isLoading: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+};
+
+export type AuthStateAction = {
+  type: "SET_STATE";
+  payload?: Partial<AuthState>;
+};
+
+export const initialAuthState: AuthState = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
 };
