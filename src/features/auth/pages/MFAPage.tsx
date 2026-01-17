@@ -22,13 +22,13 @@ export default function MFAPage() {
       return;
     }
 
-    // userHasSms2FA().then((hasSms2FA) => {
-    //   if (hasSms2FA) {
-    //     navigate("/verify-2fa", { replace: true });
-    //   } else {
-    //     navigate("/setup-2fa", { replace: true });
-    //   }
-    // });
+    userHasSms2FA().then((hasSms2FA) => {
+      if (hasSms2FA) {
+        navigate("/mfa/verify", { replace: true });
+      } else {
+        navigate("/mfa/setup", { replace: true });
+      }
+    });
   }, [ctx, navigate]);
 
   return <div>MFA</div>;

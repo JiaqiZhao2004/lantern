@@ -28,7 +28,7 @@ export default function EmailVerificationPage() {
     }
 
     if (ctx.state.user.emailVerified) {
-      navigate("/2fa", { replace: true });
+      navigate("/mfa", { replace: true });
       return;
     }
   }, [ctx, navigate]);
@@ -41,7 +41,7 @@ export default function EmailVerificationPage() {
     try {
       await sendVerificationEmail();
       console.log("Email sent");
-      setStatus("Verification email sent")
+      setStatus("Verification email sent");
     } catch (e) {
       if (isAppError(e)) {
         if (e.code === "auth/no-current-user") navigate("/login");
@@ -64,7 +64,7 @@ export default function EmailVerificationPage() {
 
     if (ctx?.state.user?.emailVerified) {
       console.log("Email verified, proceeding to 2FA.");
-      navigate("/2fa", { replace: true });
+      navigate("/mfa", { replace: true });
     } else {
       setStatus(
         "Still not verified yet. Click the link in your email, or click check again."
@@ -127,16 +127,16 @@ export default function EmailVerificationPage() {
           <p style={{ margin: "0.75rem 0 0", color: "#d32f2f" }}>{error}</p>
         )}
 
-        <PrimaryButton onClick={handleCheckVerified} disabled={isBusy}>
-          {isBusy ? "Working..." : "I have verified my email"}
-        </PrimaryButton>
-
         <PrimaryButton
           onClick={handleResend}
           disabled={isBusy}
           style={{ marginTop: "0.5rem", backgroundColor: "#455a64" }}
         >
-          {isBusy ? "Working..." : "Resend verification email"}
+          {isBusy ? "Working..." : "Send verification email"}
+        </PrimaryButton>
+
+        <PrimaryButton onClick={handleCheckVerified} disabled={isBusy}>
+          {isBusy ? "Working..." : "I have verified my email"}
         </PrimaryButton>
 
         <button
