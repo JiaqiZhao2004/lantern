@@ -23,20 +23,25 @@ export function subscribeToAuthChanges(
 function fbErrorToAppError(e: any): AppError {
   console.log(JSON.stringify(e));
   const code = e?.code ?? "unknown";
-  if (code == "auth/too-many-requests") {
+  if (code === "auth/too-many-requests") {
     throw new AppError(
       "auth/too-many-requests",
       "Too many requests. Please try again later."
     );
-  } else if (code == "auth/no-current-user") {
+  } else if (code === "auth/no-current-user") {
     throw new AppError(
       "auth/no-current-user",
       "This user does not exist. Have you registered yet?"
     );
-  } else if (code == "auth/invalid-credential") {
+  } else if (code === "auth/invalid-credential") {
     throw new AppError(
       "auth/invalid-credential",
       "The username or password is incorrect. Have you registered yet?"
+    );
+  } else if (code === "auth/multi-factor-auth-required") {
+    throw new AppError(
+      "auth/multi-factor-auth-required",
+      "Move on to MFA verification."
     );
   } else {
     throw new AppError(
@@ -104,34 +109,49 @@ export async function userHasSms2FA() {
   return hasSms2FA;
 }
 
-export async function enrollSmsMfa(phoneE164: string) {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Not signed in");
+export function createRecaptchaVerifier(refId: string) {
+  return new RecaptchaVerifier(auth, refId, {
+    size: "invisible",
+  });
+}
 
-  // Ensure a div with id="recaptcha-container" exists in the page.
+export async function enrollSMSMFA(phoneNumber: string): Promise<string> {
   const recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
     size: "invisible",
   });
+  recaptchaVerifier.render();
 
-  // Start MFA enrollment session
-  const mfaSession = await multiFactor(user).getSession();
-
+  const multiFactorSession = await multiFactor(auth.currentUser!).getSession();
+  // Specify the phone number and pass the MFA session.
   const phoneInfoOptions = {
-    phoneNumber: phoneE164, // e.g. "+14155552671"
-    session: mfaSession,
+    phoneNumber: phoneNumber,
+    session: multiFactorSession,
   };
-
+  // Send the phone
   const phoneAuthProvider = new PhoneAuthProvider(auth);
-  const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-    phoneInfoOptions,
-    recaptchaVerifier
+  while (true) {
+    try {
+      const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+        phoneInfoOptions,
+        recaptchaVerifier
+      );
+      return verificationId;
+    } catch (e: any) {
+      console.log(JSON.stringify(e));
+      recaptchaVerifier.clear();
+    }
+  }
+}
+
+export async function verifySMSMFA(
+  verificationId: string,
+  verificationCode: string
+) {
+  // Ask user for the verification code. Then:
+  const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+  const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+  await multiFactor(auth.currentUser!).enroll(
+    multiFactorAssertion,
+    "My personal phone number"
   );
-
-  const code = window.prompt("Enter the SMS code");
-  if (!code) throw new Error("No code entered");
-
-  const cred = PhoneAuthProvider.credential(verificationId, code);
-  const assertion = PhoneMultiFactorGenerator.assertion(cred);
-
-  await multiFactor(user).enroll(assertion, "Phone");
 }

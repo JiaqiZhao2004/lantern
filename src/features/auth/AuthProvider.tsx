@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isLoading: false,
         },
       });
-      console.log("syncwithfbUser fired. fbUser: ", fbUser);
     }
   };
 

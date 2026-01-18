@@ -31,14 +31,18 @@ export default function LoginPage() {
       console.log("User logged in, emailVerified: ", emailVerified);
 
       if (emailVerified) {
-        navigate("/2fa", { replace: true });
+        navigate("/mfa", { replace: true });
       } else {
         navigate("/verify-email", { replace: true });
       }
-    } catch (err: any) {
-      const message = isAppError(err)
-        ? err.message
+    } catch (e: any) {
+      if (isAppError(e) && e.code === "auth/multi-factor-auth-required")
+        navigate("/mfa/verify");
+
+      const message = isAppError(e)
+        ? e.message
         : "Failed to sign in. Please try again.";
+
       setError(message);
       setIsSubmitting(false);
     }
