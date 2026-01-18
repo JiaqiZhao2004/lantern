@@ -31,6 +31,7 @@ export default function LoginPage() {
       console.log("User logged in, emailVerified: ", emailVerified);
 
       if (emailVerified) {
+        ctx.dispatch({ type: "SET_STATE", payload: { isAuthenticated: true } });
         navigate("/dashboard", { replace: true }); // TODO: MFA
       } else {
         navigate("/verify-email", { replace: true });
