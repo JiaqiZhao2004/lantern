@@ -31,13 +31,13 @@ export default function LoginPage() {
       console.log("User logged in, emailVerified: ", emailVerified);
 
       if (emailVerified) {
-        navigate("/mfa", { replace: true });
+        navigate("/dashboard", { replace: true }); // TODO: MFA
       } else {
         navigate("/verify-email", { replace: true });
       }
     } catch (e: any) {
-      if (isAppError(e) && e.code === "auth/multi-factor-auth-required")
-        navigate("/mfa/verify");
+      // if (isAppError(e) && e.code === "auth/multi-factor-auth-required")
+      //   navigate("/mfa/verify");
 
       const message = isAppError(e)
         ? e.message
