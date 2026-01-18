@@ -2,6 +2,7 @@
 export type AppErrorCode =
   | "auth/no-current-user"
   | "auth/invalid-credential"
+  | "auth/multi-factor-auth-required"
   | "auth/too-many-requests"
   | "network/offline"
   | "unknown";
@@ -15,6 +16,7 @@ export class AppError extends Error {
     this.name = "AppError";
     this.code = code;
     this.details = details;
+    console.log("AppError: ", message);
   }
 }
 
