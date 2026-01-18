@@ -1,7 +1,5 @@
 // src/features/auth/pages/LoginPage.tsx
-import React, { useState, FormEvent, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../AuthContext";
+import React, { useState, FormEvent } from "react";
 // Components
 import PrimaryButton from "../../../Components/PrimaryButton";
 import TextInput from "../../../Components/TextInput";
@@ -10,15 +8,12 @@ import { loginWithEmail } from "../auth.api";
 import { isAppError } from "../../../app/apiErrors";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const ctx = useContext(AuthContext);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,24 +22,12 @@ export default function LoginPage() {
 
     try {
       await loginWithEmail(email.trim(), password);
-      const emailVerified = ctx?.state.user?.emailVerified;
-      console.log("User logged in, emailVerified: ", emailVerified);
-
-      if (emailVerified) {
-        ctx.dispatch({ type: "SET_STATE", payload: { isAuthenticated: true } });
-        navigate("/dashboard", { replace: true }); // TODO: MFA
-      } else {
-        navigate("/verify-email", { replace: true });
-      }
     } catch (e: any) {
       // if (isAppError(e) && e.code === "auth/multi-factor-auth-required")
       //   navigate("/mfa/verify");
-
-      const message = isAppError(e)
-        ? e.message
-        : "Failed to sign in. Please try again.";
-
-      setError(message);
+      setError(
+        isAppError(e) ? e.message : "Failed to sign in. Please try again."
+      );
       setIsSubmitting(false);
     }
   };

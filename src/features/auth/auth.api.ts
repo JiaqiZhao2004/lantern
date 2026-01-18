@@ -69,6 +69,7 @@ export async function loginWithEmail(email: string, password: string) {
 
 export async function logoutFirebase() {
   await signOut(auth);
+  console.log("currentuser:", auth.currentUser);
 }
 
 export async function refreshAuthUser() {

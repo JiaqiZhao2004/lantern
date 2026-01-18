@@ -1,6 +1,6 @@
 // src/features/auth/pages/RegisterPage.tsx
 import React, { useState, FormEvent, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AuthContext } from "../AuthContext";
 // Components
 import TextInput from "../../../Components/TextInput";
@@ -10,7 +10,6 @@ import { registerWithEmail } from "../auth.api"; // adjust path if needed
 import { isAppError } from "../../../app/apiErrors";
 
 export default function RegisterPage() {
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +35,6 @@ export default function RegisterPage() {
       await registerWithEmail(email.trim(), password);
       await ctx?.refresh();
       console.log("Registered with email and password");
-      navigate("/verify-email", { replace: true });
     } catch (err: any) {
       const message = isAppError(err)
         ? err.message

@@ -1,13 +1,10 @@
-import { useNavigate } from "react-router-dom";
 import { logoutFirebase } from "../features/auth/auth.api";
 
 function Header() {
-  const navigate = useNavigate();
-
+  
   const handleLogout = async () => {
     try {
       await logoutFirebase();
-      navigate("/login", { replace: true });
     } catch (err) {
       console.error("Logout failed", err);
     }
