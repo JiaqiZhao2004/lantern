@@ -1,8 +1,8 @@
 import React, { useEffect, useContext, useCallback } from "react";
 
-import Header from "../../Components/Headers";
-import Products from "../../Components/ProductTypes/Products";
-import Items from "../../Components/ProductTypes/Items";
+import Header from "./Headers";
+import Products from "./ProductTypes/Products";
+import Items from "./ProductTypes/Items";
 import Context from "./Context";
 
 // import styles from "./PlaidLinkApp.module.scss";
@@ -54,29 +54,29 @@ const PlaidLinkApp = () => {
     localStorage.setItem("link_token", data.link_token);
   }, [dispatch]);
 
-  // useEffect(() => {
-  const init = async () => {
-    await getInfo();
-    console.log("Initializing Plaid Link");
-    // do not generate a new token for OAuth redirect; instead
-    // setLinkToken from localStorage
-    if (window.location.href.includes("?oauth_state_id=")) {
-      dispatch({
-        type: "SET_STATE",
-        state: {
-          linkToken: localStorage.getItem("link_token"),
-        },
-      });
-      return;
-    }
-    generateToken();
-  };
-  // init();
-  // }, [dispatch, generateToken, getInfo]);
+  useEffect(() => {
+    const init = async () => {
+      await getInfo();
+      console.log("Initializing Plaid Link");
+      // do not generate a new token for OAuth redirect; instead
+      // setLinkToken from localStorage
+      if (window.location.href.includes("?oauth_state_id=")) {
+        dispatch({
+          type: "SET_STATE",
+          state: {
+            linkToken: localStorage.getItem("link_token"),
+          },
+        });
+        return;
+      }
+      generateToken();
+    };
+    init();
+  }, [dispatch, generateToken, getInfo]);
 
   return (
     <div>
-      <button onClick={init}>Connect</button>
+      {/* <button onClick={init}>Connect</button> */}
       <div>
         <Header />
         {linkSuccess && (
