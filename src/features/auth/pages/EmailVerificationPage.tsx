@@ -1,15 +1,13 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useContext, useMemo, useState } from "react";
 import { isAppError } from "../../../app/apiErrors";
 import { AuthContext } from "../AuthContext";
 // Components
 import PrimaryButton from "../../../Components/PrimaryButton";
 import TextInput from "../../../Components/TextInput";
 // API calls
-import { sendVerificationEmail } from "../auth.api";
+import { logoutFirebase, sendVerificationEmail } from "../auth.api";
 
 export default function EmailVerificationPage() {
-  const navigate = useNavigate();
   const ctx = useContext(AuthContext);
 
   const [status, setStatus] = useState<string>("");
@@ -17,22 +15,6 @@ export default function EmailVerificationPage() {
   const [isBusy, setIsBusy] = useState(false);
 
   const email = useMemo(() => ctx?.state.user?.email ?? "", [ctx]);
-
-  // Redirects must happen in an effect (not during render).
-  useEffect(() => {
-    if (!ctx) return;
-
-    if (!ctx.state.user) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
-    if (ctx.state.user.emailVerified) {
-      ctx.dispatch({ type: "SET_STATE", payload: { isAuthenticated: true } });
-      navigate("/dashboard", { replace: true }); // TODO: MFA
-      return;
-    }
-  }, [ctx, navigate]);
 
   const handleResend = async () => {
     setIsBusy(true);
@@ -45,8 +27,7 @@ export default function EmailVerificationPage() {
       setStatus("Verification email sent");
     } catch (e) {
       if (isAppError(e)) {
-        if (e.code === "auth/no-current-user") navigate("/login");
-        else if (e.code === "auth/too-many-requests")
+        if (e.code === "auth/too-many-requests")
           setError("Verification email sent. Please try again in a minute.");
         else setError(e.message);
       } else {
@@ -63,20 +44,13 @@ export default function EmailVerificationPage() {
 
     await ctx?.refresh();
 
-    if (ctx?.state.user?.emailVerified) {
-      console.log("Email verified, proceeding to dashboard."); // TODO: MFA
-      ctx.dispatch({ type: "SET_STATE", payload: { isAuthenticated: true } });
-      navigate("/dashboard", { replace: true });
-    } else {
+    if (!ctx?.state.user?.emailVerified) {
       setStatus(
-        "Still not verified yet. Click the link in your email, or click check again."
+        "Still not verified yet. Please click the link in your email."
       );
     }
     setIsBusy(false);
   };
-
-  // While redirect effect runs, keep UI stable.
-  if (!ctx || !ctx.state.user) return null;
 
   return (
     <div
@@ -143,7 +117,7 @@ export default function EmailVerificationPage() {
 
         <button
           type="button"
-          onClick={() => navigate("/login", { replace: true })}
+          onClick={() => logoutFirebase()}
           style={{
             width: "100%",
             marginTop: "0.75rem",

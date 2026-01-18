@@ -1,19 +1,37 @@
 // src/app/routes.tsx
-import React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import React, { useContext, useEffect } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import LoginPage from "../features/auth/pages/LoginPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
-// import AddPlaidItemPage from "../features/plaid/pages/AddPlaidItemPage";
 
 import { RequireAuth } from "../features/auth/RequireAuth";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 // import MFAPage from "../features/auth/pages/MFAPage";
 import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
+import { AuthContext } from "../features/auth/AuthContext";
 // import MFASetupPage from "../features/auth/pages/MFASetupPage";
 // import MFAVerifyPage from "../features/auth/pages/MFAVerifyPage";
 
 export function AppRoutes() {
+
+  const authctx = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // All auth routing is based on AuthContext
+  useEffect(() => {
+    if (!authctx?.state.user) {
+      if (window.location.pathname === "/register") {
+        return;
+      }
+      navigate("/login");
+    } else if (!authctx.state.user.emailVerified) {
+      navigate("verify-email");
+    } else if (authctx.state.isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [authctx, navigate]);
+
   return (
     <Routes>
       {/* Public */}
@@ -44,7 +62,7 @@ export function AppRoutes() {
       /> */}
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

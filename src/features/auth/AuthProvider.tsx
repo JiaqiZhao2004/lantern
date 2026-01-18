@@ -11,11 +11,13 @@ import { User as FirebaseUser } from "firebase/auth";
 function reducer(state: AuthState, action: AuthStateAction): AuthState {
   switch (action.type) {
     case "SET_STATE":
+      console.log("auth state updated");
       return {
         ...state,
         ...action.payload,
       };
     case "RESET":
+      console.log("auth state reset");
       return initialAuthState;
     default:
       return state;
@@ -25,11 +27,10 @@ function reducer(state: AuthState, action: AuthStateAction): AuthState {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialAuthState);
 
-  const syncWithfbUser = async (fbUser: FirebaseUser | null) => {
+  const syncWithfbUser = (fbUser: FirebaseUser | null) => {
     if (!fbUser) {
       dispatch({ type: "RESET" });
     } else {
-      await fbUser.reload();
       dispatch({
         type: "SET_STATE",
         payload: {
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             hasSms2FA: false /* TODO: await userHasSms2FA() */,
           },
           isLoading: false,
+          isAuthenticated: fbUser.emailVerified,
         },
       });
     }
@@ -47,14 +49,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = async () => {
     const fbUser = await refreshAuthUser();
-    await syncWithfbUser(fbUser);
+    syncWithfbUser(fbUser);
   };
 
   useEffect(() => {
     dispatch({ type: "SET_STATE", payload: { isLoading: true } });
     const unsubscribe = subscribeToAuthChanges(syncWithfbUser);
+    dispatch({ type: "SET_STATE", payload: { isLoading: false } });
     return unsubscribe;
-  }, []);
+  }, [dispatch]);
 
   return (
     <AuthContext.Provider value={{ state, dispatch, refresh }}>
