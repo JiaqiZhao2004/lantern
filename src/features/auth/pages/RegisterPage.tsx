@@ -1,16 +1,15 @@
 // src/features/auth/pages/RegisterPage.tsx
 import React, { useState, FormEvent, useContext } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../AuthContext";
+import { AuthContext } from "../state/AuthContext";
 // Components
 import TextInput from "../../../Components/TextInput";
 import PrimaryButton from "../../../Components/PrimaryButton";
 // API
-import { registerWithEmail } from "../auth.api"; // adjust path if needed
+import { registerWithEmail } from "../api/firebase/client"; // adjust path if needed
 import { isAppError } from "../../../app/apiErrors";
 
 export default function RegisterPage() {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");

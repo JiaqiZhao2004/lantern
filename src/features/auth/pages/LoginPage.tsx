@@ -4,11 +4,10 @@ import React, { useState, FormEvent } from "react";
 import PrimaryButton from "../../../Components/PrimaryButton";
 import TextInput from "../../../Components/TextInput";
 // API calls
-import { loginWithEmail } from "../auth.api";
+import { loginWithEmail } from "../api/firebase/client";
 import { isAppError } from "../../../app/apiErrors";
 
 export default function LoginPage() {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 

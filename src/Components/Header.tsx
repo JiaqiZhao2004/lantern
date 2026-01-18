@@ -1,7 +1,6 @@
-import { logoutFirebase } from "../features/auth/auth.api";
+import { logoutFirebase } from "../features/auth/api/firebase/client";
 
 function Header() {
-  
   const handleLogout = async () => {
     try {
       await logoutFirebase();
@@ -11,7 +10,7 @@ function Header() {
   };
   return (
     <header style={{ display: "flex", justifyContent: "space-between" }}>
-      <h2>My App</h2>
+      <h2>Dashboard</h2>
       <button
         onClick={handleLogout}
         style={{
