@@ -28,6 +28,7 @@ export default function EmailVerificationPage() {
     }
 
     if (ctx.state.user.emailVerified) {
+      ctx.dispatch({ type: "SET_STATE", payload: { isAuthenticated: true } });
       navigate("/dashboard", { replace: true }); // TODO: MFA
       return;
     }
@@ -64,6 +65,7 @@ export default function EmailVerificationPage() {
 
     if (ctx?.state.user?.emailVerified) {
       console.log("Email verified, proceeding to dashboard."); // TODO: MFA
+      ctx.dispatch({ type: "SET_STATE", payload: { isAuthenticated: true } });
       navigate("/dashboard", { replace: true });
     } else {
       setStatus(

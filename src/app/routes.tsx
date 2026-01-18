@@ -26,7 +26,7 @@ export function AppRoutes() {
 
       {/* Protected */}
       <Route
-        path="/"
+        path="/dashboard"
         element={
           <RequireAuth>
             <DashboardPage />
