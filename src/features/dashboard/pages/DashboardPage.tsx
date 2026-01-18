@@ -6,7 +6,6 @@ export default function DashboardPage() {
   return (
     <div>
       <Header></Header>
-      Dashboard Page
       <QuickstartProvider>
         <PlaidLinkApp></PlaidLinkApp>
       </QuickstartProvider>

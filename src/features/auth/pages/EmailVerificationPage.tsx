@@ -1,11 +1,11 @@
 import React, { useContext, useMemo, useState } from "react";
 import { isAppError } from "../../../app/apiErrors";
-import { AuthContext } from "../AuthContext";
+import { AuthContext } from "../state/AuthContext";
 // Components
 import PrimaryButton from "../../../Components/PrimaryButton";
 import TextInput from "../../../Components/TextInput";
 // API calls
-import { logoutFirebase, sendVerificationEmail } from "../auth.api";
+import { logoutFirebase, sendVerificationEmail } from "../api/firebase/client";
 
 export default function EmailVerificationPage() {
   const ctx = useContext(AuthContext);
@@ -45,9 +45,7 @@ export default function EmailVerificationPage() {
     await ctx?.refresh();
 
     if (!ctx?.state.user?.emailVerified) {
-      setStatus(
-        "Still not verified yet. Please click the link in your email."
-      );
+      setStatus("Still not verified yet. Please click the link in your email.");
     }
     setIsBusy(false);
   };

@@ -1,8 +1,3 @@
-// export type PhoneNumber = {
-//   countryCode: number;
-//   number: number;
-// };
-
 export type User = {
   firebase_uid: string;
   email: string;

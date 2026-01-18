@@ -10,8 +10,8 @@ import {
   sendEmailVerification,
   onAuthStateChanged,
 } from "firebase/auth";
-import { auth } from "./firebase";
-import { AppError } from "../../app/apiErrors";
+import { auth } from "./firebaseConfig";
+import { AppError } from "../../../../app/apiErrors";
 
 // Auth state listener wrapper (just a tiny pass-through)
 export function subscribeToAuthChanges(
@@ -19,9 +19,8 @@ export function subscribeToAuthChanges(
 ) {
   return onAuthStateChanged(auth, handler);
 }
-
 function fbErrorToAppError(e: any): AppError {
-  console.log(JSON.stringify(e));
+  // console.log(JSON.stringify(e));
   const code = e?.code ?? "unknown";
   if (code === "auth/too-many-requests") {
     throw new AppError(
@@ -69,7 +68,6 @@ export async function loginWithEmail(email: string, password: string) {
 
 export async function logoutFirebase() {
   await signOut(auth);
-  console.log("currentuser:", auth.currentUser);
 }
 
 export async function refreshAuthUser() {

@@ -1,11 +1,11 @@
 import { useEffect, useReducer } from "react";
-import { AuthState, AuthStateAction, initialAuthState } from "./auth.types";
+import { AuthState, AuthStateAction, initialAuthState } from "./AuthModels";
 import { AuthContext } from "./AuthContext";
 import {
   refreshAuthUser,
   subscribeToAuthChanges,
   // userHasSms2FA,
-} from "./auth.api";
+} from "../api/firebase/client";
 import { User as FirebaseUser } from "firebase/auth";
 
 function reducer(state: AuthState, action: AuthStateAction): AuthState {

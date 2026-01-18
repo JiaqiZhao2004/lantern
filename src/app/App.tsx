@@ -19,7 +19,7 @@ import React from "react";
 import { BrowserRouter } from "react-router-dom";
 
 import { AppRoutes } from "./routes";
-import { AuthProvider } from "../features/auth/AuthProvider";
+import { AuthProvider } from "../features/auth/state/AuthProvider";
 
 // If you use React Query, uncomment these
 // import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

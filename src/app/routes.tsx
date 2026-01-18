@@ -5,16 +5,14 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 
-import { RequireAuth } from "../features/auth/RequireAuth";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 // import MFAPage from "../features/auth/pages/MFAPage";
 import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
-import { AuthContext } from "../features/auth/AuthContext";
+import { AuthContext } from "../features/auth/state/AuthContext";
 // import MFASetupPage from "../features/auth/pages/MFASetupPage";
 // import MFAVerifyPage from "../features/auth/pages/MFAVerifyPage";
 
 export function AppRoutes() {
-
   const authctx = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -43,14 +41,7 @@ export function AppRoutes() {
       <Route path="/mfa/verify" element={<MFAVerifyPage />} /> */}
 
       {/* Protected */}
-      <Route
-        path="/dashboard"
-        element={
-          <RequireAuth>
-            <DashboardPage />
-          </RequireAuth>
-        }
-      />
+      <Route path="/dashboard" element={<DashboardPage />} />
 
       {/* <Route
         path="/plaid/add"
