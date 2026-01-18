@@ -3,10 +3,10 @@ import {
   signInWithEmailAndPassword,
   signOut,
   User as FirebaseUser,
-  multiFactor,
-  PhoneAuthProvider,
-  RecaptchaVerifier,
-  PhoneMultiFactorGenerator,
+  // multiFactor,
+  // PhoneAuthProvider,
+  // RecaptchaVerifier,
+  // PhoneMultiFactorGenerator,
   sendEmailVerification,
   onAuthStateChanged,
 } from "firebase/auth";
@@ -92,66 +92,60 @@ export async function sendVerificationEmail() {
   }
 }
 
-export async function userHasSms2FA() {
-  const fbUser = auth.currentUser;
-  if (!fbUser) return false;
+// export async function userHasSms2FA() {
+//   const fbUser = auth.currentUser;
+//   if (!fbUser) return false;
 
-  // Make sure data is fresh
-  await fbUser.reload();
+//   // Make sure data is fresh
+//   await fbUser.reload();
 
-  const mfa = multiFactor(fbUser);
-  const enrolledFactors = mfa.enrolledFactors; // MultiFactorInfo[]
+//   const mfa = multiFactor(fbUser);
+//   const enrolledFactors = mfa.enrolledFactors; // MultiFactorInfo[]
 
-  const hasSms2FA = enrolledFactors.some(
-    (factor) => factor.factorId === PhoneMultiFactorGenerator.FACTOR_ID
-  );
+//   const hasSms2FA = enrolledFactors.some(
+//     (factor) => factor.factorId === PhoneMultiFactorGenerator.FACTOR_ID
+//   );
 
-  return hasSms2FA;
-}
+//   return hasSms2FA;
+// }
 
-export function createRecaptchaVerifier(refId: string) {
-  return new RecaptchaVerifier(auth, refId, {
-    size: "invisible",
-  });
-}
+// export async function enrollSMSMFA(phoneNumber: string): Promise<string> {
+//   const recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+//     size: "invisible",
+//   });
+//   recaptchaVerifier.render();
 
-export async function enrollSMSMFA(phoneNumber: string): Promise<string> {
-  const recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-    size: "invisible",
-  });
-  recaptchaVerifier.render();
+//   const multiFactorSession = await multiFactor(auth.currentUser!).getSession();
+//   // Specify the phone number and pass the MFA session.
+//   const phoneInfoOptions = {
+//     phoneNumber: phoneNumber,
+//     session: multiFactorSession,
+//   };
+//   // Send the phone
+//   const phoneAuthProvider = new PhoneAuthProvider(auth);
+//   while (true) {
+//     try {
+//       const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+//         phoneInfoOptions,
+//         recaptchaVerifier
+//       );
+//       return verificationId;
+//     } catch (e: any) {
+//       console.log(JSON.stringify(e));
+//       recaptchaVerifier.clear();
+//     }
+//   }
+// }
 
-  const multiFactorSession = await multiFactor(auth.currentUser!).getSession();
-  // Specify the phone number and pass the MFA session.
-  const phoneInfoOptions = {
-    phoneNumber: phoneNumber,
-    session: multiFactorSession,
-  };
-  // Send the phone
-  const phoneAuthProvider = new PhoneAuthProvider(auth);
-  while (true) {
-    try {
-      const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-        phoneInfoOptions,
-        recaptchaVerifier
-      );
-      return verificationId;
-    } catch (e: any) {
-      console.log(JSON.stringify(e));
-      recaptchaVerifier.clear();
-    }
-  }
-}
-
-export async function verifySMSMFA(
-  verificationId: string,
-  verificationCode: string
-) {
-  // Ask user for the verification code. Then:
-  const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
-  const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
-  await multiFactor(auth.currentUser!).enroll(
-    multiFactorAssertion,
-    "My personal phone number"
-  );
-}
+// export async function verifySMSMFA(
+//   verificationId: string,
+//   verificationCode: string
+// ) {
+//   // Ask user for the verification code. Then:
+//   const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+//   const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+//   await multiFactor(auth.currentUser!).enroll(
+//     multiFactorAssertion,
+//     "My personal phone number"
+//   );
+// }

@@ -28,7 +28,7 @@ export default function EmailVerificationPage() {
     }
 
     if (ctx.state.user.emailVerified) {
-      navigate("/mfa", { replace: true });
+      navigate("/dashboard", { replace: true }); // TODO: MFA
       return;
     }
   }, [ctx, navigate]);
@@ -63,8 +63,8 @@ export default function EmailVerificationPage() {
     await ctx?.refresh();
 
     if (ctx?.state.user?.emailVerified) {
-      console.log("Email verified, proceeding to 2FA.");
-      navigate("/mfa", { replace: true });
+      console.log("Email verified, proceeding to dashboard."); // TODO: MFA
+      navigate("/dashboard", { replace: true });
     } else {
       setStatus(
         "Still not verified yet. Click the link in your email, or click check again."

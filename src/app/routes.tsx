@@ -8,10 +8,10 @@ import DashboardPage from "../features/dashboard/pages/DashboardPage";
 
 import { RequireAuth } from "../features/auth/RequireAuth";
 import RegisterPage from "../features/auth/pages/RegisterPage";
-import MFAPage from "../features/auth/pages/MFAPage";
+// import MFAPage from "../features/auth/pages/MFAPage";
 import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
-import MFASetupPage from "../features/auth/pages/MFASetupPage";
-import MFAVerifyPage from "../features/auth/pages/MFAVerifyPage";
+// import MFASetupPage from "../features/auth/pages/MFASetupPage";
+// import MFAVerifyPage from "../features/auth/pages/MFAVerifyPage";
 
 export function AppRoutes() {
   return (
@@ -20,9 +20,9 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<EmailVerificationPage />} />
-      <Route path="/mfa" element={<MFAPage />} />
-      <Route path="/mfa/setup" element={<MFASetupPage />} />
-      <Route path="/mfa/verify" element={<MFAVerifyPage />} />
+      {/* <Route path="/mfa" element={<MFAPage />} /> */}
+      {/* <Route path="/mfa/setup" element={<MFASetupPage />} />
+      <Route path="/mfa/verify" element={<MFAVerifyPage />} /> */}
 
       {/* Protected */}
       <Route

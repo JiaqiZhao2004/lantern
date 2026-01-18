@@ -4,7 +4,7 @@ import { AuthContext } from "./AuthContext";
 import {
   refreshAuthUser,
   subscribeToAuthChanges,
-  userHasSms2FA,
+  // userHasSms2FA,
 } from "./auth.api";
 import { User as FirebaseUser } from "firebase/auth";
 
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             firebase_uid: fbUser.uid,
             email: fbUser.email!,
             emailVerified: fbUser.emailVerified,
-            hasSms2FA: await userHasSms2FA(),
+            hasSms2FA: false /* TODO: await userHasSms2FA() */,
           },
           isLoading: false,
         },
