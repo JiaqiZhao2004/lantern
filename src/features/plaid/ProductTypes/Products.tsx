@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 
 import Endpoint from "../Endpoint";
-import Context from "../../features/plaid/Context";
+import Context from "../Context";
 import ProductTypesContainer from "./ProductTypesContainer";
 import {
   transactionsCategories,
@@ -38,7 +38,7 @@ import {
   checkReportInsightsCategories,
   transformPartnerInsightsData,
   checkReportPartnerInsightsCategories,
-} from "../../features/plaid/dataUtilities";
+} from "../dataUtilities";
 
 const Products = () => {
   const { products } = useContext(Context);

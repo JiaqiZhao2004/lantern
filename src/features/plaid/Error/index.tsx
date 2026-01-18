@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Button from "plaid-threads/Button";
 import Note from "plaid-threads/Note";
 
-import { ErrorDataItem } from "../../features/plaid/dataUtilities";
+import { ErrorDataItem } from "../dataUtilities";
 
 import styles from "./index.module.scss";
 
