@@ -60,3 +60,4 @@ docker-compose.local*.yml
 __pycache__
 
 *.drawio
+postgres-data

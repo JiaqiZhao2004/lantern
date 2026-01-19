@@ -2,8 +2,13 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
-from plaid_server import plaid_router
+from db.database import Base, engine
+from routers import plaid, auth
+import db.models
+
+load_dotenv(verbose=True)
 
 app = FastAPI()
 
@@ -15,4 +20,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router=plaid_router)
+app.include_router(router=plaid.router)
+app.include_router(router=auth.router)
+
+# Make sure tables exist
+print(">>> Creating tables now")
+Base.metadata.create_all(bind=engine)
