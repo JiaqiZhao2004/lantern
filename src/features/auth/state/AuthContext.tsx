@@ -1,16 +1,11 @@
 import { createContext, useContext } from "react";
-import { AuthStateAction, AuthState } from "./AuthModels";
+import { AuthStateAction, AuthState, initialAuthState } from "./AuthModels";
 
-export const AuthContext = createContext<{
-  state: AuthState;
+interface IAuthContext extends AuthState {
   dispatch: React.Dispatch<AuthStateAction>;
   refresh: Function;
-} | null>(null);
-
-export function useAuth(): AuthState {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return ctx.state;
 }
+
+export const AuthContext = createContext<IAuthContext>(
+  initialAuthState as IAuthContext
+);

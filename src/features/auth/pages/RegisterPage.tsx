@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ctx = useContext(AuthContext);
+  const { refresh } = useContext(AuthContext);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
     try {
       await registerWithEmail(email.trim(), password);
-      await ctx?.refresh();
+      await refresh();
       console.log("Registered with email and password");
     } catch (err: any) {
       const message = isAppError(err)

@@ -18,14 +18,14 @@ export function AppRoutes() {
 
   // All auth routing is based on AuthContext
   useEffect(() => {
-    if (!authctx?.state.user) {
+    if (!authctx?.user) {
       if (window.location.pathname === "/register") {
         return;
       }
       navigate("/login");
-    } else if (!authctx.state.user.emailVerified) {
+    } else if (!authctx.user.emailVerified) {
       navigate("verify-email");
-    } else if (authctx.state.isAuthenticated) {
+    } else if (authctx.isAuthenticated) {
       navigate("/dashboard");
     }
   }, [authctx, navigate]);
