@@ -1,5 +1,5 @@
 import React from "react";
-import App from "./app/App";
+import App from "./core/App";
 import { createRoot } from "react-dom/client";
 import reportWebVitals from "./reportWebVitals";
 
