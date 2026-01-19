@@ -41,7 +41,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "preinstall": "npx npm-force-resolutions",
-    "generate-api-types": "npx openapi-typescript http://localhost:8000/openapi.json -o src/app/DTOTypes.ts"
+    "generate-api-types": "npx openapi-typescript http://localhost:8000/openapi.json -o src/app/backendDTOTypes.ts"
   },
   "eslintConfig": {
     "extends": [

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { auth } from "../firebase/firebaseConfig";
+import { auth } from "./firebaseConfig";
 
 // Create an Axios instance
 const axiosClient = axios.create({

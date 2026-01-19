@@ -1,5 +1,5 @@
 import React, { useContext, useMemo, useState } from "react";
-import { isAppError } from "../../../app/apiErrors";
+import { isAppError } from "../../../app/appErrors";
 import { AuthContext } from "../state/AuthContext";
 // Components
 import PrimaryButton from "../../../Components/PrimaryButton";
