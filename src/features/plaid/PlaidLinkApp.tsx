@@ -12,7 +12,7 @@ const PlaidLinkApp = () => {
   const { linkSuccess, itemId, dispatch } = useContext(Context);
 
   const getInfo = useCallback(async () => {
-    const response = await fetch("/api/plaid/info", { method: "POST" });
+    const response = await fetch("/api/v1/plaid/info", { method: "POST" });
     if (!response.ok) {
       dispatch({ type: "SET_STATE", state: { backend: false } });
     }
@@ -28,7 +28,7 @@ const PlaidLinkApp = () => {
 
   const generateToken = useCallback(async () => {
     // Link tokens for 'payment_initiation' use a different creation flow in your backend.
-    const path = "/api/plaid/create_link_token";
+    const path = "/api/v1/plaid/create_link_token";
     const response = await fetch(path, {
       method: "POST",
     });
