@@ -1,15 +1,14 @@
-import { createContext, useContext } from "react";
-import { DashboardStateAction, DashboardState } from "./DashboardModels";
+import { createContext } from "react";
+import {
+  DashboardStateAction,
+  DashboardState,
+  initialDashboardState,
+} from "./DashboardModels";
 
-export const DashboardContext = createContext<{
-  state: DashboardState;
+interface IDashboardContext extends DashboardState {
   dispatch: React.Dispatch<DashboardStateAction>;
-} | null>(null);
-
-export function useDashboard(): DashboardState {
-  const ctx = useContext(DashboardContext);
-  if (!ctx) {
-    throw new Error("useDashboard must be used within DashboardProvider");
-  }
-  return ctx.state;
 }
+
+export const DashboardContext = createContext<IDashboardContext>(
+  initialDashboardState as IDashboardContext
+);

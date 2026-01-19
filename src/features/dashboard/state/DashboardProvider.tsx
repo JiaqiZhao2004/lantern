@@ -29,7 +29,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialDashboardState);
 
   return (
-    <DashboardContext.Provider value={{ state, dispatch }}>
+    <DashboardContext.Provider value={{ ...state, dispatch }}>
       {children}
     </DashboardContext.Provider>
   );
