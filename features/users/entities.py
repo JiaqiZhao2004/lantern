@@ -1,6 +1,7 @@
-# models.py
+# features/users/entities.py
+# Persistent entities for Database ORM mapping
 from sqlalchemy import Column, Integer, String
-from ...db.database import Base
+from services.db import Base
 
 
 class User(Base):
