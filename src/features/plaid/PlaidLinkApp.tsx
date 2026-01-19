@@ -76,16 +76,13 @@ const PlaidLinkApp = () => {
 
   return (
     <div>
-      {/* <button onClick={init}>Connect</button> */}
-      <div>
-        <Header />
-        {linkSuccess && (
-          <>
-            <Products />
-            {itemId && <Items />}
-          </>
-        )}
-      </div>
+      <Header />
+      {linkSuccess && (
+        <>
+          <Products />
+          {itemId && <Items />}
+        </>
+      )}
     </div>
   );
 };

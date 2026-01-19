@@ -1,14 +1,11 @@
 import Header from "../../../Components/Header";
-import { QuickstartProvider } from "../../plaid/Context";
-import PlaidLinkApp from "../../plaid/PlaidLinkApp";
+import PlaidLinkPage from "../../plaid/pages/PlaidLinkPage";
 
 export default function DashboardPage() {
   return (
     <div>
       <Header></Header>
-      <QuickstartProvider>
-        <PlaidLinkApp></PlaidLinkApp>
-      </QuickstartProvider>
+      <PlaidLinkPage></PlaidLinkPage>
     </div>
   );
 }
