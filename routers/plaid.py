@@ -6,8 +6,6 @@ import json
 import time
 from datetime import date, timedelta
 from typing import Optional, Dict, Any
-from dotenv import load_dotenv
-
 from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
 
@@ -38,8 +36,6 @@ from plaid.model.statements_download_request import StatementsDownloadRequest
 from plaid.api import plaid_api
 
 from utils import pretty_print_response
-
-load_dotenv()
 
 PLAID_CLIENT_ID = os.getenv("PLAID_CLIENT_ID")
 PLAID_SECRET = os.getenv("PLAID_SECRET")
@@ -113,9 +109,9 @@ def poll_with_retries(request_callback, ms: int = 1000, retries_left: int = 20):
 
 
 # ---------- Routes (same paths/methods) ----------
-plaid_router = APIRouter()
+router = APIRouter()
 
-@plaid_router.post("/api/plaid/info")
+@router.post("/api/plaid/info")
 def info():
     return {
         "item_id": item_id,
@@ -123,7 +119,7 @@ def info():
         "products": PLAID_PRODUCTS,
     }
 
-@plaid_router.post("/api/plaid/create_link_token")
+@router.post("/api/plaid/create_link_token")
 def create_link_token():
     global user_token, user_id
     try:
@@ -150,7 +146,7 @@ def create_link_token():
         return JSONResponse(status_code=e.status, content=json.loads(e.body))
 
 
-@plaid_router.post("/api/plaid/set_access_token")
+@router.post("/api/plaid/set_access_token")
 def set_access_token(public_token: str = Form(...)):
     """
     Flask used request.form['public_token'].
@@ -167,7 +163,7 @@ def set_access_token(public_token: str = Form(...)):
         return JSONResponse(status_code=e.status, content=json.loads(e.body))
 
 
-@plaid_router.get("/api/plaid/auth")
+@router.get("/api/plaid/auth")
 def get_auth():
     try:
         req = AuthGetRequest(access_token=access_token)
@@ -178,7 +174,7 @@ def get_auth():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/transactions")
+@router.get("/api/plaid/transactions")
 def get_transactions():
     cursor = ""
     added, modified, removed = [], [], []
@@ -205,7 +201,7 @@ def get_transactions():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/identity")
+@router.get("/api/plaid/identity")
 def get_identity():
     try:
         req = IdentityGetRequest(access_token=access_token)
@@ -216,7 +212,7 @@ def get_identity():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/balance")
+@router.get("/api/plaid/balance")
 def get_balance():
     try:
         req = AccountsBalanceGetRequest(access_token=access_token)
@@ -227,7 +223,7 @@ def get_balance():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/accounts")
+@router.get("/api/plaid/accounts")
 def get_accounts():
     try:
         req = AccountsGetRequest(access_token=access_token)
@@ -238,7 +234,7 @@ def get_accounts():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/assets")
+@router.get("/api/plaid/assets")
 def get_assets():
     try:
         req = AssetReportCreateRequest(
@@ -278,7 +274,7 @@ def get_assets():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/holdings")
+@router.get("/api/plaid/holdings")
 def get_holdings():
     try:
         req = InvestmentsHoldingsGetRequest(access_token=access_token)
@@ -289,7 +285,7 @@ def get_holdings():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/investments_transactions")
+@router.get("/api/plaid/investments_transactions")
 def get_investments_transactions():
     start_date = (dt.datetime.now() - dt.timedelta(days=30)).date()
     end_date = dt.datetime.now().date()
@@ -308,7 +304,7 @@ def get_investments_transactions():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/statements")
+@router.get("/api/plaid/statements")
 def statements():
     try:
         req = StatementsListRequest(access_token=access_token)
@@ -332,7 +328,7 @@ def statements():
         return format_error(e)
 
 
-@plaid_router.get("/api/plaid/item")
+@router.get("/api/plaid/item")
 def item():
     try:
         item_resp = client.item_get(ItemGetRequest(access_token=access_token))
