@@ -26,7 +26,7 @@ const Endpoint = (props: Props) => {
 
   const getData = async () => {
     setIsLoading(true);
-    const response = await fetch(`/api/plaid/${props.endpoint}`, {
+    const response = await fetch(`/api/v1/plaid/${props.endpoint}`, {
       method: "GET",
     });
     const data = await response.json();
