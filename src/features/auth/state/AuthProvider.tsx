@@ -14,7 +14,7 @@ function reducer(state: AuthState, action: AuthStateAction): AuthState {
       console.log("auth state updated");
       return {
         ...state,
-        ...action.payload,
+        ...action.state,
       };
     case "RESET":
       console.log("auth state reset");
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       dispatch({
         type: "SET_STATE",
-        payload: {
+        state: {
           user: {
             firebase_uid: fbUser.uid,
             email: fbUser.email!,
@@ -53,9 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    dispatch({ type: "SET_STATE", payload: { isLoading: true } });
+    dispatch({ type: "SET_STATE", state: { isLoading: true } });
     const unsubscribe = subscribeToAuthChanges(syncWithfbUser);
-    dispatch({ type: "SET_STATE", payload: { isLoading: false } });
+    dispatch({ type: "SET_STATE", state: { isLoading: false } });
     return unsubscribe;
   }, [dispatch]);
 

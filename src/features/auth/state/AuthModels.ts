@@ -17,7 +17,7 @@ export type AuthState = {
 export type AuthStateAction =
   | {
       type: "SET_STATE";
-      payload?: Partial<AuthState>;
+      state?: Partial<AuthState>;
     }
   | { type: "RESET" };
 
