@@ -1,4 +1,4 @@
-import axiosClient from "./axiosConfig";
+import axiosClient from "../../../../app/axiosConfig";
 import { UserResponse, USERS_ME_API_PATH } from "./dto";
 
 export async function get_or_create_me() {

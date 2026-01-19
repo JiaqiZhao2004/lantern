@@ -5,7 +5,7 @@ import PrimaryButton from "../../../Components/PrimaryButton";
 import TextInput from "../../../Components/TextInput";
 // API calls
 import { loginWithEmail } from "../api/firebase/client";
-import { isAppError } from "../../../app/apiErrors";
+import { isAppError } from "../../../app/appErrors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

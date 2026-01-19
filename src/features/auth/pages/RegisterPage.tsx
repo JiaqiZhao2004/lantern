@@ -7,7 +7,7 @@ import TextInput from "../../../Components/TextInput";
 import PrimaryButton from "../../../Components/PrimaryButton";
 // API
 import { registerWithEmail } from "../api/firebase/client"; // adjust path if needed
-import { isAppError } from "../../../app/apiErrors";
+import { isAppError } from "../../../app/appErrors";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");

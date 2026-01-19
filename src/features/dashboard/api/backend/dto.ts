@@ -1,4 +1,4 @@
-import { paths } from "../../../../app/DTOTypes";
+import { paths } from "../../../../app/backendDTOTypes";
 
 export const USERS_ME_API_PATH = "/api/v1/users/me";
 
