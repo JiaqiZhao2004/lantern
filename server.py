@@ -4,9 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from db.database import Base, engine
-from routers import plaid, auth
-import db.models
+import features.plaid.routes as plaid_routes
+import features.users.routes as users_routes
 
 load_dotenv(verbose=True)
 
@@ -20,9 +19,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router=plaid.router)
-app.include_router(router=auth.router)
-
-# Make sure tables exist
-print(">>> Creating tables now")
-Base.metadata.create_all(bind=engine)
+app.include_router(router=plaid_routes.router)
+app.include_router(router=users_routes.router)
