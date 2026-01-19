@@ -1,5 +1,5 @@
 # scripts/init_db.py
-from db.database import engine, Base
+from services.db.database import engine, Base
 
 # IMPORTANT: import entities so they register
 import features.users.entities
