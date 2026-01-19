@@ -40,7 +40,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "preinstall": "npx npm-force-resolutions"
+    "preinstall": "npx npm-force-resolutions",
+    "generate-api-types": "npx openapi-typescript http://localhost:8000/openapi.json -o src/app/DTOTypes.ts"
   },
   "eslintConfig": {
     "extends": [
