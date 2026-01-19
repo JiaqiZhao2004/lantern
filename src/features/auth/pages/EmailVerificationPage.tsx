@@ -8,13 +8,13 @@ import TextInput from "../../../Components/TextInput";
 import { logoutFirebase, sendVerificationEmail } from "../api/firebase/client";
 
 export default function EmailVerificationPage() {
-  const ctx = useContext(AuthContext);
+  const { user, refresh } = useContext(AuthContext);
 
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isBusy, setIsBusy] = useState(false);
 
-  const email = useMemo(() => ctx?.state.user?.email ?? "", [ctx]);
+  const email = useMemo(() => user?.email ?? "", [user?.email]);
 
   const handleResend = async () => {
     setIsBusy(true);
@@ -42,9 +42,9 @@ export default function EmailVerificationPage() {
     setStatus("");
     setError("");
 
-    await ctx?.refresh();
+    await refresh();
 
-    if (!ctx?.state.user?.emailVerified) {
+    if (!user?.emailVerified) {
       setStatus("Still not verified yet. Please click the link in your email.");
     }
     setIsBusy(false);
