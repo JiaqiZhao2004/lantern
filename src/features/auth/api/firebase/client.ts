@@ -10,8 +10,8 @@ import {
   sendEmailVerification,
   onAuthStateChanged,
 } from "firebase/auth";
-import { auth } from "../../../../app/firebaseConfig";
-import { AppError } from "../../../../app/appErrors";
+import { auth } from "../../../../core/firebaseConfig";
+import { AppError } from "../../../../core/appErrors";
 
 // Auth state listener wrapper (just a tiny pass-through)
 export function subscribeToAuthChanges(
