@@ -7,7 +7,7 @@ import {
   transformAccountsData,
   itemCategories,
   accountsCategories,
-} from "../dataUtilities";
+} from "../../api/plaid/dataUtilities";
 
 const Items = () => (
   <>
