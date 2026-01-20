@@ -1,6 +1,6 @@
 export type User = {
   email: string;
-  name?: string;
+  name?: string | null;
 };
 
 export type DashboardState = {

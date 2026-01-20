@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 import { AuthStateAction, AuthState, initialAuthState } from "./AuthModels";
 
 interface IAuthContext extends AuthState {
