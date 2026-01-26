@@ -12,12 +12,10 @@ interface QuickstartState {
   userId: string | null;
   itemId: string | null;
   isError: boolean;
-  backend: boolean;
   products: string[];
-  linkTokenError: {
+  error: {
     error_message: string;
     error_code: string;
-    error_type: string;
   };
 }
 
@@ -29,10 +27,8 @@ const initialState: QuickstartState = {
   accessToken: null,
   itemId: null,
   isError: false,
-  backend: true,
   products: ["transactions"],
-  linkTokenError: {
-    error_type: "",
+  error: {
     error_code: "",
     error_message: "",
   },

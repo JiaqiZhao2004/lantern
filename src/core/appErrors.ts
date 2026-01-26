@@ -4,6 +4,8 @@ export type AppErrorCode =
   | "auth/invalid-credential"
   | "auth/multi-factor-auth-required"
   | "auth/too-many-requests"
+  | "link/backend-down"
+  | "link/create-link-token-failed"
   | "network/offline"
   | "unknown";
 

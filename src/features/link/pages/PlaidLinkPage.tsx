@@ -1,27 +1,25 @@
 import React, { useEffect, useContext, useCallback } from "react";
-import Context, { QuickstartProvider } from "../state/Context";
 
-import Products from "./ProductTypes/Products";
-import Items from "./ProductTypes/Items";
-import LaunchLinkButton from "./LaunchLinkButton";
+import PlaidLinkButton from "./PlaidLinkButton";
 import {
   plaidCreateLinkToken,
   plaidGetInfo,
 } from "../../link/api/plaid/client";
 import { isAppError } from "../../../core/appErrors";
+import LinkContext, { LinkProvider } from "../state/LinkContext";
 
-// import styles from "./PlaidLinkApp.module.scss";
+import styles from "./PlaidLinkApp.module.scss";
 
 export default function PlaidLinkPage() {
   return (
-    <QuickstartProvider>
+    <LinkProvider>
       <PlaidLinkApp></PlaidLinkApp>
-    </QuickstartProvider>
+    </LinkProvider>
   );
 }
 
 const PlaidLinkApp = () => {
-  const { linkSuccess, itemId, dispatch } = useContext(Context);
+  const { linkSuccess, itemId, dispatch } = useContext(LinkContext);
 
   const getInfo = useCallback(async () => {
     try {
@@ -69,8 +67,8 @@ const PlaidLinkApp = () => {
 
   useEffect(() => {
     const init = async () => {
-      await getInfo();
-      console.log("Initializing Plaid Link");
+      // await getInfo();
+      // console.log("Initializing Plaid Link");
       // do not generate a new token for OAuth redirect; instead
       // setLinkToken from localStorage
       if (window.location.href.includes("?oauth_state_id=")) {
@@ -87,15 +85,5 @@ const PlaidLinkApp = () => {
     init();
   }, [dispatch, generateToken, getInfo]);
 
-  return (
-    <div>
-      <LaunchLinkButton />
-      {linkSuccess && (
-        <>
-          <Products />
-          {itemId && <Items />}
-        </>
-      )}
-    </div>
-  );
+  return <PlaidLinkButton />;
 };
