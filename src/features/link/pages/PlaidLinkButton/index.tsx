@@ -1,50 +1,19 @@
-import React, { useEffect, useContext } from "react";
+import { useEffect, useContext, useCallback } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import Button from "plaid-threads/Button";
 import styles from "./index.module.scss";
 import LinkContext from "../../state/LinkContext";
-import backend from "../../api/plaid/client"
+import { PlaidService } from "../../api/plaid/client";
 
 const PlaidLinkButton = () => {
   const { linkToken, dispatch } = useContext(LinkContext);
 
-  const onSuccess = React.useCallback(
+  const onSuccess = useCallback(
     (public_token: string) => {
-      // If the access_token is needed, send public_token to server
-      const exchangePublicTokenForAccessToken = async () => {
-        const response = await fetch("/api/v1/plaid/set_access_token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-          },
-          body: `public_token=${public_token}`,
-        });
-        if (!response.ok) {
-          dispatch({
-            type: "SET_STATE",
-            state: {
-              itemId: `no item_id retrieved`,
-              accessToken: `no access_token retrieved`,
-            },
-          });
-          return;
-        }
-        const data = await response.json();
-        dispatch({
-          type: "SET_STATE",
-          state: {
-            itemId: data.item_id,
-            accessToken: data.access_token,
-          },
-        });
-      };
-
-      backend.saveAccessToken();
-
-      exchangePublicTokenForAccessToken();
-
-      dispatch({ type: "SET_STATE", state: { linkSuccess: true } });
-      window.history.pushState("", "", "/");
+      PlaidService.addItem(public_token).then(() =>
+        dispatch({ type: "SET_STATE", state: { linkSuccess: true } })
+      );
+      // window.history.pushState("", "", "/");
     },
     [dispatch]
   );

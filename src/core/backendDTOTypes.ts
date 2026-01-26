@@ -38,21 +38,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/plaid/set_access_token": {
+    "/api/v1/plaid/item": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Item */
+        get: operations["item_api_v1_plaid_item_get"];
         put?: never;
         /**
-         * Set Access Token
+         * Add Item
          * @description Flask used request.form['public_token'].
          *     FastAPI: use Form(...) so your frontend can keep sending form-encoded.
          */
-        post: operations["set_access_token_api_v1_plaid_set_access_token_post"];
+        post: operations["add_item_api_v1_plaid_item_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -212,23 +213,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/plaid/item": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Item */
-        get: operations["item_api_v1_plaid_item_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -250,8 +234,8 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** Body_set_access_token_api_v1_plaid_set_access_token_post */
-        Body_set_access_token_api_v1_plaid_set_access_token_post: {
+        /** Body_add_item_api_v1_plaid_item_post */
+        Body_add_item_api_v1_plaid_item_post: {
             /** Public Token */
             public_token: string;
         };
@@ -332,7 +316,27 @@ export interface operations {
             };
         };
     };
-    set_access_token_api_v1_plaid_set_access_token_post: {
+    item_api_v1_plaid_item_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    add_item_api_v1_plaid_item_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -341,7 +345,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/x-www-form-urlencoded": components["schemas"]["Body_set_access_token_api_v1_plaid_set_access_token_post"];
+                "application/x-www-form-urlencoded": components["schemas"]["Body_add_item_api_v1_plaid_item_post"];
             };
         };
         responses: {
@@ -526,26 +530,6 @@ export interface operations {
         };
     };
     statements_api_v1_plaid_statements_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    item_api_v1_plaid_item_get: {
         parameters: {
             query?: never;
             header?: never;
