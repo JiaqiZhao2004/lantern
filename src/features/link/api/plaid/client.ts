@@ -1,6 +1,8 @@
 import { AppError } from "../../../../core/appErrors";
 import axiosClient from "../../../../core/axiosConfig";
 import {
+  ADD_ITEM_API_PATH,
+  AddItemResponse,
   CREATE_LINK_TOKEN_API_PATH,
   CreateLinkTokenResponse,
   GET_INFO_API_PATH,
@@ -8,8 +10,7 @@ import {
 } from "./dto";
 
 export class PlaidService {
-
-  static async plaidGetInfo() {
+  static async getInfo() {
     try {
       const res = await axiosClient.post<GetInfoResponse>(GET_INFO_API_PATH);
       return res.data;
@@ -18,7 +19,7 @@ export class PlaidService {
     }
   }
 
-  static async plaidCreateLinkToken() {
+  static async createLinkToken() {
     try {
       const res = await axiosClient.post<CreateLinkTokenResponse>(
         CREATE_LINK_TOKEN_API_PATH
@@ -38,13 +39,20 @@ export class PlaidService {
       );
     }
   }
-}
 
-export class BackendService {
-
-  saveAccessToken() {
-    // axiosClient
+  static async addItem(public_token: string) {
+    const res = await axiosClient.post<AddItemResponse>(
+      ADD_ITEM_API_PATH,
+      {
+        public_token,
+      },
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+      }
+    );
+    console.log(res);
+    return res.data;
   }
-  
-
 }
