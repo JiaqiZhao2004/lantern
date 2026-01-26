@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect } from "react";
 import Header from "../../../Components/Header";
-import PlaidLinkPage from "../../plaid/pages/PlaidLinkPage";
+import PlaidLinkPage from "../../link/pages/PlaidLinkPage";
 import { DashboardProvider } from "../state/DashboardProvider";
 import { DashboardContext } from "../state/DashboardContext";
 import { get_or_create_me } from "../api/backend/client";

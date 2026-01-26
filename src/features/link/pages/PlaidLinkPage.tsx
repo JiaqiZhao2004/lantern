@@ -1,10 +1,7 @@
-import React, { useEffect, useContext, useCallback } from "react";
+import { useEffect, useContext, useCallback } from "react";
 
 import PlaidLinkButton from "./PlaidLinkButton";
-import {
-  plaidCreateLinkToken,
-  plaidGetInfo,
-} from "../../link/api/plaid/client";
+import { PlaidService } from "../../link/api/plaid/client";
 import { isAppError } from "../../../core/appErrors";
 import LinkContext, { LinkProvider } from "../state/LinkContext";
 
@@ -21,32 +18,32 @@ export default function PlaidLinkPage() {
 const PlaidLinkApp = () => {
   const { linkSuccess, itemId, dispatch } = useContext(LinkContext);
 
-  const getInfo = useCallback(async () => {
-    try {
-      const data = (await plaidGetInfo()) as unknown as Object; // TODO: fix type
-      dispatch({
-        type: "SET_STATE",
-        state: {
-          products: data.hasOwnProperty("products")
-            ? (data as any).products
-            : [],
-        },
-      });
-    } catch (e: any) {
-      if (isAppError(e)) {
-        console.error(e.message);
+  // const getInfo = useCallback(async () => {
+  //   try {
+  //     const data = (await PlaidService.getInfo()) as unknown as Object; // TODO: fix type
+  //     dispatch({
+  //       type: "SET_STATE",
+  //       state: {
+  //         products: data.hasOwnProperty("products")
+  //           ? (data as any).products
+  //           : [],
+  //       },
+  //     });
+  //   } catch (e: any) {
+  //     if (isAppError(e)) {
+  //       console.error(e.message);
 
-        dispatch({
-          type: "SET_STATE",
-          state: { error: { error_code: e.code, error_message: e.message } },
-        });
-      }
-    }
-  }, [dispatch]);
+  //       dispatch({
+  //         type: "SET_STATE",
+  //         state: { error: { error_code: e.code, error_message: e.message } },
+  //       });
+  //     }
+  //   }
+  // }, [dispatch]);
 
   const generateToken = useCallback(async () => {
     // Link tokens for 'payment_initiation' use a different creation flow in your backend.
-    const linkToken = await plaidCreateLinkToken()
+    await PlaidService.createLinkToken()
       .catch((e: any) => {
         if (isAppError(e)) {
           console.error(e.message);
@@ -83,7 +80,7 @@ const PlaidLinkApp = () => {
       generateToken();
     };
     init();
-  }, [dispatch, generateToken, getInfo]);
+  }, [dispatch, generateToken]);
 
   return <PlaidLinkButton />;
 };

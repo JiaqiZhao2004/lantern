@@ -4,10 +4,7 @@ import Context, { QuickstartProvider } from "../state/Context";
 import Products from "./ProductTypes/Products";
 import Items from "./ProductTypes/Items";
 import LaunchLinkButton from "./LaunchLinkButton";
-import {
-  plaidCreateLinkToken,
-  plaidGetInfo,
-} from "../../link/api/plaid/client";
+import { PlaidService } from "../../link/api/plaid/client";
 import { isAppError } from "../../../core/appErrors";
 
 // import styles from "./PlaidLinkApp.module.scss";
@@ -25,7 +22,7 @@ const PlaidLinkApp = () => {
 
   const getInfo = useCallback(async () => {
     try {
-      const data = (await plaidGetInfo()) as unknown as Object; // TODO: fix type
+      const data = (await PlaidService.getInfo()) as unknown as Object; // TODO: fix type
       dispatch({
         type: "SET_STATE",
         state: {
@@ -48,7 +45,7 @@ const PlaidLinkApp = () => {
 
   const generateToken = useCallback(async () => {
     // Link tokens for 'payment_initiation' use a different creation flow in your backend.
-    const linkToken = await plaidCreateLinkToken()
+    await PlaidService.createLinkToken()
       .catch((e: any) => {
         if (isAppError(e)) {
           console.error(e.message);
