@@ -6,7 +6,7 @@ WORKDIR /app
 
 # add `/app/node_modules/.bin` to $PATH
 ENV PATH=/app/node_modules/.bin:$PATH
-ENV REACT_APP_BACKEND_HOST=http://host.docker.internal:8000
+ENV VITE_BACKEND_HOST=http://host.docker.internal:8000
 # install app dependencies
 COPY .npmrc ./
 COPY package*.json ./

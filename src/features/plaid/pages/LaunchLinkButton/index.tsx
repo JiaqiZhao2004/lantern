@@ -4,7 +4,7 @@ import Button from "plaid-threads/Button";
 import Link from "../Link";
 import Context from "../../state/Context";
 
-import styles from "./index.module.scss";
+import styles from "./index.module.css";
 
 const LaunchLinkButton = () => {
   const { linkToken } = useContext(Context);

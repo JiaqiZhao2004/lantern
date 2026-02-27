@@ -1,4 +1,5 @@
 import React from "react";
+import "./styles/global.css";
 import App from "./core/App";
 import { createRoot } from "react-dom/client";
 import reportWebVitals from "./reportWebVitals";

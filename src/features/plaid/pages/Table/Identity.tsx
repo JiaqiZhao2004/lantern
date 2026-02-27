@@ -2,7 +2,7 @@ import React from "react";
 
 import { DataItem, Categories } from "../../api/plaid/dataUtilities";
 
-import styles from "./Identity.module.scss";
+import styles from "./Identity.module.css";
 
 interface Props {
   data: Array<DataItem>;

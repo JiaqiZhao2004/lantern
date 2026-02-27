@@ -3,7 +3,7 @@ import { auth } from "./firebaseConfig";
 
 // Create an Axios instance
 const axiosClient = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_HOST, // Use environment variable for base URL
+  baseURL: import.meta.env.VITE_BACKEND_HOST, // Use environment variable for base URL
   timeout: 10000, // Set timeout to 10 seconds
   headers: {
     "Content-Type": "application/json",
