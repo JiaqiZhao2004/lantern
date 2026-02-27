@@ -5,7 +5,7 @@ import { PlaidService } from "../../link/api/plaid/client";
 import { isAppError } from "../../../core/appErrors";
 import LinkContext, { LinkProvider } from "../state/LinkContext";
 
-import styles from "./PlaidLinkApp.module.scss";
+import styles from "./PlaidLinkPage.module.css";
 
 export default function PlaidLinkPage() {
   return (

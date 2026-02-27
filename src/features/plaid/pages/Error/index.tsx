@@ -4,7 +4,7 @@ import Note from "plaid-threads/Note";
 
 import { ErrorDataItem } from "../../api/plaid/dataUtilities";
 
-import styles from "./index.module.scss";
+import styles from "./index.module.css";
 
 interface Props {
   error: ErrorDataItem;

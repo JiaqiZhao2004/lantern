@@ -11,7 +11,7 @@ import {
   Data,
 } from "../../api/plaid/dataUtilities";
 
-import styles from "./index.module.scss";
+import styles from "./index.module.css";
 
 interface Props {
   endpoint: string;

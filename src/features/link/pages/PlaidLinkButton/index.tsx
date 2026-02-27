@@ -1,7 +1,7 @@
 import { useEffect, useContext, useCallback } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import Button from "plaid-threads/Button";
-import styles from "./index.module.scss";
+import styles from "./index.module.css";
 import LinkContext from "../../state/LinkContext";
 import { PlaidService } from "../../api/plaid/client";
 
