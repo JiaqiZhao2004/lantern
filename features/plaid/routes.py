@@ -1,4 +1,3 @@
-
 import base64
 import os
 import datetime as dt
@@ -12,26 +11,36 @@ from fastapi.responses import JSONResponse
 import plaid
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
-from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+from plaid.model.item_public_token_exchange_request import (
+    ItemPublicTokenExchangeRequest,
+)
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.asset_report_create_request import AssetReportCreateRequest
-from plaid.model.asset_report_create_request_options import AssetReportCreateRequestOptions
+from plaid.model.asset_report_create_request_options import (
+    AssetReportCreateRequestOptions,
+)
 from plaid.model.asset_report_user import AssetReportUser
 from plaid.model.asset_report_get_request import AssetReportGetRequest
 from plaid.model.asset_report_pdf_get_request import AssetReportPDFGetRequest
 from plaid.model.auth_get_request import AuthGetRequest
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from plaid.model.identity_get_request import IdentityGetRequest
-from plaid.model.investments_transactions_get_request_options import InvestmentsTransactionsGetRequestOptions
-from plaid.model.investments_transactions_get_request import InvestmentsTransactionsGetRequest
+from plaid.model.investments_transactions_get_request_options import (
+    InvestmentsTransactionsGetRequestOptions,
+)
+from plaid.model.investments_transactions_get_request import (
+    InvestmentsTransactionsGetRequest,
+)
 from plaid.model.accounts_balance_get_request import AccountsBalanceGetRequest
 from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.investments_holdings_get_request import InvestmentsHoldingsGetRequest
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 from plaid.model.statements_list_request import StatementsListRequest
-from plaid.model.link_token_create_request_statements import LinkTokenCreateRequestStatements
+from plaid.model.link_token_create_request_statements import (
+    LinkTokenCreateRequestStatements,
+)
 from plaid.model.statements_download_request import StatementsDownloadRequest
 from plaid.api import plaid_api
 
@@ -111,6 +120,7 @@ def poll_with_retries(request_callback, ms: int = 1000, retries_left: int = 20):
 # ---------- Routes (same paths/methods) ----------
 router = APIRouter(prefix="/api/v1/plaid", tags=["plaid"])
 
+
 @router.post("/info")
 def info():
     return {
@@ -118,6 +128,7 @@ def info():
         "access_token": access_token,
         "products": PLAID_PRODUCTS,
     }
+
 
 @router.post("/create_link_token")
 def create_link_token():
@@ -146,8 +157,8 @@ def create_link_token():
         return JSONResponse(status_code=e.status, content=json.loads(e.body))
 
 
-@router.post("/set_access_token")
-def set_access_token(public_token: str = Form(...)):
+@router.post("/item")
+def add_item(public_token: str = Form(...)):
     """
     Flask used request.form['public_token'].
     FastAPI: use Form(...) so your frontend can keep sending form-encoded.
@@ -158,9 +169,32 @@ def set_access_token(public_token: str = Form(...)):
         resp = client.item_public_token_exchange(req)
         access_token = resp["access_token"]
         item_id = resp["item_id"]
+
+        
+        # TODO: encrypt, save to DB
         return resp.to_dict()
     except plaid.ApiException as e:
         return JSONResponse(status_code=e.status, content=json.loads(e.body))
+
+
+@router.get("/item")
+def item():
+    try:
+        item_resp = client.item_get(ItemGetRequest(access_token=access_token))
+        inst_req = InstitutionsGetByIdRequest(
+            institution_id=item_resp["item"]["institution_id"],
+            country_codes=list(map(lambda x: CountryCode(x), PLAID_COUNTRY_CODES)),
+        )
+        inst_resp = client.institutions_get_by_id(inst_req)
+        pretty_print_response(item_resp.to_dict())
+        pretty_print_response(inst_resp.to_dict())
+        return {
+            "error": None,
+            "item": item_resp.to_dict()["item"],
+            "institution": inst_resp.to_dict()["institution"],
+        }
+    except plaid.ApiException as e:
+        return format_error(e)
 
 
 @router.get("/auth")
@@ -326,25 +360,3 @@ def statements():
         }
     except plaid.ApiException as e:
         return format_error(e)
-
-
-@router.get("/item")
-def item():
-    try:
-        item_resp = client.item_get(ItemGetRequest(access_token=access_token))
-        inst_req = InstitutionsGetByIdRequest(
-            institution_id=item_resp["item"]["institution_id"],
-            country_codes=list(map(lambda x: CountryCode(x), PLAID_COUNTRY_CODES)),
-        )
-        inst_resp = client.institutions_get_by_id(inst_req)
-        pretty_print_response(item_resp.to_dict())
-        pretty_print_response(inst_resp.to_dict())
-        return {
-            "error": None,
-            "item": item_resp.to_dict()["item"],
-            "institution": inst_resp.to_dict()["institution"],
-        }
-    except plaid.ApiException as e:
-        return format_error(e)
-
-
