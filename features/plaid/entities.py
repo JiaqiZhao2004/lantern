@@ -69,6 +69,12 @@ class PlaidItem(Base):
         doc="Plaid institution_id, if you choose to store it",
     )
 
+    institution_name: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Human-readable institution name resolved from institutions/get_by_id at link time",
+    )
+
     status: Mapped[str] = mapped_column(
         Enum(
             "active",
