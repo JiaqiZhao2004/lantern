@@ -6,6 +6,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+fill in .env
+copy over postgres-data
+copy over google app secret
+
 ```bash
 uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
