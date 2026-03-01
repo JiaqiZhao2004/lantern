@@ -51,9 +51,6 @@ class PlaidItem(Base):
         index=True,
     )
 
-    # backref
-    user: Mapped["User"] = relationship(back_populates="plaid_items")
-
     # Plaid's own identifiers
     plaid_item_id: Mapped[str] = mapped_column(
         String(255),

@@ -19,8 +19,8 @@ class CreateLinkTokenResponseDTO(BaseModel):
     link_token: str = Field(
         ..., description="Opaque token passed to Plaid Link on the client."
     )
-    expiration: str = Field(
-        ..., description="ISO-8601 expiry timestamp for the link token."
+    expiration: datetime = Field(
+        ..., description="Expiry timestamp for the link token."
     )
     request_id: str = Field(..., description="Plaid request ID for debugging.")
 
