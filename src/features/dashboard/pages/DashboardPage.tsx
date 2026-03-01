@@ -5,6 +5,7 @@ import { DashboardProvider } from "../state/DashboardProvider";
 import { DashboardContext } from "../state/DashboardContext";
 import { get_or_create_me } from "../api/backend/client";
 import { AuthContext } from "../../auth/state/AuthContext";
+import ConnectionsPanel from "./ConnectionsPanel";
 
 export default function DashboardPage() {
   return (
@@ -43,6 +44,7 @@ function Content() {
     <div>
       <Header></Header>
       <PlaidLinkPage></PlaidLinkPage>
+      <ConnectionsPanel></ConnectionsPanel>
     </div>
   );
 }
