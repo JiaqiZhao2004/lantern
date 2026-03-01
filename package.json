@@ -37,7 +37,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "generate-api-types": "npx openapi-typescript http://localhost:8000/openapi.json -o src/app/backendDTOTypes.ts"
+    "generate-api-types": "npx openapi-typescript http://localhost:8000/openapi.json -o src/core/backendDTOTypes.ts"
   },
   "eslintConfig": {
     "extends": [
