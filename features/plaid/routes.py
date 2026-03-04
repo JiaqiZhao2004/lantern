@@ -2,14 +2,11 @@ import os
 import json
 import time
 from datetime import date, timedelta
-from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 import plaid
-from plaid.model.products import Products
-from plaid.model.country_code import CountryCode
 from plaid.model.item_public_token_exchange_request import (
     ItemPublicTokenExchangeRequest,
 )
@@ -20,7 +17,6 @@ from plaid.model.link_token_create_request_statements import (
 )
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
-from plaid.api import plaid_api
 
 from services import get_db, get_firebase_claims
 from services.aws import encrypt_secret
@@ -31,44 +27,16 @@ from features.plaid.dto import (
     PlaidItemDTO,
 )
 from features.plaid.entities import PlaidItem
-from features.users.entities import User
-
-PLAID_CLIENT_ID = os.getenv("PLAID_CLIENT_ID")
-PLAID_SECRET = os.getenv("PLAID_SECRET")
-PLAID_ENV = os.getenv("PLAID_ENV", "sandbox")
-PLAID_PRODUCTS = os.getenv("PLAID_PRODUCTS", "transactions").split(",")
-PLAID_COUNTRY_CODES = os.getenv("PLAID_COUNTRY_CODES", "US").split(",")
-SIGNAL_RULESET_KEY = os.getenv("SIGNAL_RULESET_KEY", "")
-
-
-def empty_to_none(field: str) -> Optional[str]:
-    value = os.getenv(field)
-    if value is None or len(value) == 0:
-        return None
-    return value
-
-
-host = plaid.Environment.Sandbox
-if PLAID_ENV == "sandbox":
-    host = plaid.Environment.Sandbox
-if PLAID_ENV == "production":
-    host = plaid.Environment.Production
-
-PLAID_REDIRECT_URI = empty_to_none("PLAID_REDIRECT_URI")
-
-configuration = plaid.Configuration(
-    host=host,
-    api_key={
-        "clientId": PLAID_CLIENT_ID,
-        "secret": PLAID_SECRET,
-        "plaidVersion": "2020-09-14",
-    },
+from features.plaid.internal_routes import _sync_accounts_for_item
+from features.plaid.plaid_client import (
+    PLAID_COUNTRY_CODES,
+    PLAID_REDIRECT_URI,
+    CountryCode,
+    Products,
+    client,
+    products,
 )
-
-api_client = plaid.ApiClient(configuration)
-client = plaid_api.PlaidApi(api_client)
-
-products = [Products(p) for p in PLAID_PRODUCTS]
+from features.users.entities import User
 
 # ---------- Routes ----------
 router = APIRouter(prefix="/api/v1/plaid", tags=["plaid"])
@@ -163,6 +131,13 @@ def add_item(
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
+
+    # Eagerly populate plaid_accounts so the item is immediately usable.
+    # Failures here are non-fatal — the item is already persisted.
+    try:
+        _sync_accounts_for_item(db_item, db)
+    except Exception:
+        pass
 
     return {"item_id": plaid_item_id, "status": "ok"}
 

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
-from features import plaid_router, users_router
+from features import plaid_router, plaid_internal_router, users_router
 
 
 app = FastAPI()
@@ -19,4 +19,5 @@ app.add_middleware(
 )
 
 app.include_router(router=plaid_router)
+app.include_router(router=plaid_internal_router)
 app.include_router(router=users_router)
