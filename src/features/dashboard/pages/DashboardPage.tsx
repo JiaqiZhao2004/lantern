@@ -6,6 +6,7 @@ import { DashboardContext } from "../state/DashboardContext";
 import { get_or_create_me } from "../api/backend/client";
 import { AuthContext } from "../../auth/state/AuthContext";
 import ConnectionsPanel from "./ConnectionsPanel";
+import AccountsPanel from "./AccountsPanel";
 
 export default function DashboardPage() {
   return (
@@ -45,6 +46,7 @@ function Content() {
       <Header userName={user?.name} userEmail={user?.email}></Header>
       <PlaidLinkPage></PlaidLinkPage>
       <ConnectionsPanel></ConnectionsPanel>
+      <AccountsPanel></AccountsPanel>
     </div>
   );
 }

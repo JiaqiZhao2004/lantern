@@ -74,6 +74,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plaid/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Accounts
+         * @description Return all accounts for the authenticated user, grouped by linked item
+         *     (institution).  Each item carries its institution name so the client
+         *     can render a grouped list without a second request.
+         *
+         *     Only active accounts (is_active=True) are returned.  Hidden accounts
+         *     (is_hidden=True) are included so the client can render a 'hidden'
+         *     section — filter them out client-side if not needed.
+         */
+        get: operations["get_accounts_api_v1_plaid_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -95,6 +121,64 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccountDTO
+         * @description A single bank account within a linked item, with only the fields the
+         *     client needs to display it.  Sensitive / internal fields are omitted.
+         */
+        AccountDTO: {
+            /**
+             * Id
+             * Format: uuid
+             * @description Internal app UUID for this account.
+             */
+            id: string;
+            /**
+             * Plaid Account Id
+             * @description Plaid's own account identifier.
+             */
+            plaid_account_id: string;
+            /**
+             * Mask
+             * @description Last 2-4 digits of the account number.
+             */
+            mask?: string | null;
+            /**
+             * Name
+             * @description Account name assigned by the user or institution.
+             */
+            name: string;
+            /**
+             * Official Name
+             * @description Official account name given by the institution.
+             */
+            official_name?: string | null;
+            /**
+             * Account Type
+             * @description Top-level type: depository, credit, loan, investment, other.
+             */
+            account_type?: string | null;
+            /**
+             * Account Subtype
+             * @description Subtype: checking, savings, credit card, etc.
+             */
+            account_subtype?: string | null;
+            /**
+             * Is Active
+             * @description Whether the account is active.
+             */
+            is_active: boolean;
+            /**
+             * Is Hidden
+             * @description Whether the account has been hidden by the user.
+             */
+            is_hidden: boolean;
+            /**
+             * Display Order
+             * @description User-defined display ordering.
+             */
+            display_order?: number | null;
+        };
         /**
          * AddItemResponseDTO
          * @description Confirmation returned after a public token is successfully exchanged.
@@ -129,7 +213,8 @@ export interface components {
             link_token: string;
             /**
              * Expiration
-             * @description ISO-8601 expiry timestamp for the link token.
+             * Format: date-time
+             * @description Expiry timestamp for the link token.
              */
             expiration: string;
             /**
@@ -137,6 +222,14 @@ export interface components {
              * @description Plaid request ID for debugging.
              */
             request_id: string;
+        };
+        /**
+         * GetAccountsResponseDTO
+         * @description All items with their accounts for the authenticated user.
+         */
+        GetAccountsResponseDTO: {
+            /** Items */
+            items: components["schemas"]["ItemWithAccountsDTO"][];
         };
         /**
          * GetItemsResponseDTO
@@ -150,6 +243,44 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * ItemWithAccountsDTO
+         * @description A linked item (institution connection) together with all its accounts.
+         *     This is the primary shape the client uses to render the accounts list.
+         */
+        ItemWithAccountsDTO: {
+            /**
+             * Item Id
+             * Format: uuid
+             * @description Internal app UUID for this item.
+             */
+            item_id: string;
+            /**
+             * Plaid Item Id
+             * @description Plaid's own item identifier.
+             */
+            plaid_item_id: string;
+            /**
+             * Institution Id
+             * @description Plaid institution_id.
+             */
+            institution_id?: string | null;
+            /**
+             * Institution Name
+             * @description Human-readable institution name, e.g. 'Chase'.
+             */
+            institution_name?: string | null;
+            /**
+             * Status
+             * @description Item status: active | revoked | error.
+             */
+            status: string;
+            /**
+             * Accounts
+             * @description Accounts belonging to this item, ordered by display_order then name.
+             */
+            accounts?: components["schemas"]["AccountDTO"][];
         };
         /**
          * PlaidItemDTO
@@ -324,6 +455,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetItemsResponseDTO"];
+                };
+            };
+        };
+    };
+    get_accounts_api_v1_plaid_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAccountsResponseDTO"];
                 };
             };
         };
