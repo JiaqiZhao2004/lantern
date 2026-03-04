@@ -42,7 +42,7 @@ function Content() {
 
   return (
     <div>
-      <Header></Header>
+      <Header userName={user?.name} userEmail={user?.email}></Header>
       <PlaidLinkPage></PlaidLinkPage>
       <ConnectionsPanel></ConnectionsPanel>
     </div>
