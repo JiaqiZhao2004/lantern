@@ -4,7 +4,7 @@ import time
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 import plaid
 from plaid.model.item_public_token_exchange_request import (
@@ -21,12 +21,15 @@ from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdReques
 from services import get_db, get_firebase_claims
 from services.aws import encrypt_secret
 from features.plaid.dto import (
+    AccountDTO,
     AddItemResponseDTO,
     CreateLinkTokenResponseDTO,
+    GetAccountsResponseDTO,
     GetItemsResponseDTO,
+    ItemWithAccountsDTO,
     PlaidItemDTO,
 )
-from features.plaid.entities import PlaidItem
+from features.plaid.entities import PlaidAccount, PlaidItem
 from features.plaid.internal_routes import _sync_accounts_for_item
 from features.plaid.plaid_client import (
     PLAID_COUNTRY_CODES,
@@ -186,6 +189,62 @@ def get_items(
                 access_token_ciphertext=item.access_token_ciphertext.hex(),
                 access_token_nonce=item.access_token_nonce.hex(),
                 access_token_encrypted_data_key=item.access_token_encrypted_data_key.hex(),
+            )
+            for item in items
+        ]
+    )
+
+
+@router.get("/accounts", response_model=GetAccountsResponseDTO)
+def get_accounts(
+    db: Session = Depends(get_db),
+    claims: dict = Depends(get_firebase_claims),
+):
+    """
+    Return all accounts for the authenticated user, grouped by linked item
+    (institution).  Each item carries its institution name so the client
+    can render a grouped list without a second request.
+
+    Only active accounts (is_active=True) are returned.  Hidden accounts
+    (is_hidden=True) are included so the client can render a 'hidden'
+    section — filter them out client-side if not needed.
+    """
+    # 1. Resolve the calling user
+    firebase_uid: str = claims["uid"]
+    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # 2. Fetch all active items + their accounts in 2 queries (selectinload
+    #    issues a single WHERE item_id IN (...) rather than N lazy selects)
+    items = (
+        db.query(PlaidItem)
+        .filter(PlaidItem.user_id == user.id, PlaidItem.status == "active")
+        .options(selectinload(PlaidItem.accounts))
+        .order_by(PlaidItem.created_at)
+        .all()
+    )
+
+    # 3. Serialise, grouping active accounts under their parent item
+    return GetAccountsResponseDTO(
+        items=[
+            ItemWithAccountsDTO(
+                item_id=item.id,
+                plaid_item_id=item.plaid_item_id,
+                institution_id=item.institution_id,
+                institution_name=item.institution_name,
+                status=item.status,
+                accounts=[
+                    AccountDTO.model_validate(acc)
+                    for acc in sorted(
+                        (a for a in item.accounts if a.is_active),
+                        key=lambda a: (
+                            a.display_order is None,
+                            a.display_order,
+                            a.name or "",
+                        ),
+                    )
+                ],
             )
             for item in items
         ]
