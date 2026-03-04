@@ -92,3 +92,65 @@ class GetItemsResponseDTO(BaseModel):
     """Wrapper around the list of linked Plaid items."""
 
     items: list[PlaidItemDTO]
+
+
+# ---------------------------------------------------------------------------
+# GET /accounts
+# ---------------------------------------------------------------------------
+
+
+class AccountDTO(BaseModel):
+    """
+    A single bank account within a linked item, with only the fields the
+    client needs to display it.  Sensitive / internal fields are omitted.
+    """
+
+    id: UUID = Field(..., description="Internal app UUID for this account.")
+    plaid_account_id: str = Field(..., description="Plaid's own account identifier.")
+    mask: str | None = Field(None, description="Last 2-4 digits of the account number.")
+    name: str = Field(
+        ..., description="Account name assigned by the user or institution."
+    )
+    official_name: str | None = Field(
+        None, description="Official account name given by the institution."
+    )
+    account_type: str | None = Field(
+        None, description="Top-level type: depository, credit, loan, investment, other."
+    )
+    account_subtype: str | None = Field(
+        None, description="Subtype: checking, savings, credit card, etc."
+    )
+    is_active: bool = Field(..., description="Whether the account is active.")
+    is_hidden: bool = Field(
+        ..., description="Whether the account has been hidden by the user."
+    )
+    display_order: int | None = Field(
+        None, description="User-defined display ordering."
+    )
+
+    model_config = {"from_attributes": True}
+
+
+class ItemWithAccountsDTO(BaseModel):
+    """
+    A linked item (institution connection) together with all its accounts.
+    This is the primary shape the client uses to render the accounts list.
+    """
+
+    item_id: UUID = Field(..., description="Internal app UUID for this item.")
+    plaid_item_id: str = Field(..., description="Plaid's own item identifier.")
+    institution_id: str | None = Field(None, description="Plaid institution_id.")
+    institution_name: str | None = Field(
+        None, description="Human-readable institution name, e.g. 'Chase'."
+    )
+    status: str = Field(..., description="Item status: active | revoked | error.")
+    accounts: list[AccountDTO] = Field(
+        default_factory=list,
+        description="Accounts belonging to this item, ordered by display_order then name.",
+    )
+
+
+class GetAccountsResponseDTO(BaseModel):
+    """All items with their accounts for the authenticated user."""
+
+    items: list[ItemWithAccountsDTO]
