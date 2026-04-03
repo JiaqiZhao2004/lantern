@@ -1,6 +1,6 @@
 # features/plaid/entities.py
 # Persistent entities for Database ORM mapping
-from features.users.entities import User
+from src.users.entities import User
 from services.db import Base
 from uuid6 import uuid7
 import uuid
