@@ -25,8 +25,8 @@ if config.config_file_name is not None:
 # Import every module that defines ORM models so their tables are
 # visible to autogenerate.
 from services.db.database import Base  # noqa: E402
-import features.users.entities  # noqa: F401
-import features.plaid.entities  # noqa: F401
+import src.users.entities  # noqa: F401
+import src.plaid.entities  # noqa: F401
 
 target_metadata = Base.metadata
 

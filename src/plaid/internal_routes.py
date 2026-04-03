@@ -11,8 +11,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from plaid.model.accounts_get_request import AccountsGetRequest
 from sqlalchemy.orm import Session
 
-from features.plaid.entities import PlaidAccount, PlaidItem
-from features.plaid.plaid_client import client
+from src.plaid.entities import PlaidAccount, PlaidItem
+from src.plaid.plaid_client import client
 from services import get_db
 from services.aws.kms import decrypt_secret
 

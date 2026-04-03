@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from psycopg import IntegrityError
 from sqlalchemy.orm import Session
 
-from features.users import entities, dto
+from src.users import entities, dto
 from services import get_db, get_firebase_claims
 
 

@@ -20,7 +20,7 @@ from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdReques
 
 from services import get_db, get_firebase_claims
 from services.aws import encrypt_secret
-from features.plaid.dto import (
+from src.plaid.dto import (
     AccountDTO,
     AddItemResponseDTO,
     CreateLinkTokenResponseDTO,
@@ -29,9 +29,9 @@ from features.plaid.dto import (
     ItemWithAccountsDTO,
     PlaidItemDTO,
 )
-from features.plaid.entities import PlaidAccount, PlaidItem
-from features.plaid.internal_routes import _sync_accounts_for_item
-from features.plaid.plaid_client import (
+from src.plaid.entities import PlaidAccount, PlaidItem
+from src.plaid.internal_routes import _sync_accounts_for_item
+from src.plaid.plaid_client import (
     PLAID_COUNTRY_CODES,
     PLAID_REDIRECT_URI,
     CountryCode,
@@ -39,7 +39,7 @@ from features.plaid.plaid_client import (
     client,
     products,
 )
-from features.users.entities import User
+from src.users.entities import User
 
 # ---------- Routes ----------
 router = APIRouter(prefix="/api/v1/plaid", tags=["plaid"])
