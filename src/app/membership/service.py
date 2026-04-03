@@ -1,0 +1,26 @@
+from sqlalchemy.orm import Session
+from .repository import MembershipRepository
+from .models import HouseholdMembership
+from uuid import UUID
+
+
+class MembershipService:
+    def __init__(
+        self,
+        membership_repo: MembershipRepository,
+    ):
+        self.membership_repo = membership_repo
+
+    def join_household(
+        self, db: Session, user_id: UUID, household_id: UUID
+    ) -> HouseholdMembership:
+        try:
+            household_membership = self.membership_repo.create(
+                db=db, user_id=user_id, household_id=household_id, role="member"
+            )
+            db.commit()
+            db.refresh(household_membership)
+            return household_membership
+        except Exception:
+            db.rollback()
+            raise

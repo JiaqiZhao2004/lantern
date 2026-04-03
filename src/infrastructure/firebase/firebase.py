@@ -9,11 +9,14 @@ bearer_scheme = HTTPBearer(auto_error=False)
 if not firebase_admin._apps:
     firebase_admin.initialize_app()  # uses GOOGLE_APPLICATION_CREDENTIALS or default credentials
 
-def get_firebase_claims(
+
+def get_firebase_identity(
     creds: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ):
     if not creds or creds.scheme.lower() != "bearer":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token"
+        )
 
     token = creds.credentials
     try:
@@ -21,4 +24,6 @@ def get_firebase_claims(
         # claims contains: uid (as 'uid'), email (maybe), etc.
         return claims
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )

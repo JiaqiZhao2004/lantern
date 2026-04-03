@@ -18,7 +18,7 @@ from plaid.model.link_token_create_request_statements import (
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 
-from src.infrastructure import get_db, get_firebase_claims
+from src.infrastructure import get_db, get_firebase_identity
 from src.infrastructure.aws import encrypt_secret
 from src.plaid.dto import (
     AccountDTO,
@@ -75,7 +75,7 @@ def create_link_token():
 def add_item(
     public_token: str = Form(...),
     db: Session = Depends(get_db),
-    claims: dict = Depends(get_firebase_claims),
+    firebase_identity: dict = Depends(get_firebase_identity),
 ):
     """
     Exchange a Plaid public_token for a persistent access_token.
@@ -93,7 +93,7 @@ def add_item(
     plaid_item_id: str = resp["item_id"]
 
     # 2. Look up the calling user
-    firebase_uid: str = claims["uid"]
+    firebase_uid: str = firebase_identity["uid"]
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -148,7 +148,7 @@ def add_item(
 @router.get("/items", response_model=GetItemsResponseDTO)
 def get_items(
     db: Session = Depends(get_db),
-    claims: dict = Depends(get_firebase_claims),
+    firebase_identity: dict = Depends(get_firebase_identity),
 ):
     """
     Return all Plaid items belonging to the authenticated user.
@@ -165,7 +165,7 @@ def get_items(
     TODO: Add pagination (skip / limit) if a user can have many linked items.
     """
     # 1. Resolve the calling user
-    firebase_uid: str = claims["uid"]
+    firebase_uid: str = firebase_identity["uid"]
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -198,7 +198,7 @@ def get_items(
 @router.get("/accounts", response_model=GetAccountsResponseDTO)
 def get_accounts(
     db: Session = Depends(get_db),
-    claims: dict = Depends(get_firebase_claims),
+    firebase_identity: dict = Depends(get_firebase_identity),
 ):
     """
     Return all accounts for the authenticated user, grouped by linked item
@@ -210,7 +210,7 @@ def get_accounts(
     section — filter them out client-side if not needed.
     """
     # 1. Resolve the calling user
-    firebase_uid: str = claims["uid"]
+    firebase_uid: str = firebase_identity["uid"]
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
