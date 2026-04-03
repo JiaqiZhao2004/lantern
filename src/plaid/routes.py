@@ -39,7 +39,7 @@ from src.plaid.plaid_client import (
     client,
     products,
 )
-from src.users.entities import User
+from src.app.users.entities import User
 
 # ---------- Routes ----------
 router = APIRouter(prefix="/api/v1/plaid", tags=["plaid"])
