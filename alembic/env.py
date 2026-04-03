@@ -26,6 +26,8 @@ if config.config_file_name is not None:
 # visible to autogenerate.
 from src.infrastructure.db.database import Base  # noqa: E402
 import src.app.user.models  # noqa: F401
+import src.app.household.models  # noqa: F401
+import src.app.membership.models  # noqa: F401
 import src.plaid.entities  # noqa: F401
 
 target_metadata = Base.metadata
