@@ -3,7 +3,7 @@
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from services.db import Base
+from src.infrastructure.db import Base
 from uuid6 import uuid7
 import uuid
 

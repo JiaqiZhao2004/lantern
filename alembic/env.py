@@ -24,7 +24,7 @@ if config.config_file_name is not None:
 
 # Import every module that defines ORM models so their tables are
 # visible to autogenerate.
-from services.db.database import Base  # noqa: E402
+from src.infrastructure.db.database import Base  # noqa: E402
 import src.app.user.entities  # noqa: F401
 import src.plaid.entities  # noqa: F401
 

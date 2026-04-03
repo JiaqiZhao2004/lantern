@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.app.user import dto
 from src.app.user import entities
-from services import get_db, get_firebase_claims
+from src.infrastructure import get_db, get_firebase_claims
 
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])

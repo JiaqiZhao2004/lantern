@@ -1,5 +1,5 @@
 # scripts/init_db.py
-from services.db.database import engine, Base
+from src.infrastructure.db.database import engine, Base
 
 # ImportError: attempted relative import with no known parent package
 # IMPORTANT: import entities so they register
