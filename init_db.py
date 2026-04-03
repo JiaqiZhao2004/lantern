@@ -3,7 +3,7 @@ from src.infrastructure.db.database import engine, Base
 
 # ImportError: attempted relative import with no known parent package
 # IMPORTANT: import entities so they register
-import src.app.user.entities
+import src.app.user.models
 import src.plaid.entities
 
 print("Creating tables...")

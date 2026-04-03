@@ -3,7 +3,7 @@ from psycopg import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.app.user import dto
-from src.app.user import entities
+from src.app.user import models
 from src.infrastructure import get_db, get_firebase_claims
 
 
@@ -20,15 +20,15 @@ def get_or_create_me(
 
     # Try to find existing user by firebase_uid
     db_user = (
-        db.query(entities.User)
-        .filter(entities.User.firebase_uid == firebase_uid)
+        db.query(models.User)
+        .filter(models.User.firebase_uid == firebase_uid)
         .first()
     )
     if db_user:
         return db_user
 
     # Create user row owned by this token identity
-    db_user = entities.User(firebase_uid=firebase_uid, email=email)
+    db_user = models.User(firebase_uid=firebase_uid, email=email)
     db.add(db_user)
 
     try:
@@ -37,8 +37,8 @@ def get_or_create_me(
         db.rollback()
         # Handles race condition: two requests create at once
         db_user = (
-            db.query(entities.User)
-            .filter(entities.User.firebase_uid == firebase_uid)
+            db.query(models.User)
+            .filter(models.User.firebase_uid == firebase_uid)
             .first()
         )
         if db_user:
