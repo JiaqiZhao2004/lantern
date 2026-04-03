@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 
 from src.plaid.entities import PlaidAccount, PlaidItem
 from src.plaid.plaid_client import client
-from services import get_db
-from services.aws.kms import decrypt_secret
+from src.infrastructure import get_db
+from src.infrastructure.aws.kms import decrypt_secret
 
 # ---------- Internal auth ----------
 

@@ -18,8 +18,8 @@ from plaid.model.link_token_create_request_statements import (
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 
-from services import get_db, get_firebase_claims
-from services.aws import encrypt_secret
+from src.infrastructure import get_db, get_firebase_claims
+from src.infrastructure.aws import encrypt_secret
 from src.plaid.dto import (
     AccountDTO,
     AddItemResponseDTO,
