@@ -9,10 +9,10 @@ class UserService:
     def get_or_create_me(
         self,
         db: Session,
-        claims: dict,
+        firebase_identity: dict,
     ):
-        firebase_uid = claims["uid"]
-        email = claims["email"]
+        firebase_uid = firebase_identity["uid"]
+        email = firebase_identity["email"]
 
         # Try to find existing user by firebase_uid
         db_user = self.user_repo.get_user_by_firebase_uid(db, firebase_uid)
