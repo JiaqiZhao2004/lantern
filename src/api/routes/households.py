@@ -48,6 +48,20 @@ def join_household(
     return membership
 
 
+@router.get("/{household_id}/members", response_model=list[MembershipResponse])
+def get_household_members(
+    household_id: UUID,
+    ctx: RequestContext = Depends(get_request_context),
+    membership_service: MembershipService = Depends(get_membership_service),
+):
+    memberships = membership_service.list_household_members(
+        db=ctx.db,
+        requester_user_id=ctx.user.id,
+        household_id=household_id,
+    )
+    return memberships
+
+
 @router.delete("/{household_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
 def leave_household(
     household_id: UUID,

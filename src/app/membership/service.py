@@ -41,6 +41,26 @@ class MembershipService:
             db.rollback()
             raise
 
+    def list_household_members(
+        self, db: Session, requester_user_id: UUID, household_id: UUID
+    ) -> list[HouseholdMembership]:
+        household = self.household_repo.get_by_id(db=db, household_id=household_id)
+        if household is None:
+            raise NotFoundError(detail="Household not found")
+
+        requester_membership = self.membership_repo.get_membership(
+            db=db,
+            user_id=requester_user_id,
+            household_id=household_id,
+        )
+        if requester_membership is None:
+            raise NotFoundError(detail="Household not found")
+
+        return self.membership_repo.list_members_for_household(
+            db=db,
+            household_id=household_id,
+        )
+
     def leave_household(self, db: Session, user_id: UUID, household_id: UUID) -> None:
         household = self.household_repo.get_by_id(db=db, household_id=household_id)
         if household is None:
