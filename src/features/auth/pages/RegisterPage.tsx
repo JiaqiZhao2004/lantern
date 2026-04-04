@@ -8,6 +8,7 @@ import PrimaryButton from "../../../Components/PrimaryButton";
 // API
 import { registerWithEmail } from "../api/firebase/client"; // adjust path if needed
 import { isAppError } from "../../../core/appErrors";
+import { get_or_create_me } from "../../dashboard/api/backend/client";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -32,6 +33,7 @@ export default function RegisterPage() {
 
     try {
       await registerWithEmail(email.trim(), password);
+      await get_or_create_me();
       await refresh();
       console.log("Registered with email and password");
     } catch (err: any) {

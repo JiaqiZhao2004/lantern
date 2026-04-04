@@ -5,6 +5,7 @@ export type User = {
 
 export type DashboardState = {
   user: User | null;
+  householdName: string | null;
 
   isLoading: boolean;
   errorCode?: string;
@@ -20,5 +21,6 @@ export type DashboardStateAction =
 
 export const initialDashboardState: DashboardState = {
   user: null,
+  householdName: null,
   isLoading: false,
 };

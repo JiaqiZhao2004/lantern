@@ -1,11 +1,11 @@
 import { logoutFirebase } from "../features/auth/api/firebase/client";
 
 interface HeaderProps {
-  userName?: string | null;
+  householdName?: string | null;
   userEmail?: string | null;
 }
 
-function Header({ userName, userEmail }: HeaderProps) {
+function Header({ householdName, userEmail }: HeaderProps) {
   const handleLogout = async () => {
     try {
       await logoutFirebase();
@@ -15,10 +15,16 @@ function Header({ userName, userEmail }: HeaderProps) {
   };
   return (
     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <h2>Dashboard</h2>
-      {(userName || userEmail) && (
+      <div>
+        <h2 style={{ marginBottom: householdName ? "0.2rem" : 0 }}>Dashboard</h2>
+        {householdName && (
+          <div style={{ color: "#555", fontSize: "0.95rem", fontWeight: 600 }}>
+            {householdName}
+          </div>
+        )}
+      </div>
+      {userEmail && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: "0.9rem" }}>
-          {userName && <span style={{ fontWeight: 600 }}>{userName}</span>}
           {userEmail && <span style={{ color: "#666" }}>{userEmail}</span>}
         </div>
       )}
