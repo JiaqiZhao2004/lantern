@@ -23,3 +23,4 @@ class UserRepository:
                 return db_user
             raise
         db.refresh(db_user)
+        return db_user

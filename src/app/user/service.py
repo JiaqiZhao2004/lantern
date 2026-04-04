@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from .repository import UserRepository
+from ..exceptions import ValidationError
 
 
 class UserService:
@@ -11,8 +12,10 @@ class UserService:
         db: Session,
         firebase_identity: dict,
     ):
-        firebase_uid = firebase_identity["uid"]
-        email = firebase_identity["email"]
+        firebase_uid = firebase_identity.get("uid")
+        email = firebase_identity.get("email")
+        if not firebase_uid or not email:
+            raise ValidationError(detail="Invalid user identity")
 
         # Try to find existing user by firebase_uid
         db_user = self.user_repo.get_user_by_firebase_uid(db, firebase_uid)
@@ -20,5 +23,4 @@ class UserService:
             return db_user
 
         # Create user row owned by this token identity
-        self.user_repo.create_user(db, firebase_uid, email)
-        return db_user
+        return self.user_repo.create_user(db, firebase_uid, email)

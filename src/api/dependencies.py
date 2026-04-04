@@ -28,8 +28,12 @@ def get_membership_repository() -> MembershipRepository:
 
 def get_membership_service(
     membership_repo: MembershipRepository = Depends(get_membership_repository),
+    household_repo: HouseholdRepository = Depends(get_household_repository),
 ) -> MembershipService:
-    return MembershipService(membership_repo=membership_repo)
+    return MembershipService(
+        membership_repo=membership_repo,
+        household_repo=household_repo,
+    )
 
 
 def get_household_service(

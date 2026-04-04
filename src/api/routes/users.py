@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.app.user import schemas
 from ..dependencies import (
@@ -17,7 +17,4 @@ def get_or_create_me(
     firebase_identity: dict = Depends(get_firebase_identity),
     user_service: UserService = Depends(get_user_service),
 ):
-    try:
-        return user_service.get_or_create_me(db=db, firebase_identity=firebase_identity)
-    except Exception as e:
-        return HTTPException(500, e)
+    return user_service.get_or_create_me(db=db, firebase_identity=firebase_identity)
