@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from .repository import HouseholdRepository
 from ..membership.repository import MembershipRepository
 from .models import Household
-from ..exceptions import ConflictError, ValidationError
+from ..exceptions import ConflictError, NotFoundError, ValidationError
 from uuid import UUID
 
 
@@ -38,3 +38,20 @@ class HouseholdService:
         except Exception:
             db.rollback()
             raise
+
+    def get_my_household(self, db: Session, user_id: UUID) -> Household:
+        membership = self.membership_repo.get_membership_for_user(
+            db=db,
+            user_id=user_id,
+        )
+        if membership is None:
+            raise NotFoundError(detail="Membership not found")
+
+        household = self.household_repo.get_by_id(
+            db=db,
+            household_id=membership.household_id,
+        )
+        if household is None:
+            raise NotFoundError(detail="Household not found")
+
+        return household

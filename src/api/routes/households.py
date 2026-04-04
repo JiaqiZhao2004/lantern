@@ -34,6 +34,18 @@ def create_household(
     return household
 
 
+@router.get("/me/household", response_model=HouseholdResponse)
+def get_my_household(
+    ctx: RequestContext = Depends(get_request_context),
+    household_service: HouseholdService = Depends(get_household_service),
+):
+    household = household_service.get_my_household(
+        db=ctx.db,
+        user_id=ctx.user.id,
+    )
+    return household
+
+
 @router.post("/{household_id}/join", response_model=MembershipResponse)
 def join_household(
     household_id: UUID,
