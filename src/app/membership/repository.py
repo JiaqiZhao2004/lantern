@@ -32,6 +32,13 @@ class MembershipRepository:
             .first()
         )
 
+    def get_membership_for_user(self, db: Session, user_id: UUID):
+        return (
+            db.query(HouseholdMembership)
+            .filter(HouseholdMembership.user_id == user_id)
+            .first()
+        )
+
     def delete_membership(
         self, db: Session, user_id: UUID, household_id: UUID
     ) -> HouseholdMembership | None:

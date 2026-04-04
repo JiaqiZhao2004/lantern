@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from .repository import HouseholdRepository
 from ..membership.repository import MembershipRepository
 from .models import Household
-from ..exceptions import ValidationError
+from ..exceptions import ConflictError, ValidationError
 from uuid import UUID
 
 
@@ -19,6 +19,12 @@ class HouseholdService:
         normalized_name = household_name.strip()
         if not normalized_name:
             raise ValidationError(detail="Household name cannot be empty")
+        existing_membership = self.membership_repo.get_membership_for_user(
+            db=db,
+            user_id=user_id,
+        )
+        if existing_membership is not None:
+            raise ConflictError(detail="User already belongs to a household")
 
         try:
             # create household and create household membership: creator as admin
