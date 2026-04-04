@@ -30,6 +30,7 @@ class HouseholdMembership(Base):
     household = relationship("Household", back_populates="memberships")
 
     __table_args__ = (
+        UniqueConstraint("user_id", name="uq_user_household_membership_single"),
         UniqueConstraint(
             "user_id", "household_id", name="uq_user_household_membership"
         ),

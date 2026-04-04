@@ -48,6 +48,18 @@ def join_household(
     return membership
 
 
+@router.get("/me/membership", response_model=MembershipResponse)
+def get_my_membership(
+    ctx: RequestContext = Depends(get_request_context),
+    membership_service: MembershipService = Depends(get_membership_service),
+):
+    membership = membership_service.get_my_membership(
+        db=ctx.db,
+        user_id=ctx.user.id,
+    )
+    return membership
+
+
 @router.get("/{household_id}/members", response_model=list[MembershipResponse])
 def get_household_members(
     household_id: UUID,
