@@ -32,6 +32,19 @@ class MembershipRepository:
             .first()
         )
 
+    def delete_membership(
+        self, db: Session, user_id: UUID, household_id: UUID
+    ) -> HouseholdMembership | None:
+        membership = self.get_membership(
+            db=db, user_id=user_id, household_id=household_id
+        )
+        if membership is None:
+            return None
+
+        db.delete(membership)
+        db.flush()
+        return membership
+
     def list_members_for_household(self, db: Session, household_id: UUID):
         return (
             db.query(HouseholdMembership)
