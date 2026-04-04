@@ -1,7 +1,7 @@
 # src/api/routes/households.py
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 
 from ..dependencies import (
     RequestContext,
@@ -46,3 +46,17 @@ def join_household(
         household_id=household_id,
     )
     return membership
+
+
+@router.delete("/{household_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+def leave_household(
+    household_id: UUID,
+    ctx: RequestContext = Depends(get_request_context),
+    membership_service: MembershipService = Depends(get_membership_service),
+):
+    membership_service.leave_household(
+        db=ctx.db,
+        user_id=ctx.user.id,
+        household_id=household_id,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
