@@ -46,6 +46,18 @@ def get_my_household(
     return household
 
 
+@router.get("/me/membership", response_model=MembershipResponse)
+def get_my_membership(
+    ctx: RequestContext = Depends(get_request_context),
+    membership_service: MembershipService = Depends(get_membership_service),
+):
+    membership = membership_service.get_my_membership(
+        db=ctx.db,
+        user_id=ctx.user.id,
+    )
+    return membership
+
+
 @router.post("/{household_id}/join", response_model=MembershipResponse)
 def join_household(
     household_id: UUID,
@@ -56,18 +68,6 @@ def join_household(
         db=ctx.db,
         user_id=ctx.user.id,
         household_id=household_id,
-    )
-    return membership
-
-
-@router.get("/me/membership", response_model=MembershipResponse)
-def get_my_membership(
-    ctx: RequestContext = Depends(get_request_context),
-    membership_service: MembershipService = Depends(get_membership_service),
-):
-    membership = membership_service.get_my_membership(
-        db=ctx.db,
-        user_id=ctx.user.id,
     )
     return membership
 
