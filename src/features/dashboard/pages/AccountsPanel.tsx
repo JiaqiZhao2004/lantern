@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { get_accounts } from "../api/backend/client";
 import { ItemWithAccounts } from "../api/backend/dto";
+import { DashboardContext } from "../state/DashboardContext";
 
 export default function AccountsPanel() {
+  const { linkedDataRefreshKey } = useContext(DashboardContext);
   const [items, setItems] = useState<ItemWithAccounts[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function AccountsPanel() {
 
   useEffect(() => {
     fetchAccounts();
-  }, [fetchAccounts]);
+  }, [fetchAccounts, linkedDataRefreshKey]);
 
   return (
     <div style={{ margin: "1rem 0" }}>
