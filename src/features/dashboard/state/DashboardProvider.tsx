@@ -17,6 +17,11 @@ function reducer(
         ...state,
         ...action.state,
       };
+    case "REFRESH_LINKED_DATA":
+      return {
+        ...state,
+        linkedDataRefreshKey: state.linkedDataRefreshKey + 1,
+      };
     case "RESET":
       console.log("Dashboard state reset");
       return initialDashboardState;

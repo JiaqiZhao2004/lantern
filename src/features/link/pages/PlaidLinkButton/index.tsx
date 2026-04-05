@@ -4,18 +4,21 @@ import Button from "plaid-threads/Button";
 import styles from "./index.module.css";
 import LinkContext from "../../state/LinkContext";
 import { PlaidService } from "../../api/plaid/client";
+import { DashboardContext } from "../../../dashboard/state/DashboardContext";
 
 const PlaidLinkButton = () => {
   const { linkToken, dispatch } = useContext(LinkContext);
+  const { dispatch: dashboardDispatch } = useContext(DashboardContext);
 
   const onSuccess = useCallback(
     (public_token: string) => {
-      PlaidService.addItem(public_token).then(() =>
-        dispatch({ type: "SET_STATE", state: { linkSuccess: true } })
-      );
+      PlaidService.addItem(public_token).then(() => {
+        dispatch({ type: "SET_STATE", state: { linkSuccess: true } });
+        dashboardDispatch({ type: "REFRESH_LINKED_DATA" });
+      });
       // window.history.pushState("", "", "/");
     },
-    [dispatch]
+    [dispatch, dashboardDispatch]
   );
 
   let isOauth = false;

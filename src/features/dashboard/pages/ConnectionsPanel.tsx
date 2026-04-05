@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { get_items } from "../api/backend/client";
 import { PlaidItem } from "../api/backend/dto";
+import { DashboardContext } from "../state/DashboardContext";
 
 export default function ConnectionsPanel() {
+  const { linkedDataRefreshKey } = useContext(DashboardContext);
   const [items, setItems] = useState<PlaidItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function ConnectionsPanel() {
 
   useEffect(() => {
     fetchItems();
-  }, [fetchItems]);
+  }, [fetchItems, linkedDataRefreshKey]);
 
   return (
     <div style={{ margin: "1rem 0" }}>
