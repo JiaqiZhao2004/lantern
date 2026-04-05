@@ -1,10 +1,12 @@
 import os
 
 import boto3
+from botocore.exceptions import ProfileNotFound
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 AWS_REGION = os.getenv("AWS_REGION")
 KMS_KEY_ID = os.getenv("KMS_KEY_ID")
+AWS_PROFILE = os.getenv("AWS_PROFILE")
 if not KMS_KEY_ID:
     raise ValueError("KMS_KEY_ID environment variable is not set")
 if not AWS_REGION:
@@ -16,7 +18,20 @@ _kms_client = None
 def _get_kms_client():
     global _kms_client
     if _kms_client is None:
-        _kms_client = boto3.client("kms", region_name=AWS_REGION)
+        try:
+            if AWS_PROFILE:
+                session = boto3.session.Session( # type: ignore
+                    profile_name=AWS_PROFILE,
+                    region_name=AWS_REGION,
+                )
+                _kms_client = session.client("kms")
+            else:
+                _kms_client = boto3.client("kms", region_name=AWS_REGION)
+        except ProfileNotFound as exc:
+            raise ValueError(
+                f"AWS profile '{AWS_PROFILE}' was not found. "
+                "Unset AWS_PROFILE or configure that profile in ~/.aws/config or ~/.aws/credentials."
+            ) from exc
     return _kms_client
 
 
