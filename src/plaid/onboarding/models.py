@@ -163,6 +163,12 @@ class PlaidItem(Base):
         doc="Whether the item should be resynced from Plaid",
     )
 
+    last_sync_error: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        doc="Most recent sync error message for the Plaid item",
+    )
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
