@@ -4,6 +4,7 @@
 
 import os
 from typing import Optional
+from functools import lru_cache
 
 import plaid
 from plaid.model.country_code import CountryCode
@@ -57,3 +58,8 @@ api_client = plaid.ApiClient(configuration)
 client = plaid_api.PlaidApi(api_client)
 
 products = [Products(p) for p in PLAID_PRODUCTS]
+
+
+@lru_cache
+def get_plaid_client():
+    return client
