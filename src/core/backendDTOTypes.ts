@@ -21,28 +21,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/plaid/item": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Item
-         * @description Exchange a Plaid public_token for a persistent access_token.
-         *     The access_token is envelope-encrypted with KMS (AES-256-GCM) and
-         *     stored in the plaid_items table alongside the KMS-encrypted data key.
-         */
-        post: operations["add_item_api_v1_plaid_item_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/plaid/items": {
         parameters: {
             query?: never;
@@ -51,21 +29,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Items
-         * @description Return all Plaid items belonging to the authenticated user.
-         *
-         *     NOTE: Access tokens are returned as raw encrypted bytes — they are NOT
-         *     decrypted here.  Callers should treat these fields as opaque.
-         *
-         *     TODO: Replace raw row serialisation with a proper response DTO/schema
-         *           (e.g. a Pydantic model) that explicitly controls which fields are
-         *           exposed.  At minimum, omit the ciphertext fields from the public
-         *           response once decryption is wired up.
-         *     TODO: Decrypt access_token_ciphertext via KMS before using the token for
-         *           any downstream Plaid API calls (see services/aws/kms.py).
+         * Get Household Items
+         * @description Return all Plaid items belonging to the authenticated user's household.
          *     TODO: Add pagination (skip / limit) if a user can have many linked items.
          */
-        get: operations["get_items_api_v1_plaid_items_get"];
+        get: operations["get_household_items_api_v1_plaid_items_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -82,8 +50,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Accounts
-         * @description Return all accounts for the authenticated user, grouped by linked item
+         * Get Household Accounts
+         * @description Return all accounts for the authenticated user's household, grouped by linked item
          *     (institution).  Each item carries its institution name so the client
          *     can render a grouped list without a second request.
          *
@@ -91,7 +59,7 @@ export interface paths {
          *     (is_hidden=True) are included so the client can render a 'hidden'
          *     section — filter them out client-side if not needed.
          */
-        get: operations["get_accounts_api_v1_plaid_accounts_get"];
+        get: operations["get_household_accounts_api_v1_plaid_accounts_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -151,23 +119,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/households/{household_id}/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Join Household */
-        post: operations["join_household_api_v1_households__household_id__join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/households/me/membership": {
         parameters: {
             query?: never;
@@ -179,6 +130,23 @@ export interface paths {
         get: operations["get_my_membership_api_v1_households_me_membership_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/households/{household_id}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Join Household */
+        post: operations["join_household_api_v1_households__household_id__join_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -224,22 +192,17 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * AccountDTO
+         * AccountSimpleDTO
          * @description A single bank account within a linked item, with only the fields the
          *     client needs to display it.  Sensitive / internal fields are omitted.
          */
-        AccountDTO: {
+        AccountSimpleDTO: {
             /**
              * Id
              * Format: uuid
              * @description Internal app UUID for this account.
              */
             id: string;
-            /**
-             * Plaid Account Id
-             * @description Plaid's own account identifier.
-             */
-            plaid_account_id: string;
             /**
              * Mask
              * @description Last 2-4 digits of the account number.
@@ -280,28 +243,6 @@ export interface components {
              * @description User-defined display ordering.
              */
             display_order?: number | null;
-        };
-        /**
-         * AddItemResponseDTO
-         * @description Confirmation returned after a public token is successfully exchanged.
-         */
-        AddItemResponseDTO: {
-            /**
-             * Item Id
-             * @description Plaid item_id for the newly linked institution.
-             */
-            item_id: string;
-            /**
-             * Status
-             * @description Always 'ok' on success.
-             * @default ok
-             */
-            status: string;
-        };
-        /** Body_add_item_api_v1_plaid_item_post */
-        Body_add_item_api_v1_plaid_item_post: {
-            /** Public Token */
-            public_token: string;
         };
         /** CreateHouseholdRequest */
         CreateHouseholdRequest: {
@@ -344,7 +285,7 @@ export interface components {
          */
         GetItemsResponseDTO: {
             /** Items */
-            items: components["schemas"]["PlaidItemDTO"][];
+            items: components["schemas"]["PlaidItemSimpleDTO"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -374,16 +315,6 @@ export interface components {
              */
             item_id: string;
             /**
-             * Plaid Item Id
-             * @description Plaid's own item identifier.
-             */
-            plaid_item_id: string;
-            /**
-             * Institution Id
-             * @description Plaid institution_id.
-             */
-            institution_id?: string | null;
-            /**
              * Institution Name
              * @description Human-readable institution name, e.g. 'Chase'.
              */
@@ -397,7 +328,7 @@ export interface components {
              * Accounts
              * @description Accounts belonging to this item, ordered by display_order then name.
              */
-            accounts?: components["schemas"]["AccountDTO"][];
+            accounts?: components["schemas"]["AccountSimpleDTO"][];
         };
         /** MembershipResponse */
         MembershipResponse: {
@@ -415,31 +346,16 @@ export interface components {
             role: string;
         };
         /**
-         * PlaidItemDTO
+         * PlaidItemSimpleDTO
          * @description A single linked Plaid item (institution connection) belonging to the user.
-         *
-         *     Encrypted credential fields are intentionally omitted from this DTO.
-         *     TODO: Remove access_token_* fields below once decryption + a dedicated
-         *           'fetch transactions' endpoint is implemented — they should never
-         *           be sent over the wire in production.
          */
-        PlaidItemDTO: {
+        PlaidItemSimpleDTO: {
             /**
              * Id
              * Format: uuid
-             * @description Internal app UUID for this Plaid item.
+             * @description Internal app UUID for this account.
              */
             id: string;
-            /**
-             * Plaid Item Id
-             * @description Plaid's own item identifier.
-             */
-            plaid_item_id: string;
-            /**
-             * Institution Id
-             * @description Plaid institution_id, if available.
-             */
-            institution_id?: string | null;
             /**
              * Institution Name
              * @description Human-readable institution name (e.g. 'Chase'), resolved at link time.
@@ -450,11 +366,6 @@ export interface components {
              * @description Item status: active | revoked | error.
              */
             status: string;
-            /**
-             * Kms Key Id
-             * @description KMS CMK used to encrypt the access token.
-             */
-            kms_key_id?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -467,21 +378,6 @@ export interface components {
              * @description When this item was last modified.
              */
             updated_at: string;
-            /**
-             * Access Token Ciphertext
-             * @description [TEMP] Hex-encoded AES-GCM ciphertext of the Plaid access token.
-             */
-            access_token_ciphertext: string;
-            /**
-             * Access Token Nonce
-             * @description [TEMP] Hex-encoded AES-GCM nonce used when encrypting the access token.
-             */
-            access_token_nonce: string;
-            /**
-             * Access Token Encrypted Data Key
-             * @description [TEMP] Hex-encoded KMS-encrypted data key (CiphertextBlob).
-             */
-            access_token_encrypted_data_key: string;
         };
         /** UserResponseDTO */
         UserResponseDTO: {
@@ -538,40 +434,7 @@ export interface operations {
             };
         };
     };
-    add_item_api_v1_plaid_item_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/x-www-form-urlencoded": components["schemas"]["Body_add_item_api_v1_plaid_item_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AddItemResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_items_api_v1_plaid_items_get: {
+    get_household_items_api_v1_plaid_items_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -591,7 +454,7 @@ export interface operations {
             };
         };
     };
-    get_accounts_api_v1_plaid_accounts_get: {
+    get_household_accounts_api_v1_plaid_accounts_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -684,6 +547,26 @@ export interface operations {
             };
         };
     };
+    get_my_membership_api_v1_households_me_membership_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipResponse"];
+                };
+            };
+        };
+    };
     join_household_api_v1_households__household_id__join_post: {
         parameters: {
             query?: never;
@@ -711,26 +594,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_membership_api_v1_households_me_membership_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MembershipResponse"];
                 };
             };
         };
