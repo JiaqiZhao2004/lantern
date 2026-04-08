@@ -29,7 +29,7 @@ from src.plaid.dto import (
     ItemWithAccountsDTO,
     PlaidItemDTO,
 )
-from src.plaid.entities import PlaidAccount, PlaidItem
+from src.plaid.onboarding.models import PlaidAccount, PlaidItem
 from src.plaid.internal_routes import _sync_accounts_for_item
 from src.plaid.plaid_client import (
     PLAID_COUNTRY_CODES,
