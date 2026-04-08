@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from .repository import UserRepository
-from ..exceptions import ValidationError
+from ...exceptions import ValidationError
 
 
 class UserService:

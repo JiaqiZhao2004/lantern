@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from .repository import MembershipRepository
 from .models import HouseholdMembership
 from ..household.repository import HouseholdRepository
-from ..exceptions import ConflictError, NotFoundError
+from ...exceptions import ConflictError, NotFoundError
 from uuid import UUID
 
 
