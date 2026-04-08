@@ -1,0 +1,66 @@
+from plaid.api.plaid_api import PlaidApi
+from ...infrastructure import Session, KMSService
+from ...app.user.models import User
+from ...app.membership.service import MembershipService
+from ..items.service import PlaidItemService
+from ..accounts.service import PlaidAccountService
+from ...exceptions import ConflictError, NotFoundError, ValidationError
+
+
+class OnboardingOrchestrator:
+
+    def __init__(
+        self,
+        plaid_item_service: PlaidItemService,
+        plaid_account_service: PlaidAccountService,
+        membership_service: MembershipService,
+    ) -> None:
+        self.plaid_item_service = plaid_item_service
+        self.plaid_account_service = plaid_account_service
+        self.membership_service = membership_service
+
+    def onboard_new_item(
+        self,
+        db: Session,
+        kms: KMSService,
+        user: User,
+        plaid_client: PlaidApi,
+        link_public_token: str,
+    ):
+        # 1. Exchange public token with Plaid
+        plaid_item_id, plaid_access_token = (
+            self.plaid_item_service.exchange_public_token(
+                plaid_client=plaid_client, link_public_token=link_public_token
+            )
+        )
+
+        # 2. Gather user data
+        membership = self.membership_service.get_my_membership(db=db, user_id=user.id)
+        if membership is None:
+            raise NotFoundError()
+        household_id = membership.household_id
+
+        # 3. Get institution_id and institution_name
+        institution_id, institution_name = self.plaid_item_service.get_institution_info(
+            plaid_client=plaid_client, plaid_access_token=plaid_access_token
+        )
+
+        # 4. Persist the PlaidItem
+        item = self.plaid_item_service.plaid_item_repo.create_encrypted(
+            db=db,
+            kms=kms,
+            user=user,
+            household_id=household_id,
+            plaid_item_id=plaid_item_id,
+            plaid_access_token=plaid_access_token,
+            institution_id=institution_id,
+            institution_name=institution_name,
+        )
+
+        # 5. Fetch accounts
+        self.plaid_account_service.sync_accounts_for_item(
+            plaid_client=plaid_client, item=item, db=db, kms=kms
+        )
+
+        # TODO 6. add initial sync task to table
+        # TODO 7. enqueue initial sync task

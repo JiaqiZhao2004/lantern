@@ -6,7 +6,9 @@ from src.infrastructure.db.database import engine, Base
 import src.app.user.models
 import src.app.household.models
 import src.app.membership.models
-import src.plaid.onboarding.models
+import src.plaid.items.models
+import src.plaid.accounts.models
+
 
 print("Creating tables...")
 Base.metadata.create_all(bind=engine)

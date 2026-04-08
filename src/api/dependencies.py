@@ -3,7 +3,13 @@ from sqlalchemy.orm import Session
 from dataclasses import dataclass
 
 from src.app import *
-from src.infrastructure import get_db, get_firebase_identity, get_kms_service, get_plaid_client
+from src.plaid import *
+from src.infrastructure import (
+    get_db,
+    get_firebase_identity,
+    get_kms_service,
+    get_plaid_client,
+)
 
 
 def get_user_repository() -> UserRepository:
@@ -80,3 +86,26 @@ def get_request_context(
         db=db,
         user=user,
     )
+
+
+def get_plaid_item_repository():
+    return PlaidItemRepository()
+
+
+def get_plaid_item_service(
+    plaid_item_repo: PlaidItemRepository = Depends(get_plaid_item_repository),
+    membership_repo: MembershipRepository = Depends(get_membership_repository),
+) -> PlaidItemService:
+    return PlaidItemService(
+        plaid_item_repo=plaid_item_repo, membership_repo=membership_repo
+    )
+
+
+def get_plaid_account_repository():
+    return PlaidAccountRepository()
+
+
+def get_plaid_account_service(
+    plaid_account_repo: PlaidAccountRepository = Depends(get_plaid_account_repository),
+) -> PlaidAccountService:
+    return PlaidAccountService(plaid_account_repo=plaid_account_repo)

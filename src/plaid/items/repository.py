@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
-from .models import PlaidItem, PlaidAccount
+from .models import PlaidItem
 from ...app.user.models import User
 from ...infrastructure.aws.kms import KMSService
 
@@ -15,8 +15,8 @@ class PlaidItemRepository:
         household_id: UUID,
         plaid_item_id: str,
         plaid_access_token: str,
-        institution_id: str,
-        institution_name: str,
+        institution_id: str | None,
+        institution_name: str | None,
     ):
         ciphertext, nonce, encrypted_data_key = kms.encrypt_secret(plaid_access_token)
         item = PlaidItem(
