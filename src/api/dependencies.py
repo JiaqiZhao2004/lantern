@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from dataclasses import dataclass
 
 from src.app import *
-from src.infrastructure import get_db, get_firebase_identity, get_kms_service
+from src.infrastructure import get_db, get_firebase_identity, get_kms_service, get_plaid_client
 
 
 def get_user_repository() -> UserRepository:

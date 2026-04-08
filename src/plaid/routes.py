@@ -34,7 +34,7 @@ from src.app.membership.models import HouseholdMembership
 from src.plaid.onboarding.models import PlaidItem
 from src.plaid.onboarding.repository import PlaidItemRepository
 from src.plaid.internal_routes import _sync_accounts_for_item
-from src.plaid.plaid_client import (
+from src.infrastructure.plaid.client import (
     PLAID_COUNTRY_CODES,
     PLAID_REDIRECT_URI,
     CountryCode,

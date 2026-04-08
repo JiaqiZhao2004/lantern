@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from src.infrastructure import get_db, get_kms_service
 from src.infrastructure.aws.kms import KMSService
 from src.plaid.onboarding.models import PlaidAccount, PlaidItem
-from src.plaid.plaid_client import client
+from src.infrastructure.plaid.client import client
 
 # ---------- Internal auth ----------
 
