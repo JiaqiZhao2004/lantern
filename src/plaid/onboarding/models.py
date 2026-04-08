@@ -62,6 +62,13 @@ class PlaidItem(Base):
         index=True,
     )
 
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("households.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
     # Plaid's own identifiers
     plaid_item_id: Mapped[str] = mapped_column(
         String(255),
@@ -192,6 +199,12 @@ class PlaidItem(Base):
 Index(
     "ix_plaid_items_user_status",
     PlaidItem.user_id,
+    PlaidItem.status,
+)
+
+Index(
+    "ix_plaid_items_household_status",
+    PlaidItem.household_id,
     PlaidItem.status,
 )
 
