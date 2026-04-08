@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
+from dataclasses import dataclass
 
 from src.app import *
-from src.infrastructure import get_db, get_firebase_identity
-from dataclasses import dataclass
+from src.infrastructure import get_db, get_firebase_identity, get_kms_service
 
 
 def get_user_repository() -> UserRepository:

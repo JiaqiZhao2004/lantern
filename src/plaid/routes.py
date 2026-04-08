@@ -2,6 +2,7 @@ import os
 import json
 import time
 from datetime import date, timedelta
+from uuid import UUID
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, selectinload
@@ -18,8 +19,8 @@ from plaid.model.link_token_create_request_statements import (
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 
-from src.infrastructure import get_db, get_firebase_identity
-from src.infrastructure.aws import encrypt_secret
+from src.infrastructure import get_db, get_firebase_identity, get_kms_service
+from src.infrastructure.aws.kms import KMSService
 from src.plaid.dto import (
     AccountDTO,
     AddItemResponseDTO,
@@ -29,7 +30,9 @@ from src.plaid.dto import (
     ItemWithAccountsDTO,
     PlaidItemDTO,
 )
-from src.plaid.onboarding.models import PlaidAccount, PlaidItem
+from src.app.membership.models import HouseholdMembership
+from src.plaid.onboarding.models import PlaidItem
+from src.plaid.onboarding.repository import PlaidItemRepository
 from src.plaid.internal_routes import _sync_accounts_for_item
 from src.plaid.plaid_client import (
     PLAID_COUNTRY_CODES,
@@ -43,6 +46,21 @@ from src.app.user.models import User
 
 # ---------- Routes ----------
 router = APIRouter(prefix="/api/v1/plaid", tags=["plaid"])
+
+
+def _get_household_id_for_user(db: Session, user: User) -> UUID:
+    membership = (
+        db.query(HouseholdMembership)
+        .filter(HouseholdMembership.user_id == user.id)
+        .first()
+    )
+    if membership is None:
+        raise HTTPException(
+            status_code=409,
+            detail="User must belong to a household before linking Plaid items",
+        )
+
+    return membership.household_id
 
 
 @router.post("/create_link_token", response_model=CreateLinkTokenResponseDTO)
@@ -76,6 +94,7 @@ def add_item(
     public_token: str = Form(...),
     db: Session = Depends(get_db),
     firebase_identity: dict = Depends(get_firebase_identity),
+    kms: KMSService = Depends(get_kms_service),
 ):
     """
     Exchange a Plaid public_token for a persistent access_token.
@@ -97,11 +116,9 @@ def add_item(
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    household_id = _get_household_id_for_user(db, user)
 
-    # 3. Envelope-encrypt the access_token with KMS
-    ciphertext, nonce, encrypted_data_key = encrypt_secret(plaid_access_token)
-
-    # 4. Get institution_id and institution_name
+    # 3. Get institution_id and institution_name
     institution_id = None
     institution_name = None
     try:
@@ -120,25 +137,25 @@ def add_item(
     except Exception:
         pass  # Institution info is optional
 
-    # 5. Persist the PlaidItem
-    db_item = PlaidItem(
-        user_id=user.id,
+    # 4. Persist the PlaidItem
+    db_item = PlaidItemRepository().create_encrypted(
+        db=db,
+        kms=kms,
+        user=user,
+        household_id=household_id,
         plaid_item_id=plaid_item_id,
+        plaid_access_token=plaid_access_token,
         institution_id=institution_id,
         institution_name=institution_name,
-        access_token_ciphertext=ciphertext,
-        access_token_nonce=nonce,
-        access_token_encrypted_data_key=encrypted_data_key,
-        kms_key_id=os.getenv("KMS_KEY_ID"),  # Store which KMS key was used
     )
-    db.add(db_item)
+    db_item.kms_key_id = os.getenv("KMS_KEY_ID")  # Store which KMS key was used
     db.commit()
     db.refresh(db_item)
 
     # Eagerly populate plaid_accounts so the item is immediately usable.
     # Failures here are non-fatal — the item is already persisted.
     try:
-        _sync_accounts_for_item(db_item, db)
+        _sync_accounts_for_item(db_item, db, kms)
     except Exception:
         pass
 
@@ -151,7 +168,7 @@ def get_items(
     firebase_identity: dict = Depends(get_firebase_identity),
 ):
     """
-    Return all Plaid items belonging to the authenticated user.
+    Return all Plaid items belonging to the authenticated user's household.
 
     NOTE: Access tokens are returned as raw encrypted bytes — they are NOT
     decrypted here.  Callers should treat these fields as opaque.
@@ -169,9 +186,15 @@ def get_items(
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    household_id = _get_household_id_for_user(db, user)
 
-    # 2. Fetch all PlaidItems for this user
-    items = db.query(PlaidItem).filter(PlaidItem.user_id == user.id).all()
+    # 2. Fetch all PlaidItems for this household
+    items = (
+        db.query(PlaidItem)
+        .filter(PlaidItem.household_id == household_id)
+        .order_by(PlaidItem.created_at)
+        .all()
+    )
 
     # 3. Serialise via DTO
     return GetItemsResponseDTO(
@@ -201,7 +224,7 @@ def get_accounts(
     firebase_identity: dict = Depends(get_firebase_identity),
 ):
     """
-    Return all accounts for the authenticated user, grouped by linked item
+    Return all accounts for the authenticated user's household, grouped by linked item
     (institution).  Each item carries its institution name so the client
     can render a grouped list without a second request.
 
@@ -214,12 +237,13 @@ def get_accounts(
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    household_id = _get_household_id_for_user(db, user)
 
     # 2. Fetch all active items + their accounts in 2 queries (selectinload
     #    issues a single WHERE item_id IN (...) rather than N lazy selects)
     items = (
         db.query(PlaidItem)
-        .filter(PlaidItem.user_id == user.id, PlaidItem.status == "active")
+        .filter(PlaidItem.household_id == household_id, PlaidItem.status == "active")
         .options(selectinload(PlaidItem.accounts))
         .order_by(PlaidItem.created_at)
         .all()

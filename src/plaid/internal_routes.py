@@ -11,10 +11,10 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from plaid.model.accounts_get_request import AccountsGetRequest
 from sqlalchemy.orm import Session
 
+from src.infrastructure import get_db, get_kms_service
+from src.infrastructure.aws.kms import KMSService
 from src.plaid.onboarding.models import PlaidAccount, PlaidItem
 from src.plaid.plaid_client import client
-from src.infrastructure import get_db
-from src.infrastructure.aws.kms import decrypt_secret
 
 # ---------- Internal auth ----------
 
@@ -35,7 +35,7 @@ def _require_internal_secret(
 # ---------- Helpers ----------
 
 
-def _sync_accounts_for_item(item: PlaidItem, db: Session) -> int:
+def _sync_accounts_for_item(item: PlaidItem, db: Session, kms: KMSService) -> int:
     """
     Pull the latest account list from Plaid for *item* and upsert every
     account into the plaid_accounts table.
@@ -48,7 +48,7 @@ def _sync_accounts_for_item(item: PlaidItem, db: Session) -> int:
         triggered by webhooks or schedulers.
     """
     # 1. Recover the plaintext access token via KMS envelope decryption
-    access_token = decrypt_secret(
+    access_token = kms.decrypt_secret(
         item.access_token_encrypted_data_key,
         item.access_token_nonce,
         item.access_token_ciphertext,
@@ -124,6 +124,7 @@ internal_router = APIRouter(prefix="/internal", tags=["internal"])
 def sync_accounts(
     plaid_item_id: str,
     db: Session = Depends(get_db),
+    kms: KMSService = Depends(get_kms_service),
     _: None = Depends(_require_internal_secret),
 ):
     """
@@ -145,7 +146,7 @@ def sync_accounts(
         )
 
     try:
-        count = _sync_accounts_for_item(item, db)
+        count = _sync_accounts_for_item(item, db, kms)
     except plaid.ApiException as e:
         raise HTTPException(status_code=502, detail=json.loads(e.body))  # type: ignore
 
