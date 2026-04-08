@@ -32,6 +32,13 @@ class PlaidItemStatus(str, Enum):
     ERROR = "error"
 
 
+class PlaidItemSyncState(str, Enum):
+    INITIALIZING = "initializing"
+    IN_SYNC = "in_sync"
+    SYNCING = "syncing"
+    FAILED = "failed"
+
+
 class PlaidItem(Base):
     __tablename__ = "plaid_items"
     __table_args__ = (
@@ -134,6 +141,26 @@ class PlaidItem(Base):
         DateTime(timezone=True),
         nullable=True,
         doc="Timestamp of the last successful transactions sync",
+    )
+
+    sync_state: Mapped[str] = mapped_column(
+        Enum(
+            "initializing",
+            "in_sync",
+            "syncing",
+            "failed",
+            name="plaid_item_sync_state",
+        ),
+        nullable=False,
+        server_default="initializing",
+        doc="Current sync lifecycle state for the Plaid item",
+    )
+
+    needs_resync: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default="false",
+        doc="Whether the item should be resynced from Plaid",
     )
 
     # Timestamps
