@@ -1,25 +1,33 @@
-import React, { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PrimaryButton from "../../../Components/PrimaryButton";
-import TextInput from "../../../Components/TextInput";
-import { create_household } from "../api/backend/client";
+import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
+import { useCreateHouseholdMutation } from "@/features/household/api/queries";
+import styles from "@/features/household/pages/HouseholdSetupPage.module.css";
 import {
   HOUSEHOLD_NAME_MAX_LENGTH,
   validateHouseholdName,
-} from "../utils/validation";
+} from "@/features/household/utils/validation";
+import { AppShell } from "@/shared/ui/AppShell/AppShell";
+import { Button } from "@/shared/ui/Button/Button";
+import { Card } from "@/shared/ui/Card/Card";
+import { InlineMessage } from "@/shared/ui/InlineMessage/InlineMessage";
+import { TextField } from "@/shared/ui/TextField/TextField";
 
 export default function HouseholdSetupPage() {
   const navigate = useNavigate();
+  const { logout, user } = useAuthSession();
+  const createHouseholdMutation = useCreateHouseholdMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [householdName, setHouseholdName] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const validationError = useMemo(
     () => validateHouseholdName(householdName),
     [householdName]
   );
+
+  const isSubmitting = createHouseholdMutation.isPending;
 
   const closeModal = () => {
     if (isSubmitting) {
@@ -38,8 +46,8 @@ export default function HouseholdSetupPage() {
     setHasSubmitted(false);
   };
 
-  const handleCreateHousehold = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleCreateHousehold = async (event: FormEvent) => {
+    event.preventDefault();
     setHasSubmitted(true);
     setSubmitError(null);
 
@@ -47,201 +55,113 @@ export default function HouseholdSetupPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      await create_household({ name: householdName.trim() });
+      await createHouseholdMutation.mutateAsync({ name: householdName.trim() });
       setIsModalOpen(false);
       setHouseholdName("");
-      setSubmitError(null);
       setHasSubmitted(false);
       navigate("/dashboard", { replace: true });
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.detail?.[0]?.msg ??
-        error?.response?.data?.detail ??
-        "Failed to create household. Please try again.";
-      setSubmitError(String(message));
-    } finally {
-      setIsSubmitting(false);
+    } catch (caughtError: unknown) {
+      setSubmitError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Failed to create household. Please try again."
+      );
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-        backgroundColor: "#f5f5f5",
-      }}
+    <AppShell
+      title="Set up your household"
+      subtitle="Before entering the dashboard, create a household or get ready for a future invite-based join flow."
+      email={user?.email}
+      onLogout={logout}
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "760px",
-          padding: "2rem",
-          borderRadius: "12px",
-          backgroundColor: "#ffffff",
-          boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h1 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-          Set up your household
-        </h1>
-        <p style={{ marginTop: 0, marginBottom: "1.5rem", color: "#555" }}>
-          Before entering the dashboard, create a household or join an existing
-          one.
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "1rem",
-          }}
-        >
-          <div
-            style={{
-              padding: "1.25rem",
-              border: "1px solid #d6e4ff",
-              borderRadius: "10px",
-              backgroundColor: "#f7fbff",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>Create household</h2>
-            <p style={{ color: "#555", minHeight: "3rem" }}>
-              Start a new household and become the first member.
-            </p>
-            <PrimaryButton type="button" onClick={openModal}>
+      <div className={styles.grid}>
+        <Card>
+          <div className={styles.stack}>
+            <div>
+              <h2 className={styles.cardTitle}>Create household</h2>
+              <p className={styles.cardBody}>
+                Start a new household and become the first member.
+              </p>
+            </div>
+            <Button type="button" onClick={openModal}>
               Create household
-            </PrimaryButton>
+            </Button>
           </div>
+        </Card>
 
-          <div
-            style={{
-              padding: "1.25rem",
-              border: "1px solid #e0e0e0",
-              borderRadius: "10px",
-              backgroundColor: "#f0f0f0",
-              opacity: 0.75,
-            }}
-          >
-            <h2 style={{ marginTop: 0, color: "#666" }}>Join household</h2>
-            <p style={{ color: "#666", minHeight: "3rem" }}>
-              Join an existing household with an invite flow. Not yet
-              implemented.
-            </p>
-            <PrimaryButton type="button" disabled>
+        <Card className={styles.mutedCard}>
+          <div className={styles.stack}>
+            <div>
+              <h2 className={styles.cardTitle}>Join household</h2>
+              <p className={styles.cardBody}>
+                The backend join API is wrapped and ready, but the polished invite
+                UX is intentionally deferred until there is something better than
+                raw household IDs.
+              </p>
+            </div>
+            <Button type="button" variant="secondary" disabled>
               Join household
-            </PrimaryButton>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {isModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "1rem",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "440px",
-              backgroundColor: "#fff",
-              borderRadius: "10px",
-              padding: "1.5rem",
-              boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
-            }}
-          >
-            <h2 style={{ marginTop: 0, marginBottom: "0.5rem" }}>
-              Create a household
-            </h2>
-            <p style={{ marginTop: 0, color: "#555" }}>
-              Choose a name using spaces, letters, numbers, or underscores.
-            </p>
+      {isModalOpen ? (
+        <div className={styles.overlay} role="dialog" aria-modal="true">
+          <Card style={{ width: "100%", maxWidth: "28rem" }}>
+            <div className={styles.stack}>
+              <div>
+                <h2 className={styles.cardTitle}>Create a household</h2>
+                <p className={styles.cardBody}>
+                  Choose a name using spaces, letters, numbers, or underscores.
+                </p>
+              </div>
 
-            <form onSubmit={handleCreateHousehold}>
-              <TextInput
-                label="Household name"
-                value={householdName}
-                onChange={setHouseholdName}
-                required
-                disabled={isSubmitting}
-              />
+              <form className={styles.form} onSubmit={handleCreateHousehold}>
+                <TextField
+                  label="Household name"
+                  value={householdName}
+                  onChange={setHouseholdName}
+                  required
+                  disabled={isSubmitting}
+                  error={hasSubmitted ? validationError : null}
+                  hint={`${householdName.length}/${HOUSEHOLD_NAME_MAX_LENGTH} characters`}
+                />
 
-              <p
-                style={{
-                  margin: "0.25rem 0 0.5rem",
-                  fontSize: "0.85rem",
-                  color: "#666",
-                }}
-              >
-                {householdName.length}/{HOUSEHOLD_NAME_MAX_LENGTH} characters
+                {submitError ? (
+                  <InlineMessage tone="error">{submitError}</InlineMessage>
+                ) : null}
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || validationError !== null}
+                  fullWidth
+                >
+                  {isSubmitting ? "Creating household..." : "Create household"}
+                </Button>
+              </form>
+
+              <p className={styles.caption}>
+                Household join is intentionally hidden until the invite flow is more
+                user-friendly.
               </p>
 
-              {hasSubmitted && validationError && (
-                <div
-                  style={{
-                    marginBottom: "0.75rem",
-                    color: "#b00020",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  {validationError}
-                </div>
-              )}
-
-              {submitError && (
-                <div
-                  style={{
-                    marginBottom: "0.75rem",
-                    color: "#b00020",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  {submitError}
-                </div>
-              )}
-
-              <PrimaryButton
-                type="submit"
-                disabled={isSubmitting || validationError !== null}
+              <Button
+                type="button"
+                onClick={closeModal}
+                disabled={isSubmitting}
+                variant="secondary"
+                fullWidth
               >
-                {isSubmitting ? "Creating household..." : "Create household"}
-              </PrimaryButton>
-            </form>
-
-            <button
-              type="button"
-              onClick={closeModal}
-              disabled={isSubmitting}
-              style={{
-                width: "100%",
-                marginTop: "0.75rem",
-                padding: "0.6rem 0.8rem",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                backgroundColor: "#fff",
-                cursor: isSubmitting ? "default" : "pointer",
-              }}
-            >
-              Cancel
-            </button>
-          </div>
+                Cancel
+              </Button>
+            </div>
+          </Card>
         </div>
-      )}
-    </div>
+      ) : null}
+    </AppShell>
   );
 }

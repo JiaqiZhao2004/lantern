@@ -2,6 +2,7 @@
   "name": "plaid_react_quickstart",
   "version": "0.1.0",
   "dependencies": {
+    "@tanstack/react-query": "^5.96.2",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -37,6 +38,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "typecheck": "tsc --noEmit",
     "generate-api-types": "npx openapi-typescript http://localhost:8000/openapi.json -o src/core/backendDTOTypes.ts"
   },
   "eslintConfig": {
@@ -57,7 +59,6 @@
       "last 1 safari version"
     ]
   },
-
   "engines": {
     "node": ">=14.0.0"
   }

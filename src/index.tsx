@@ -1,7 +1,7 @@
 import React from "react";
 import "./styles/global.css";
-import App from "./core/App";
 import { createRoot } from "react-dom/client";
+import App from "@/app/App";
 import reportWebVitals from "./reportWebVitals";
 
 const container = document.getElementById("root");
