@@ -193,6 +193,11 @@ class PlaidItem(Base):
     accounts = relationship(
         "PlaidAccount", back_populates="item", cascade="all, delete-orphan"
     )
+    sync_jobs = relationship(
+        "SyncJob",
+        back_populates="institution_connection",
+        cascade="all, delete-orphan",
+    )
 
 
 # Optional composite index if you frequently query by (user_id, status)

@@ -29,6 +29,8 @@ import src.app.user.models  # noqa: F401
 import src.app.household.models  # noqa: F401
 import src.app.membership.models  # noqa: F401
 import src.plaid.items.models  # noqa: F401
+import src.plaid.accounts.models  # noqa: F401
+import src.sync.jobs.models  # noqa: F401
 
 target_metadata = Base.metadata
 
