@@ -1,27 +1,27 @@
-// src/features/auth/pages/RegisterPage.tsx
-import React, { useState, FormEvent, useContext } from "react";
+import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../state/AuthContext";
-// Components
-import TextInput from "../../../Components/TextInput";
-import PrimaryButton from "../../../Components/PrimaryButton";
-// API
-import { registerWithEmail } from "../api/firebase/client"; // adjust path if needed
-import { isAppError } from "../../../core/appErrors";
-import { get_or_create_me } from "../../dashboard/api/backend/client";
+import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
+import formStyles from "@/features/auth/components/AuthForm.module.css";
+import {
+  registerWithEmail,
+  sendVerificationEmail,
+} from "@/features/auth/api/firebase/client";
+import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
+import { isAppError } from "@/shared/api/appError";
+import { Button } from "@/shared/ui/Button/Button";
+import { InlineMessage } from "@/shared/ui/InlineMessage/InlineMessage";
+import { TextField } from "@/shared/ui/TextField/TextField";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { refresh } = useAuthSession();
 
-  const { refresh } = useContext(AuthContext);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError(null);
 
     if (password !== passwordConfirm) {
@@ -33,104 +33,66 @@ export default function RegisterPage() {
 
     try {
       await registerWithEmail(email.trim(), password);
-      await get_or_create_me();
+      await sendVerificationEmail();
       await refresh();
-      console.log("Registered with email and password");
-    } catch (err: any) {
-      const message = isAppError(err)
-        ? err.message
-        : "Failed to register. Please try again.";
-      setError(message);
+    } catch (caughtError: unknown) {
+      setError(
+        isAppError(caughtError)
+          ? caughtError.message
+          : "Failed to register. Please try again."
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-        backgroundColor: "#f5f5f5",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          padding: "1.5rem",
-          borderRadius: "8px",
-          backgroundColor: "#ffffff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h1 style={{ margin: 0, marginBottom: "1.25rem", fontSize: "1.5rem" }}>
-          Create an account
-        </h1>
-
-        {error && (
-          <div
-            style={{
-              marginBottom: "0.75rem",
-              padding: "0.5rem 0.75rem",
-              borderRadius: "4px",
-              backgroundColor: "#ffe5e5",
-              color: "#b00020",
-              fontSize: "0.875rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <TextInput
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="email"
-            required
-          />
-
-          <TextInput
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="new-password"
-            required
-          />
-
-          <TextInput
-            label="Confirm Password"
-            type="password"
-            value={passwordConfirm}
-            onChange={setPasswordConfirm}
-            autoComplete="new-password"
-            required
-          />
-
-          <PrimaryButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating account..." : "Register"}
-          </PrimaryButton>
-        </form>
-
-        <div
-          style={{
-            marginTop: "0.75rem",
-            fontSize: "0.85rem",
-            textAlign: "center",
-          }}
-        >
+    <AuthPageLayout
+      title="Create an account"
+      description="Start with your email and password, then verify your address before entering the app."
+      footer={
+        <>
           Already have an account?{" "}
-          <Link to="/login" style={{ color: "#1976d2" }}>
+          <Link className={formStyles.footerLink} to="/login">
             Sign in
           </Link>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
+
+      <form className={formStyles.form} onSubmit={handleSubmit}>
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          autoComplete="email"
+          required
+        />
+
+        <TextField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          required
+        />
+
+        <TextField
+          label="Confirm password"
+          type="password"
+          value={passwordConfirm}
+          onChange={setPasswordConfirm}
+          autoComplete="new-password"
+          required
+        />
+
+        <Button type="submit" disabled={isSubmitting} fullWidth>
+          {isSubmitting ? "Creating account..." : "Create account"}
+        </Button>
+      </form>
+    </AuthPageLayout>
   );
 }

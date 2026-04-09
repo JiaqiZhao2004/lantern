@@ -1,115 +1,105 @@
-/* Design tokens derived from plaid-threads */
 :root {
-  --font-monospace: Inconsolata, Consolas, Courier, monospace;
-  --font-sans: Helvetica, Arial, sans-serif;
-
-  --black100: #f6f6f6;
-  --black200: #ededed;
-  --black300: #dcdcdc;
-  --black700: #767676;
-  --black900: #383838;
-  --black1000: #111111;
-
-  --red200: #ffd7dc;
-
-  --blue900: #0076d6;
-
-  --shadow-small: 0 0.8rem 0.8rem 0 rgba(17, 17, 17, 0.08);
-  --border-radius: 0.2rem;
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-monospace: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --background: #f4f7fb;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface-muted: #f6f8fc;
+  --text-strong: #162235;
+  --text-muted: #5f6b7c;
+  --border-subtle: rgba(20, 40, 80, 0.08);
+  --border-strong: rgba(20, 40, 80, 0.16);
+  --brand-500: #3f7cff;
+  --brand-600: #276ef1;
+  --brand-700: #1e56c7;
+  --success-700: #147d57;
+  --danger-700: #b63d3d;
+  --shadow-soft: 0 20px 48px rgba(22, 34, 53, 0.08);
 }
 
-/* Reset + typography (replaces plaid-threads/scss/typography) */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  color: var(--text-strong);
+  font-size: 1rem;
+  line-height: 1.5;
+  background:
+    radial-gradient(circle at top left, rgba(39, 110, 241, 0.14), transparent 28rem),
+    linear-gradient(180deg, #f7faff 0%, var(--background) 50%, #eef3fb 100%);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-html {
-  font-size: 62.5%; /* 10px base for rem calculations */
-}
-
-body {
-  font-family: var(--font-sans);
-  color: var(--black1000);
-  font-size: 1.6rem;
-  line-height: 2.4rem;
+#root {
+  min-height: 100vh;
 }
 
 h1 {
-  font-size: 6rem;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 h2 {
-  font-size: 3.6rem;
-  font-weight: 800;
-  line-height: 1.33;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 h3 {
-  font-size: 3.6rem;
-  line-height: 1.33;
-  font-weight: normal;
-}
-
-h4 {
-  font-size: 2.4rem;
-  line-height: 1.33;
-  font-weight: normal;
-}
-
-h5 {
-  font-size: 1.6rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  line-height: 1.5;
-}
-
-h6 {
-  font-family: var(--font-monospace);
-  font-size: 1.4rem;
-  line-height: 1.33;
-  letter-spacing: 1px;
-  font-weight: bold;
-  text-transform: uppercase;
+  line-height: 1.3;
 }
 
 p {
-  font-size: 1.6rem;
+  font-size: 1rem;
   line-height: 1.5;
-  color: var(--black900);
+  color: var(--text-muted);
 }
 
 a {
-  color: var(--black1000);
+  color: var(--brand-700);
   text-decoration: none;
 }
 
-small {
-  font-size: 1.2rem;
-  line-height: 1.33;
-  letter-spacing: 0.25px;
+a:hover {
+  text-decoration: underline;
 }
 
 code {
   font-family: var(--font-monospace);
-  font-size: 1.4rem;
+  font-size: 0.9rem;
   white-space: pre-wrap;
   word-break: break-word;
-  background-color: var(--black100);
-  border-radius: var(--border-radius);
+  background-color: rgba(20, 40, 80, 0.08);
+  border-radius: 0.375rem;
   padding: 0.2rem 0.4rem;
-  color: var(--black1000);
+  color: var(--text-strong);
 }
 
-em {
-  font-style: italic;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
-b,
-strong {
-  font-weight: 600;
+table {
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
 }

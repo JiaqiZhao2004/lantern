@@ -1,19 +1,18 @@
-import React, { useContext, useMemo, useState } from "react";
-import { isAppError } from "../../../core/appErrors";
-import { AuthContext } from "../state/AuthContext";
-// Components
-import PrimaryButton from "../../../Components/PrimaryButton";
-import TextInput from "../../../Components/TextInput";
-// API calls
-import { logoutFirebase, sendVerificationEmail } from "../api/firebase/client";
+import { useMemo, useState } from "react";
+import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
+import formStyles from "@/features/auth/components/AuthForm.module.css";
+import { sendVerificationEmail } from "@/features/auth/api/firebase/client";
+import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
+import { isAppError } from "@/shared/api/appError";
+import { Button } from "@/shared/ui/Button/Button";
+import { InlineMessage } from "@/shared/ui/InlineMessage/InlineMessage";
+import { TextField } from "@/shared/ui/TextField/TextField";
 
 export default function EmailVerificationPage() {
-  const { user, refresh } = useContext(AuthContext);
-
-  const [status, setStatus] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const { logout, refresh, user } = useAuthSession();
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
-
   const email = useMemo(() => user?.email ?? "", [user?.email]);
 
   const handleResend = async () => {
@@ -23,18 +22,20 @@ export default function EmailVerificationPage() {
 
     try {
       await sendVerificationEmail();
-      console.log("Email sent");
-      setStatus("Verification email sent");
-    } catch (e) {
-      if (isAppError(e)) {
-        if (e.code === "auth/too-many-requests")
-          setError("Verification email sent. Please try again in a minute.");
-        else setError(e.message);
+      setStatus("Verification email sent.");
+    } catch (caughtError: unknown) {
+      if (isAppError(caughtError)) {
+        setError(
+          caughtError.code === "auth/too-many-requests"
+            ? "Verification email sent recently. Please wait a minute and try again."
+            : caughtError.message
+        );
       } else {
         setError("Unexpected error.");
       }
+    } finally {
+      setIsBusy(false);
     }
-    setIsBusy(false);
   };
 
   const handleCheckVerified = async () => {
@@ -42,93 +43,50 @@ export default function EmailVerificationPage() {
     setStatus("");
     setError("");
 
-    await refresh();
+    const refreshedUser = await refresh();
 
-    if (!user?.emailVerified) {
+    if (!refreshedUser?.emailVerified) {
       setStatus("Still not verified yet. Please click the link in your email.");
     }
+
     setIsBusy(false);
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f5f5f5",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 420,
-          padding: "1.6rem",
-          backgroundColor: "#fff",
-          borderRadius: 8,
-          border: "1px solid #e0e0e0",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-        }}
-      >
-        <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-          Verify your email
-        </h2>
-
-        <p style={{ marginTop: 0, marginBottom: "0.75rem", color: "#444" }}>
-          We sent a verification link to your email. The email may be in your
-          junk folder. Click the link, then come back and press “I have verified
-          my email”.
-        </p>
-
-        <TextInput
-          label="Email"
-          type="email"
-          value={email}
-          onChange={() => {
-            // no-op (read-only display)
-          }}
-          autoComplete="email"
-          disabled={true}
-          required
-        />
-
-        {status && (
-          <p style={{ margin: "0.75rem 0 0", color: "#1976d2" }}>{status}</p>
-        )}
-        {error && (
-          <p style={{ margin: "0.75rem 0 0", color: "#d32f2f" }}>{error}</p>
-        )}
-
-        <PrimaryButton
-          onClick={handleResend}
-          disabled={isBusy}
-          style={{ marginTop: "0.5rem", backgroundColor: "#455a64" }}
-        >
-          {isBusy ? "Working..." : "Send verification email"}
-        </PrimaryButton>
-
-        <PrimaryButton onClick={handleCheckVerified} disabled={isBusy}>
-          {isBusy ? "Working..." : "I have verified my email"}
-        </PrimaryButton>
-
+    <AuthPageLayout
+      title="Verify your email"
+      description="Open the verification link from your inbox, then come back here to continue into the app."
+      footer={
         <button
+          className={formStyles.footerLink}
           type="button"
-          onClick={() => logoutFirebase()}
-          style={{
-            width: "100%",
-            marginTop: "0.75rem",
-            border: "none",
-            background: "none",
-            color: "#1976d2",
-            textDecoration: "underline",
-            cursor: "pointer",
-          }}
+          onClick={() => void logout()}
         >
           Back to login
         </button>
+      }
+    >
+      <TextField
+        label="Email"
+        type="email"
+        value={email}
+        onChange={() => undefined}
+        autoComplete="email"
+        readOnly
+      />
+
+      {status ? <InlineMessage tone="success">{status}</InlineMessage> : null}
+      {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
+
+      <div className={formStyles.actions}>
+        <Button onClick={handleResend} disabled={isBusy} variant="secondary" fullWidth>
+          {isBusy ? "Working..." : "Send verification email"}
+        </Button>
+
+        <Button onClick={handleCheckVerified} disabled={isBusy} fullWidth>
+          {isBusy ? "Working..." : "I have verified my email"}
+        </Button>
       </div>
-    </div>
+    </AuthPageLayout>
   );
 }

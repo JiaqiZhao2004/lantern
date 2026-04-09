@@ -1,58 +1,66 @@
-import { useCallback, useContext, useEffect } from "react";
-import Header from "../../../Components/Header";
-import PlaidLinkPage from "../../link/pages/PlaidLinkPage";
-import { DashboardProvider } from "../state/DashboardProvider";
-import { DashboardContext } from "../state/DashboardContext";
-import { get_my_household, get_or_create_me } from "../api/backend/client";
-import { AuthContext } from "../../auth/state/AuthContext";
-import ConnectionsPanel from "./ConnectionsPanel";
-import AccountsPanel from "./AccountsPanel";
+import styles from "@/features/dashboard/pages/DashboardPage.module.css";
+import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
+import { useAccountsQuery, useConnectionsQuery } from "@/features/connections/api/queries";
+import { PlaidLinkCard } from "@/features/connections/components/PlaidLinkCard";
+import AccountsPanel from "@/features/dashboard/components/AccountsPanel";
+import ConnectionsPanel from "@/features/dashboard/components/ConnectionsPanel";
+import { useHouseholdQuery } from "@/features/household/api/queries";
+import { useViewerQuery } from "@/features/viewer/api/queries";
+import { AppShell } from "@/shared/ui/AppShell/AppShell";
+import { PageSection } from "@/shared/ui/PageSection/PageSection";
 
 export default function DashboardPage() {
-  return (
-    <DashboardProvider>
-      <Content></Content>
-    </DashboardProvider>
-  );
-}
+  const { logout, user } = useAuthSession();
+  const viewerQuery = useViewerQuery({ enabled: true });
+  const householdQuery = useHouseholdQuery({ enabled: true });
+  const connectionsQuery = useConnectionsQuery({ enabled: true });
+  const accountsQuery = useAccountsQuery({ enabled: true });
 
-function Content() {
-  const { user, householdName, dispatch } = useContext(DashboardContext);
-  const { isAuthenticated } = useContext(AuthContext);
-
-  const loadDashboard = useCallback(async () => {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    const [userResponse, householdResponse] = await Promise.all([
-      get_or_create_me(),
-      get_my_household(),
-    ]);
-
-    dispatch({
-      type: "SET_STATE",
-      state: {
-        user: { email: userResponse.email, name: userResponse.name },
-        householdName: householdResponse.name,
-      },
-    });
-  }, [isAuthenticated, dispatch]);
-
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
-
-  useEffect(() => {
-    console.log("user changed:", user);
-  }, [user]);
+  const title =
+    householdQuery.data?.name ?? viewerQuery.data?.name ?? "Dashboard";
 
   return (
-    <div>
-      <Header householdName={householdName} userEmail={user?.email}></Header>
-      <PlaidLinkPage></PlaidLinkPage>
-      <ConnectionsPanel></ConnectionsPanel>
-      <AccountsPanel></AccountsPanel>
-    </div>
+    <AppShell
+      title={title}
+      subtitle="Review linked institutions, explore account structure, and keep the onboarding surface clean."
+      email={user?.email ?? viewerQuery.data?.email}
+      onLogout={logout}
+    >
+      <div className={styles.grid}>
+        <div className={styles.topGrid}>
+          <PlaidLinkCard />
+        </div>
+
+        <PageSection
+          title="Linked institutions"
+          description="Every institution currently visible from the backend contract."
+        >
+          <ConnectionsPanel
+            items={connectionsQuery.data?.items ?? []}
+            isLoading={connectionsQuery.isLoading}
+            errorMessage={
+              connectionsQuery.error instanceof Error
+                ? connectionsQuery.error.message
+                : null
+            }
+          />
+        </PageSection>
+
+        <PageSection
+          title="Accounts"
+          description="Accounts are grouped by institution and ordered by the backend response."
+        >
+          <AccountsPanel
+            items={accountsQuery.data?.items ?? []}
+            isLoading={accountsQuery.isLoading}
+            errorMessage={
+              accountsQuery.error instanceof Error
+                ? accountsQuery.error.message
+                : null
+            }
+          />
+        </PageSection>
+      </div>
+    </AppShell>
   );
 }

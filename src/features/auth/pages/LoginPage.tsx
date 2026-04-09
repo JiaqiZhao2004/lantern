@@ -1,105 +1,75 @@
-// src/features/auth/pages/LoginPage.tsx
-import React, { useState, FormEvent } from "react";
-// Components
-import PrimaryButton from "../../../Components/PrimaryButton";
-import TextInput from "../../../Components/TextInput";
-// API calls
-import { loginWithEmail } from "../api/firebase/client";
-import { isAppError } from "../../../core/appErrors";
+import { FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
+import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
+import formStyles from "@/features/auth/components/AuthForm.module.css";
+import { loginWithEmail } from "@/features/auth/api/firebase/client";
+import { isAppError } from "@/shared/api/appError";
+import { Button } from "@/shared/ui/Button/Button";
+import { InlineMessage } from "@/shared/ui/InlineMessage/InlineMessage";
+import { TextField } from "@/shared/ui/TextField/TextField";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError(null);
     setIsSubmitting(true);
 
     try {
       await loginWithEmail(email.trim(), password);
-    } catch (e: any) {
-      // if (isAppError(e) && e.code === "auth/multi-factor-auth-required")
-      //   navigate("/mfa/verify");
+    } catch (caughtError: unknown) {
       setError(
-        isAppError(e) ? e.message : "Failed to sign in. Please try again."
+        isAppError(caughtError)
+          ? caughtError.message
+          : "Failed to sign in. Please try again."
       );
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-        backgroundColor: "#f5f5f5",
-      }}
+    <AuthPageLayout
+      title="Sign in"
+      description="Use your existing Family Finance account to get back to your dashboard."
+      footer={
+        <>
+          Don&apos;t have an account?{" "}
+          <Link className={formStyles.footerLink} to="/register">
+            Register
+          </Link>
+        </>
+      }
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          padding: "1.5rem",
-          borderRadius: "8px",
-          backgroundColor: "#ffffff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h1 style={{ margin: 0, marginBottom: "1.25rem", fontSize: "1.5rem" }}>
-          Sign in
-        </h1>
+      {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
 
-        {error && (
-          <div
-            style={{
-              marginBottom: "0.75rem",
-              padding: "0.5rem 0.75rem",
-              borderRadius: "4px",
-              backgroundColor: "#ffe5e5",
-              color: "#b00020",
-              fontSize: "0.875rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
+      <form className={formStyles.form} onSubmit={handleSubmit}>
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          autoComplete="email"
+          required
+        />
 
-        <form onSubmit={handleSubmit}>
-          <TextInput
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="email"
-            required
-          />
+        <TextField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          required
+        />
 
-          <TextInput
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="current-password"
-            required
-          />
-
-          <PrimaryButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Sign in"}
-          </PrimaryButton>
-        </form>
-
-        {/* Optional: small extras */}
-        <div style={{ marginTop: "0.75rem", fontSize: "0.85rem" }}>
-          Don&apos;t have an account? <a href="/register">Register</a>
-        </div>
-      </div>
-    </div>
+        <Button type="submit" disabled={isSubmitting} fullWidth>
+          {isSubmitting ? "Signing in..." : "Sign in"}
+        </Button>
+      </form>
+    </AuthPageLayout>
   );
 }
