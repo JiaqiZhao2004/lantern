@@ -5,7 +5,7 @@ from uuid6 import uuid7
 import uuid
 from datetime import datetime
 from decimal import Decimal
-
+from enum import StrEnum
 from sqlalchemy import (
     String,
     Text,
@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
-class PlaidItemStatus(str, Enum):
+class PlaidItemStatus(StrEnum):
     # You can also use sqlalchemy Enum directly if you prefer, but this
     # makes typing a bit nicer.
     ACTIVE = "active"
@@ -32,7 +32,7 @@ class PlaidItemStatus(str, Enum):
     ERROR = "error"
 
 
-class PlaidItemSyncState(str, Enum):
+class PlaidItemSyncState(StrEnum):
     INITIALIZING = "initializing"
     IN_SYNC = "in_sync"
     SYNCING = "syncing"
@@ -90,7 +90,7 @@ class PlaidItem(Base):
         doc="Human-readable institution name resolved from institutions/get_by_id at link time",
     )
 
-    status: Mapped[str] = mapped_column(
+    status: Mapped[PlaidItemStatus] = mapped_column(
         Enum(
             "active",
             "revoked",
@@ -150,7 +150,7 @@ class PlaidItem(Base):
         doc="Timestamp of the last successful transactions sync",
     )
 
-    sync_state: Mapped[str] = mapped_column(
+    sync_state: Mapped[PlaidItemSyncState] = mapped_column(
         Enum(
             "initializing",
             "in_sync",

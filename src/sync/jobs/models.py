@@ -3,7 +3,7 @@ from src.infrastructure.db import Base
 from uuid6 import uuid7
 import uuid
 from datetime import datetime
-
+from enum import StrEnum
 from sqlalchemy import (
     text,
     String,
@@ -21,6 +21,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+
+class JobType(StrEnum):
+    WEBHOOK = "webhook"
+    ONBOARDING = "onboarding"
+    MANUAL_RESYNC = "manual_resync"
+    SCHEDULED_FALLBACK = "scheduled_fallback"
 
 
 class SyncJob(Base):
