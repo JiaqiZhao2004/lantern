@@ -103,9 +103,6 @@ class PlaidItemService:
         return institution_id, institution_name
 
     def list_household_items(self, db: Session, household_id: UUID):
-        return (
-            db.query(PlaidItem)
-            .filter(PlaidItem.household_id == household_id)
-            .order_by(PlaidItem.created_at)
-            .all()
+        return self.plaid_item_repo.list_household_items(
+            db=db, household_id=household_id
         )

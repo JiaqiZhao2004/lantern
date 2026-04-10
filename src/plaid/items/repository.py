@@ -32,3 +32,11 @@ class PlaidItemRepository:
         db.add(item)
         db.flush()  # ensures item.id is available before commit
         return item
+
+    def list_household_items(self, db: Session, household_id: UUID):
+        return (
+            db.query(PlaidItem)
+            .filter(PlaidItem.household_id == household_id)
+            .order_by(PlaidItem.created_at)
+            .all()
+        )
