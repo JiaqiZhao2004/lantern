@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
+from uuid import UUID
 from datetime import datetime
 from .models import PlaidAccount
+from ..items.models import PlaidItem
 
 
 class PlaidAccountRepository:
@@ -74,3 +76,12 @@ class PlaidAccountRepository:
 
         db.flush()
         return existing if existing else account
+
+    def list_household_accounts(self, db: Session, household_id: UUID):
+        return (
+            db.query(PlaidAccount)
+            .join(PlaidAccount.item)
+            .filter(PlaidItem.household_id == household_id)
+            .order_by(PlaidItem.created_at, PlaidAccount.created_at)
+            .all()
+        )

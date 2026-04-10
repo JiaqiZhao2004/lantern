@@ -6,6 +6,7 @@ from datetime import datetime
 from plaid.model.accounts_get_request import AccountsGetRequest
 from uuid import UUID
 
+
 class PlaidAccountService:
     def __init__(
         self,
@@ -75,10 +76,6 @@ class PlaidAccountService:
         return len(accounts)
 
     def list_household_accounts(self, db: Session, household_id: UUID):
-        return (
-            db.query(PlaidAccount)
-            .join(PlaidAccount.item)
-            .filter(PlaidItem.household_id == household_id)
-            .order_by(PlaidItem.created_at, PlaidAccount.created_at)
-            .all()
+        return self.plaid_account_repo.list_household_accounts(
+            db=db, household_id=household_id
         )
