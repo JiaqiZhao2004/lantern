@@ -23,14 +23,31 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
+def enum_values(enum_cls: type[StrEnum]) -> list[str]:
+    return [member.value for member in enum_cls]
+
+
 class JobType(StrEnum):
     WEBHOOK = "webhook"
     ONBOARDING = "onboarding"
     MANUAL_RESYNC = "manual_resync"
-    SCHEDULED_FALLBACK = "scheduled_fallback"
 
 
-class SyncJob(Base):
+class JobStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    DEAD_LETTER = "dead_letter"
+
+
+class SyncErrorType(StrEnum):
+    TRANSIENT = "transient"
+    REAUTH_REQUIRED = "reauth_required"
+    RATE_LIMIT = "rate_limit"
+    UNKNOWN = "unknown"
+
+
+class SyncJobs(Base):
     __tablename__ = "sync_jobs"
     __table_args__ = (
         Index(
@@ -38,6 +55,11 @@ class SyncJob(Base):
             "institution_connection_id",
             unique=True,
             postgresql_where=text("status IN ('queued', 'running')"),
+        ),
+        Index(
+            "ix_sync_jobs_status_next_attempt_at",
+            "status",
+            "next_attempt_at",
         ),
     )
 
@@ -55,24 +77,20 @@ class SyncJob(Base):
         index=True,
     )
 
-    job_type: Mapped[str] = mapped_column(
+    job_type: Mapped[JobType] = mapped_column(
         Enum(
-            "webhook",
-            "onboarding",
-            "manual_resync",
-            "scheduled_fallback",
+            JobType,
+            values_callable=enum_values,
             name="job_type",
         ),
         nullable=False,
         server_default="webhook",
     )
 
-    status: Mapped[str] = mapped_column(
+    status: Mapped[JobStatus] = mapped_column(
         Enum(
-            "queued",
-            "running",
-            "succeeded",
-            "dead_letter",
+            JobStatus,
+            values_callable=enum_values,
             name="sync_status",
         ),
         nullable=False,
@@ -86,9 +104,9 @@ class SyncJob(Base):
         server_default="0",
     )
 
-    next_attempt_at: Mapped[datetime | None] = mapped_column(
+    next_attempt_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        nullable=True,
+        nullable=False,
     )
 
     last_error: Mapped[str | None] = mapped_column(
@@ -96,12 +114,10 @@ class SyncJob(Base):
         nullable=True,
     )
 
-    last_error_type: Mapped[str | None] = mapped_column(
+    last_error_type: Mapped[SyncErrorType | None] = mapped_column(
         Enum(
-            "transient",
-            "reauth_required",
-            "rate_limit",
-            "unknown",
+            SyncErrorType,
+            values_callable=enum_values,
             name="sync_error_type",
         ),
         nullable=True,
