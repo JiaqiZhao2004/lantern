@@ -12,15 +12,5 @@ class UserRepository:
     def create_user(self, db: Session, firebase_uid: str, email: str):
         db_user = User(firebase_uid=firebase_uid, email=email)
         db.add(db_user)
-
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            # Handles race condition: two requests create at once
-            db_user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
-            if db_user:
-                return db_user
-            raise
-        db.refresh(db_user)
+        db.flush()
         return db_user
