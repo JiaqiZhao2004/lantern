@@ -6,18 +6,13 @@ from datetime import datetime
 from enum import StrEnum
 from sqlalchemy import (
     text,
-    String,
     Text,
     Enum,
     ForeignKey,
-    LargeBinary,
     DateTime,
-    Numeric,
-    Boolean,
     Integer,
     func,
     Index,
-    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -47,7 +42,7 @@ class SyncErrorType(StrEnum):
     UNKNOWN = "unknown"
 
 
-class SyncJobs(Base):
+class SyncJob(Base):
     __tablename__ = "sync_jobs"
     __table_args__ = (
         Index(

@@ -4,7 +4,6 @@ from src.infrastructure.db import Base
 from uuid6 import uuid7
 import uuid
 from datetime import datetime
-from decimal import Decimal
 from enum import StrEnum
 from sqlalchemy import (
     String,
@@ -13,9 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     LargeBinary,
     DateTime,
-    Numeric,
     Boolean,
-    Integer,
     func,
     Index,
     UniqueConstraint,
@@ -193,7 +190,7 @@ class PlaidItem(Base):
         "PlaidAccount", back_populates="item", cascade="all, delete-orphan"
     )
     sync_jobs = relationship(
-        "SyncJobs",
+        "SyncJob",
         back_populates="institution_connection",
         cascade="all, delete-orphan",
     )
