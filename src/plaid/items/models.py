@@ -24,9 +24,11 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
+def enum_values(enum_cls: type[StrEnum]) -> list[str]:
+    return [member.value for member in enum_cls]
+
+
 class PlaidItemStatus(StrEnum):
-    # You can also use sqlalchemy Enum directly if you prefer, but this
-    # makes typing a bit nicer.
     ACTIVE = "active"
     REVOKED = "revoked"
     ERROR = "error"
@@ -92,9 +94,8 @@ class PlaidItem(Base):
 
     status: Mapped[PlaidItemStatus] = mapped_column(
         Enum(
-            "active",
-            "revoked",
-            "error",
+            PlaidItemStatus,
+            values_callable=enum_values,
             name="plaid_item_status",
         ),
         nullable=False,
@@ -152,10 +153,8 @@ class PlaidItem(Base):
 
     sync_state: Mapped[PlaidItemSyncState] = mapped_column(
         Enum(
-            "initializing",
-            "in_sync",
-            "syncing",
-            "failed",
+            PlaidItemSyncState,
+            values_callable=enum_values,
             name="plaid_item_sync_state",
         ),
         nullable=False,
@@ -194,7 +193,7 @@ class PlaidItem(Base):
         "PlaidAccount", back_populates="item", cascade="all, delete-orphan"
     )
     sync_jobs = relationship(
-        "SyncJob",
+        "SyncJobs",
         back_populates="institution_connection",
         cascade="all, delete-orphan",
     )
