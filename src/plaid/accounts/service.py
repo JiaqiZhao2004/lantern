@@ -1,8 +1,7 @@
 from ...infrastructure import Session, KMSService, PlaidClient
 from ..accounts.repository import PlaidAccountRepository
 from ..items.models import PlaidItem
-from ..accounts.models import PlaidAccount
-from datetime import datetime
+from datetime import datetime, timezone
 from plaid.model.accounts_get_request import AccountsGetRequest
 from uuid import UUID
 
@@ -53,6 +52,7 @@ class PlaidAccountService:
                     last_balance_update_at = datetime.fromisoformat(
                         str(last_balance_update_raw)
                     )
+                last_balance_update_at = last_balance_update_at.astimezone(timezone.utc)
 
             self.plaid_account_repo.create_or_update(
                 db=db,
