@@ -1,38 +1,30 @@
-from sqlalchemy.orm import Session
+from uuid import UUID
+from datetime import date, datetime, timedelta
+
 from .repository import PlaidItemRepository
 from ...app.membership.repository import MembershipRepository
-from .models import PlaidItem
-from ...app.user.models import User
 from ...exceptions import ConflictError, NotFoundError, ValidationError
-from uuid import UUID
-from plaid.api.plaid_api import PlaidApi
-import plaid
-from plaid.model.item_public_token_exchange_request import (
-    ItemPublicTokenExchangeRequest,
-)
-from datetime import date, datetime, timedelta
-import plaid
-from plaid.model.item_public_token_exchange_request import (
-    ItemPublicTokenExchangeRequest,
-)
-from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
-from plaid.model.link_token_create_request_statements import (
-    LinkTokenCreateRequestStatements,
-)
-from plaid.model.item_get_request import ItemGetRequest
-from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
-
-from src.plaid.items.repository import PlaidItemRepository
+from ...infrastructure import Session, PlaidClient
 from src.infrastructure.plaid.client import (
     PLAID_COUNTRY_CODES,
     PLAID_REDIRECT_URI,
     CountryCode,
     Products,
-    client,
     products,
 )
-from src.plaid.items.models import PlaidItem
+
+
+import plaid
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.link_token_create_request_statements import (
+    LinkTokenCreateRequestStatements,
+)
+from plaid.model.item_public_token_exchange_request import (
+    ItemPublicTokenExchangeRequest,
+)
+from plaid.model.item_get_request import ItemGetRequest
+from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 
 
 class PlaidItemService:
@@ -40,9 +32,11 @@ class PlaidItemService:
         self,
         plaid_item_repo: PlaidItemRepository,
         membership_repo: MembershipRepository,
+        plaid_client: PlaidClient,
     ):
         self.plaid_item_repo = plaid_item_repo
         self.membership_repo = membership_repo
+        self.plaid_client = plaid_client
 
     def create_link_token(self):
         try:
@@ -63,12 +57,12 @@ class PlaidItemService:
                     start_date=date.today() - timedelta(days=30),
                 )
 
-            resp = client.link_token_create(req)
+            resp = self.plaid_client.link_token_create(req)
             return resp.to_dict()
         except plaid.ApiException as e:
             raise NotFoundError()
 
-    def exchange_public_token(self, plaid_client: PlaidApi, link_public_token: str):
+    def exchange_public_token(self, plaid_client: PlaidClient, link_public_token: str):
         try:
             req = ItemPublicTokenExchangeRequest(public_token=link_public_token)
             resp = plaid_client.item_public_token_exchange(req)
@@ -79,7 +73,7 @@ class PlaidItemService:
         plaid_item_id: str = resp["item_id"]
         return plaid_item_id, plaid_access_token
 
-    def get_institution_info(self, plaid_client: PlaidApi, plaid_access_token: str):
+    def get_institution_info(self, plaid_client: PlaidClient, plaid_access_token: str):
         institution_id = None
         institution_name = None
         try:
