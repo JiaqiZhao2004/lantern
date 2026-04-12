@@ -28,14 +28,14 @@ def enum_values(enum_cls: type[StrEnum]) -> list[str]:
 class PlaidItemStatus(StrEnum):
     ACTIVE = "active"
     REVOKED = "revoked"
-    ERROR = "error"
 
 
 class PlaidItemSyncState(StrEnum):
-    INITIALIZING = "initializing"
     IN_SYNC = "in_sync"
     SYNCING = "syncing"
-    FAILED = "failed"
+    RETRY_SCHEDULED = "retry_scheduled"
+    NEEDS_REAUTH = "needs_reauth"
+    DISABLED = "disabled"
 
 
 class PlaidItem(Base):
@@ -96,7 +96,7 @@ class PlaidItem(Base):
             name="plaid_item_status",
         ),
         nullable=False,
-        server_default="active",
+        server_default=PlaidItemStatus.ACTIVE,
     )
 
     # ---- Encrypted access token fields (envelope encryption) ----
@@ -155,7 +155,7 @@ class PlaidItem(Base):
             name="plaid_item_sync_state",
         ),
         nullable=False,
-        server_default="initializing",
+        server_default=PlaidItemSyncState.SYNCING,
         doc="Current sync lifecycle state for the Plaid item",
     )
 
