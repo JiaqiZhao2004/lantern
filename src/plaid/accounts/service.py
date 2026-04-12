@@ -1,9 +1,9 @@
-from ...infrastructure import Session, KMSService, PlaidClient
+from uuid import UUID
+from datetime import datetime, timezone
 from ..accounts.repository import PlaidAccountRepository
 from ..items.models import PlaidItem
-from datetime import datetime, timezone
+from ...infrastructure import Session, KMSService, PlaidClient
 from plaid.model.accounts_get_request import AccountsGetRequest
-from uuid import UUID
 
 
 class PlaidAccountService:
