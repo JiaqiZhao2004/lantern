@@ -11,7 +11,7 @@ copy over postgres-data
 copy over google app secret
 
 ```bash
-uvicorn server:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## docker
