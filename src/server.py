@@ -1,12 +1,14 @@
 # server_fastapi.py
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
-from src import plaid_router, users_router, households_router
+from src.api.routes.households import router as households_router
+from src.api.routes.institution_connections import router as plaid_router
+from src.api.routes.users import router as users_router
 from src.app import AppError
 
 
@@ -27,6 +29,7 @@ async def handle_unexpected_error(_, __):
         status_code=500,
         content={"detail": "Internal server error"},
     )
+
 
 app.add_middleware(
     CORSMiddleware,

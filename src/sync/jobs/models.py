@@ -1,5 +1,6 @@
 # Persistent entities for Database ORM mapping
 from src.infrastructure.db import Base
+from ...plaid.items.models import PlaidItem
 from uuid6 import uuid7
 import uuid
 from datetime import datetime
@@ -142,4 +143,6 @@ class SyncJob(Base):
         nullable=True,
     )
 
-    institution_connection = relationship("PlaidItem", back_populates="sync_jobs")
+    institution_connection: Mapped[PlaidItem] = relationship(
+        "PlaidItem", back_populates="sync_jobs"
+    )

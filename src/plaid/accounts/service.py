@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import datetime, timezone
+from .mapper import plaid_accounts_to_rows
 from ..accounts.repository import PlaidAccountRepository
 from ..items.models import PlaidItem
 from ...infrastructure import Session, KMSService, PlaidClient
@@ -38,40 +38,15 @@ class PlaidAccountService:
         resp = plaid_client.accounts_get(AccountsGetRequest(access_token=access_token))
         accounts = resp["accounts"]
 
-        # 3. Upsert each account
-        for acc in accounts:
-            balances = acc.get("balances", {})
-            plaid_account_id: str = acc["account_id"]
+        # 3. Map Plaid's account shape into plaid_accounts columns
+        account_rows = plaid_accounts_to_rows(accounts)
 
-            last_balance_update_raw = balances.get("last_updated_datetime")
-            last_balance_update_at: datetime | None = None
-            if last_balance_update_raw is not None:
-                if isinstance(last_balance_update_raw, datetime):
-                    last_balance_update_at = last_balance_update_raw
-                else:
-                    last_balance_update_at = datetime.fromisoformat(
-                        str(last_balance_update_raw)
-                    )
-                last_balance_update_at = last_balance_update_at.astimezone(timezone.utc)
-
-            self.plaid_account_repo.create_or_update(
-                db=db,
-                plaid_item_id=item.plaid_item_id,
-                plaid_account_id=plaid_account_id,
-                mask=acc.get("mask"),
-                name=acc.get("name"),
-                official_name=acc.get("official_name"),
-                account_type=str(acc["type"]) if acc.get("type") is not None else None,
-                account_subtype=(
-                    str(acc["subtype"]) if acc.get("subtype") is not None else None
-                ),
-                current_balance=balances.get("current"),
-                available_balance=balances.get("available"),
-                limit_amount=balances.get("limit"),
-                iso_currency_code=balances.get("iso_currency_code"),
-                unofficial_currency_code=balances.get("unofficial_currency_code"),
-                last_balance_update_at=last_balance_update_at,
-            )
+        # 4. Upsert each account
+        self.plaid_account_repo.upsert_many(
+            db=db,
+            item_id=item.id,
+            account_rows=account_rows,
+        )
 
         return len(accounts)
 

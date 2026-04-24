@@ -41,7 +41,7 @@ from plaid.model.statements_list_request import StatementsListRequest
 from plaid.model.statements_download_request import StatementsDownloadRequest
 from plaid.api import plaid_api
 
-from utils import pretty_print_response
+from src.plaid.utils import pretty_print_response
 
 PLAID_CLIENT_ID = os.getenv("PLAID_CLIENT_ID")
 PLAID_SECRET = os.getenv("PLAID_SECRET")
