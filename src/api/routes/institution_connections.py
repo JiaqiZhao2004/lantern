@@ -3,13 +3,9 @@ from fastapi import (
     APIRouter,
     Depends,
     Form,
-    Header,
-    HTTPException,
-    Request,
     Response,
     status,
 )
-from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
 from ..dependencies import (
@@ -25,18 +21,10 @@ from ..dependencies import (
     get_kms_service,
     get_onboarding_orchestrator,
     get_plaid_client,
-    get_plaid_webhook_service,
-    get_plaid_webhook_verifier,
     KMSService,
     PlaidClient,
 )
 from ...exceptions import NotFoundError
-from ...plaid.webhooks import (
-    PlaidWebhookPayload,
-    PlaidWebhookService,
-    PlaidWebhookVerificationError,
-    PlaidWebhookVerifier,
-)
 from ...plaid.onboarding.orchestrator import OnboardingOrchestrator
 
 from ...plaid.items.schema import (
@@ -72,7 +60,7 @@ def add_item(
         get_onboarding_orchestrator
     ),
 ):
-    item = onboarding_orchestrator.onboard_new_item(
+    onboarding_orchestrator.onboard_new_item(
         db=db,
         kms=kms,
         user=user,
@@ -80,36 +68,6 @@ def add_item(
         link_public_token=link_public_token,
     )
     return Response(status_code=status.HTTP_201_CREATED)
-
-
-@router.post("/webhooks", status_code=status.HTTP_202_ACCEPTED)
-async def receive_plaid_webhook(
-    request: Request,
-    plaid_verification: str | None = Header(default=None, alias="Plaid-Verification"),
-    db: Session = Depends(get_db),
-    webhook_verifier: PlaidWebhookVerifier = Depends(get_plaid_webhook_verifier),
-    webhook_service: PlaidWebhookService = Depends(get_plaid_webhook_service),
-):
-    raw_body = await request.body()
-
-    try:
-        webhook_verifier.verify(
-            raw_body=raw_body,
-            plaid_verification=plaid_verification,
-        )
-    except PlaidWebhookVerificationError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
-
-    try:
-        payload = PlaidWebhookPayload.model_validate_json(raw_body)
-    except PydanticValidationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=exc.errors(),
-        )
-
-    webhook_service.dispatch(db=db, payload=payload)
-    return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.get("/items", response_model=GetItemsResponseDTO)

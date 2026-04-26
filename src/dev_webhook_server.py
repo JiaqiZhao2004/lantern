@@ -1,4 +1,3 @@
-# server_fastapi.py
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,11 +5,8 @@ from fastapi.responses import JSONResponse
 
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
-from src.api.routes.households import router as households_router
-from src.api.routes.institution_connections import router as plaid_router
-from src.api.routes.webhooks import router as webhooks_router
-from src.api.routes.users import router as users_router
 from src.app import AppError
+from .api.routes.webhooks import router as webhooks_router
 
 
 app = FastAPI()
@@ -34,13 +30,10 @@ async def handle_unexpected_error(_, __):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(router=plaid_router)
 app.include_router(router=webhooks_router)
-app.include_router(router=users_router)
-app.include_router(router=households_router)
