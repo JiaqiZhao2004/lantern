@@ -34,6 +34,7 @@ class JobStatus(StrEnum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     DEAD_LETTER = "dead_letter"
+    CANCELLED = "cancelled"
 
 
 class SyncErrorType(StrEnum):
