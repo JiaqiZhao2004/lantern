@@ -49,5 +49,7 @@ async def receive_plaid_webhook(
             detail=exc.errors(),
         )
 
-    webhook_service.dispatch(db=db, payload=payload)
+    with db.begin():
+        webhook_service.dispatch(db=db, payload=payload)
+
     return Response(status_code=status.HTTP_202_ACCEPTED)

@@ -81,40 +81,38 @@ class PlaidItemsWebhookService:
         if plaid_item_id is None:
             return None
 
-        with db.begin():
-            plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
-                db=db,
-                plaid_item_id=plaid_item_id,
-            )
-            if plaid_item is None:
-                return None
+        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+            db=db,
+            plaid_item_id=plaid_item_id,
+        )
+        if plaid_item is None:
+            return None
 
-            self.plaid_item_repo.mark_sync_needs_reauth(
-                db=db,
-                plaid_item=plaid_item,
-                error=error,
-            )
-            self.sync_jobs_repo.cancel_queued_or_running_for_connection(
-                db=db,
-                institution_connection_id=plaid_item.id,
-                last_error=error,
-            )
-            return plaid_item
+        self.plaid_item_repo.mark_sync_needs_reauth(
+            db=db,
+            plaid_item=plaid_item,
+            error=error,
+        )
+        self.sync_jobs_repo.cancel_queued_or_running_for_connection(
+            db=db,
+            institution_connection_id=plaid_item.id,
+            last_error=error,
+        )
+        return plaid_item
 
     def _handle_login_repaired(self, db: Session, plaid_item_id: str | None):
         if plaid_item_id is None:
             return None
 
-        with db.begin():
-            plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
-                db=db,
-                plaid_item_id=plaid_item_id,
-            )
-            if plaid_item is None:
-                return None
+        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+            db=db,
+            plaid_item_id=plaid_item_id,
+        )
+        if plaid_item is None:
+            return None
 
-            self.plaid_item_repo.mark_item_active(db=db, plaid_item=plaid_item)
-            self.plaid_item_repo.clear_sync_error(db=db, plaid_item=plaid_item)
+        self.plaid_item_repo.mark_item_active(db=db, plaid_item=plaid_item)
+        self.plaid_item_repo.clear_sync_error(db=db, plaid_item=plaid_item)
 
         return self._enqueue_webhook_sync(db=db, plaid_item_id=plaid_item_id)
 
@@ -122,25 +120,24 @@ class PlaidItemsWebhookService:
         if plaid_item_id is None:
             return None
 
-        with db.begin():
-            plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
-                db=db,
-                plaid_item_id=plaid_item_id,
-            )
-            if plaid_item is None:
-                return None
+        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+            db=db,
+            plaid_item_id=plaid_item_id,
+        )
+        if plaid_item is None:
+            return None
 
-            self.plaid_item_repo.mark_item_revoked_and_disabled(
-                db=db,
-                plaid_item=plaid_item,
-                error="USER_PERMISSION_REVOKED",
-            )
-            self.sync_jobs_repo.cancel_queued_or_running_for_connection(
-                db=db,
-                institution_connection_id=plaid_item.id,
-                last_error="USER_PERMISSION_REVOKED",
-            )
-            return plaid_item
+        self.plaid_item_repo.mark_item_revoked_and_disabled(
+            db=db,
+            plaid_item=plaid_item,
+            error="USER_PERMISSION_REVOKED",
+        )
+        self.sync_jobs_repo.cancel_queued_or_running_for_connection(
+            db=db,
+            institution_connection_id=plaid_item.id,
+            last_error="USER_PERMISSION_REVOKED",
+        )
+        return plaid_item
 
     def _mark_account_revoked(
         self,
@@ -151,16 +148,15 @@ class PlaidItemsWebhookService:
         if plaid_item_id is None or plaid_account_id is None:
             return None
 
-        with db.begin():
-            plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
-                db=db,
-                plaid_item_id=plaid_item_id,
-            )
-            if plaid_item is None:
-                return None
+        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+            db=db,
+            plaid_item_id=plaid_item_id,
+        )
+        if plaid_item is None:
+            return None
 
-            return self.plaid_account_repo.mark_inactive_by_plaid_id(
-                db=db,
-                item_id=plaid_item.id,
-                plaid_account_id=plaid_account_id,
-            )
+        return self.plaid_account_repo.mark_inactive_by_plaid_id(
+            db=db,
+            item_id=plaid_item.id,
+            plaid_account_id=plaid_account_id,
+        )

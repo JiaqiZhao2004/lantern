@@ -42,32 +42,29 @@ class OnboardingOrchestrator:
             plaid_client=plaid_client, plaid_access_token=plaid_access_token
         )
 
-        with db.begin():
-            # 3. Gather user data
-            membership = self.membership_service.get_my_membership(
-                db=db, user_id=user.id
-            )
-            if membership is None:
-                raise NotFoundError()
-            household_id = membership.household_id
+        # 3. Gather user data
+        membership = self.membership_service.get_my_membership(db=db, user_id=user.id)
+        if membership is None:
+            raise NotFoundError()
+        household_id = membership.household_id
 
-            # 4. Persist the PlaidItem
-            item = self.plaid_item_service.plaid_item_repo.create_encrypted(
-                db=db,
-                kms=kms,
-                user=user,
-                household_id=household_id,
-                plaid_item_id=plaid_item_id,
-                plaid_access_token=plaid_access_token,
-                institution_id=institution_id,
-                institution_name=institution_name,
-            )
+        # 4. Persist the PlaidItem
+        item = self.plaid_item_service.plaid_item_repo.create_encrypted(
+            db=db,
+            kms=kms,
+            user=user,
+            household_id=household_id,
+            plaid_item_id=plaid_item_id,
+            plaid_access_token=plaid_access_token,
+            institution_id=institution_id,
+            institution_name=institution_name,
+        )
 
-            # 5. Fetch accounts
-            self.plaid_account_service.sync_accounts_for_item(
-                plaid_client=plaid_client, item=item, db=db, kms=kms
-            )
+        # 5. Fetch accounts
+        self.plaid_account_service.sync_accounts_for_item(
+            plaid_client=plaid_client, item=item, db=db, kms=kms
+        )
 
-            self.sync_jobs_request_service.handle_onboarding(db=db, plaid_item=item)
+        self.sync_jobs_request_service.handle_onboarding(db=db, plaid_item=item)
 
         return item

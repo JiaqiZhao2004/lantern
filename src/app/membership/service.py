@@ -29,12 +29,9 @@ class MembershipService:
         if existing_membership is not None:
             raise ConflictError(detail="User already belongs to a household")
 
-        with db.begin():
-            household_membership = self.membership_repo.create(
-                db=db, user_id=user_id, household_id=household_id, role="member"
-            )
-
-        db.refresh(household_membership)
+        household_membership = self.membership_repo.create(
+            db=db, user_id=user_id, household_id=household_id, role="member"
+        )
         return household_membership
 
     def list_household_members(
@@ -67,17 +64,15 @@ class MembershipService:
         return membership
 
     def leave_household(self, db: Session, user_id: UUID, household_id: UUID) -> None:
-        with db.begin():
+        household = self.household_repo.get_by_id(db=db, household_id=household_id)
+        if household is None:
+            raise NotFoundError(detail="Household not found")
 
-            household = self.household_repo.get_by_id(db=db, household_id=household_id)
-            if household is None:
-                raise NotFoundError(detail="Household not found")
+        membership = self.membership_repo.get_membership(
+            db=db, user_id=user_id, household_id=household_id
+        )
 
-            membership = self.membership_repo.get_membership(
-                db=db, user_id=user_id, household_id=household_id
-            )
+        if membership is None:
+            raise NotFoundError(detail="Membership not found")
 
-            if membership is None:
-                raise NotFoundError(detail="Membership not found")
-
-            self.membership_repo.delete_membership(db=db, membership=membership)
+        self.membership_repo.delete_membership(db=db, membership=membership)
