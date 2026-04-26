@@ -9,11 +9,22 @@ pip install -r requirements.txt
 fill in .env
 copy over postgres-data
 copy over google app secret
+
+```bash
+uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
+```
+
+### setup ngrok webhook server for local dev
+
+```bash
+ngrok http 8001
+```
+
 set `PLAID_WEBHOOK_URL` to your public webhook endpoint, e.g.
 `https://<your-domain>/api/v1/plaid/webhooks`
 
 ```bash
-uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.dev_webhook_server:app --reload --host 0.0.0.0 --port 8001
 ```
 
 ## docker
