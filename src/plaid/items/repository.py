@@ -79,6 +79,14 @@ class PlaidItemRepository:
     def mark_in_sync(self, db: Session, plaid_item: PlaidItem):
         plaid_item.sync_state = PlaidItemSyncState.IN_SYNC
         plaid_item.last_synced_at = datetime.now(timezone.utc)
+        plaid_item.last_sync_error = None
+        db.flush()
+        return plaid_item
+
+    def clear_sync_error(self, db: Session, plaid_item: PlaidItem):
+        plaid_item.sync_state = PlaidItemSyncState.IN_SYNC
+        plaid_item.last_sync_error = None
+        plaid_item.needs_resync = False
         db.flush()
         return plaid_item
 
@@ -108,6 +116,16 @@ class PlaidItemRepository:
 
     def mark_item_revoked(self, db: Session, plaid_item: PlaidItem):
         plaid_item.status = PlaidItemStatus.REVOKED
+        db.flush()
+        return plaid_item
+
+    def mark_item_revoked_and_disabled(
+        self, db: Session, plaid_item: PlaidItem, error: str
+    ):
+        plaid_item.status = PlaidItemStatus.REVOKED
+        plaid_item.sync_state = PlaidItemSyncState.DISABLED
+        plaid_item.needs_resync = False
+        plaid_item.last_sync_error = error
         db.flush()
         return plaid_item
 
