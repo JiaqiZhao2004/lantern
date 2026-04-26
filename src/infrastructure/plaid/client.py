@@ -19,6 +19,7 @@ __all__ = [
     "products",
     "PLAID_COUNTRY_CODES",
     "PLAID_REDIRECT_URI",
+    "PLAID_WEBHOOK_URL",
     "SIGNAL_RULESET_KEY",
 ]
 
@@ -27,6 +28,7 @@ PLAID_SECRET = os.getenv("PLAID_SECRET")
 PLAID_ENV = os.getenv("PLAID_ENV", "sandbox")
 PLAID_PRODUCTS = os.getenv("PLAID_PRODUCTS", "transactions").split(",")
 PLAID_COUNTRY_CODES = os.getenv("PLAID_COUNTRY_CODES", "US").split(",")
+PLAID_WEBHOOK_URL = os.getenv("PLAID_WEBHOOK_URL")
 SIGNAL_RULESET_KEY = os.getenv("SIGNAL_RULESET_KEY", "")
 
 
