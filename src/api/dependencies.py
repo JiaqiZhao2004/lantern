@@ -14,6 +14,7 @@ from src.infrastructure import (
 )
 from src.sync.jobs.repository import SyncJobsRepository
 from src.sync.jobs.request_service import SyncJobsRequestService
+from src.sync.jobs.execution_service import SyncJobsExecutionService
 from src.plaid.onboarding.orchestrator import OnboardingOrchestrator
 from src.plaid.webhooks.items_service import PlaidItemsWebhookService
 from src.plaid.webhooks.service import PlaidWebhookService
@@ -123,6 +124,22 @@ def get_plaid_account_service(
     return PlaidAccountService(plaid_account_repo=plaid_account_repo)
 
 
+def get_transaction_repository():
+    return TransactionRepository()
+
+
+def get_transaction_service(
+    plaid_item_repo: PlaidItemRepository = Depends(get_plaid_item_repository),
+    plaid_account_repo: PlaidAccountRepository = Depends(get_plaid_account_repository),
+    transaction_repo: TransactionRepository = Depends(get_transaction_repository),
+) -> TransactionService:
+    return TransactionService(
+        plaid_item_repo=plaid_item_repo,
+        plaid_account_repo=plaid_account_repo,
+        transaction_repo=transaction_repo,
+    )
+
+
 def get_sync_jobs_repository() -> SyncJobsRepository:
     return SyncJobsRepository()
 
@@ -132,6 +149,16 @@ def get_sync_jobs_request_service(
     sync_jobs_repo: SyncJobsRepository = Depends(get_sync_jobs_repository),
 ) -> SyncJobsRequestService:
     return SyncJobsRequestService(
+        plaid_items_repo=plaid_item_repo,
+        sync_jobs_repo=sync_jobs_repo,
+    )
+
+
+def get_sync_jobs_execution_service(
+    plaid_item_repo: PlaidItemRepository = Depends(get_plaid_item_repository),
+    sync_jobs_repo: SyncJobsRepository = Depends(get_sync_jobs_repository),
+) -> SyncJobsExecutionService:
+    return SyncJobsExecutionService(
         plaid_items_repo=plaid_item_repo,
         sync_jobs_repo=sync_jobs_repo,
     )
