@@ -7,6 +7,7 @@ from ..items.repository import PlaidItem, PlaidItemRepository
 from ..accounts.mapper import plaid_accounts_to_rows
 from ..accounts.repository import PlaidAccountRepository
 from ...infrastructure import Session, PlaidClient, KMSService
+from ...exceptions import InternalError
 import plaid
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 
@@ -43,19 +44,7 @@ def transactions_sync(plaid_client: PlaidClient, cursor: str, access_token: str)
             "next_cursor": cursor,
         }
     except plaid.ApiException as e:
-        return format_error(e)
-
-
-def format_error(e: plaid.ApiException) -> Dict[str, Any]:
-    response = json.loads(str(e.body))
-    return {
-        "error": {
-            "status_code": e.status,
-            "display_message": response.get("error_message"),
-            "error_code": response.get("error_code"),
-            "error_type": response.get("error_type"),
-        }
-    }
+        raise InternalError()
 
 
 class TransactionService:

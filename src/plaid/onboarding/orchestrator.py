@@ -4,6 +4,7 @@ from ...app.user.models import User
 from ...app.membership.service import MembershipService
 from ..items.service import PlaidItemService
 from ..accounts.service import PlaidAccountService
+from ...sync.jobs.request_service import SyncJobsRequestService
 from ...exceptions import ConflictError, NotFoundError, ValidationError
 
 
@@ -14,10 +15,12 @@ class OnboardingOrchestrator:
         plaid_item_service: PlaidItemService,
         plaid_account_service: PlaidAccountService,
         membership_service: MembershipService,
+        sync_jobs_request_service: SyncJobsRequestService,
     ) -> None:
         self.plaid_item_service = plaid_item_service
         self.plaid_account_service = plaid_account_service
         self.membership_service = membership_service
+        self.sync_jobs_request_service = sync_jobs_request_service
 
     def onboard_new_item(
         self,
@@ -34,33 +37,37 @@ class OnboardingOrchestrator:
             )
         )
 
-        # 2. Gather user data
-        membership = self.membership_service.get_my_membership(db=db, user_id=user.id)
-        if membership is None:
-            raise NotFoundError()
-        household_id = membership.household_id
-
-        # 3. Get institution_id and institution_name
+        # 2. Get institution_id and institution_name
         institution_id, institution_name = self.plaid_item_service.get_institution_info(
             plaid_client=plaid_client, plaid_access_token=plaid_access_token
         )
 
-        # 4. Persist the PlaidItem
-        item = self.plaid_item_service.plaid_item_repo.create_encrypted(
-            db=db,
-            kms=kms,
-            user=user,
-            household_id=household_id,
-            plaid_item_id=plaid_item_id,
-            plaid_access_token=plaid_access_token,
-            institution_id=institution_id,
-            institution_name=institution_name,
-        )
+        with db.begin():
+            # 3. Gather user data
+            membership = self.membership_service.get_my_membership(
+                db=db, user_id=user.id
+            )
+            if membership is None:
+                raise NotFoundError()
+            household_id = membership.household_id
 
-        # 5. Fetch accounts
-        self.plaid_account_service.sync_accounts_for_item(
-            plaid_client=plaid_client, item=item, db=db, kms=kms
-        )
+            # 4. Persist the PlaidItem
+            item = self.plaid_item_service.plaid_item_repo.create_encrypted(
+                db=db,
+                kms=kms,
+                user=user,
+                household_id=household_id,
+                plaid_item_id=plaid_item_id,
+                plaid_access_token=plaid_access_token,
+                institution_id=institution_id,
+                institution_name=institution_name,
+            )
 
-        # TODO 6. add initial sync task to table
-        # TODO 7. enqueue initial sync task
+            # 5. Fetch accounts
+            self.plaid_account_service.sync_accounts_for_item(
+                plaid_client=plaid_client, item=item, db=db, kms=kms
+            )
+
+            self.sync_jobs_request_service.handle_onboarding(db=db, plaid_item=item)
+
+        return item

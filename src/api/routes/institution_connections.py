@@ -40,7 +40,6 @@ from ...plaid.webhooks import (
 from ...plaid.onboarding.orchestrator import OnboardingOrchestrator
 
 from ...plaid.items.schema import (
-    AddItemResponseDTO,
     CreateLinkTokenResponseDTO,
     GetItemsResponseDTO,
     PlaidItemSimpleDTO,
@@ -60,6 +59,27 @@ def create_link_token(
     plaid_item_service: PlaidItemService = Depends(get_plaid_item_service),
 ):
     return plaid_item_service.create_link_token()
+
+
+@router.post("/item", status_code=status.HTTP_201_CREATED)
+def add_item(
+    link_public_token: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    kms: KMSService = Depends(get_kms_service),
+    plaid_client: PlaidClient = Depends(get_plaid_client),
+    onboarding_orchestrator: OnboardingOrchestrator = Depends(
+        get_onboarding_orchestrator
+    ),
+):
+    item = onboarding_orchestrator.onboard_new_item(
+        db=db,
+        kms=kms,
+        user=user,
+        plaid_client=plaid_client,
+        link_public_token=link_public_token,
+    )
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.post("/webhooks", status_code=status.HTTP_202_ACCEPTED)

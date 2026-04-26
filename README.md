@@ -9,6 +9,8 @@ pip install -r requirements.txt
 fill in .env
 copy over postgres-data
 copy over google app secret
+set `PLAID_WEBHOOK_URL` to your public webhook endpoint, e.g.
+`https://<your-domain>/api/v1/plaid/webhooks`
 
 ```bash
 uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
