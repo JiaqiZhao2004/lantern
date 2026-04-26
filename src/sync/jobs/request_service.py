@@ -26,7 +26,9 @@ class SyncJobsRequestService:
 
         # If the item is attempting sync, update needs_resync = True and return
         # this is because the current sync may miss the latest transactions
-        if self.plaid_items_repo.is_syncing(plaid_item):
+        if job_type != JobType.ONBOARDING and self.plaid_items_repo.is_syncing(
+            plaid_item
+        ):
             existing_job = (
                 self.sync_jobs_repo.get_queued_or_running_job_by_connection_id(
                     db=db, institution_connection_id=plaid_item.id
