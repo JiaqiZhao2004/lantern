@@ -135,3 +135,21 @@ class PlaidAccountRepository:
             .order_by(PlaidItem.created_at, PlaidAccount.created_at)
             .all()
         )
+
+    def mark_inactive_by_plaid_id(
+        self,
+        db: Session,
+        item_id: UUID,
+        plaid_account_id: str,
+    ):
+        account = self.get_by_id(
+            db=db,
+            item_id=item_id,
+            plaid_account_id=plaid_account_id,
+        )
+        if account is None:
+            return None
+
+        account.is_active = False
+        db.flush()
+        return account

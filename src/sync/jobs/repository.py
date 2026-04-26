@@ -89,3 +89,33 @@ class SyncJobsRepository:
         job.last_error_type = last_error_type
         db.flush()
         return job
+
+    def set_cancelled(
+        self,
+        db: Session,
+        job: SyncJob,
+        last_error: str | None = None,
+    ):
+        job.status = JobStatus.CANCELLED
+        job.finished_at = datetime.now(timezone.utc)
+        job.last_error = last_error
+        db.flush()
+        return job
+
+    def cancel_queued_or_running_for_connection(
+        self,
+        db: Session,
+        institution_connection_id: UUID,
+        last_error: str | None = None,
+    ):
+        jobs = (
+            db.query(SyncJob)
+            .filter(
+                SyncJob.institution_connection_id == institution_connection_id,
+                SyncJob.status.in_([JobStatus.QUEUED, JobStatus.RUNNING]),
+            )
+            .all()
+        )
+        for job in jobs:
+            self.set_cancelled(db=db, job=job, last_error=last_error)
+        return jobs

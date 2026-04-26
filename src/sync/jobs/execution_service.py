@@ -34,15 +34,33 @@ class SyncJobsExecutionService:
         self.sync_jobs_repo = sync_jobs_repo
 
     def claim_next_due_job(self, db: Session):
-        job = self.sync_jobs_repo.claim_next_due_job(db=db)
-        if job is None:
-            return None
-        job = self.sync_jobs_repo.set_running(db=db, job=job)
-        self.plaid_items_repo.mark_syncing(db=db, plaid_item=job.institution_connection)
-        return job
+        while True:
+            job = self.sync_jobs_repo.claim_next_due_job(db=db)
+            if job is None:
+                return None
+
+            plaid_item = job.institution_connection
+            if not self.plaid_items_repo.is_active(
+                plaid_item
+            ) or self.plaid_items_repo.is_unable_to_sync(plaid_item):
+                self.sync_jobs_repo.set_cancelled(
+                    db=db,
+                    job=job,
+                    last_error="Connection is not eligible for sync",
+                )
+                continue
+
+            job = self.sync_jobs_repo.set_running(db=db, job=job)
+            self.plaid_items_repo.mark_syncing(db=db, plaid_item=plaid_item)
+            return job
 
     def handle_success(self, db: Session, job: SyncJob, plaid_item: PlaidItem):
         self.sync_jobs_repo.set_succeeded(db=db, job=job)
+        if not self.plaid_items_repo.is_active(
+            plaid_item
+        ) or self.plaid_items_repo.is_unable_to_sync(plaid_item):
+            return
+
         self.plaid_items_repo.mark_in_sync(db=db, plaid_item=plaid_item)
         if plaid_item.needs_resync:
             self.sync_jobs_repo.create(

@@ -9,7 +9,16 @@ from src.infrastructure import (
     get_firebase_identity,
     get_kms_service,
     get_plaid_client,
+    KMSService,
+    PlaidClient,
 )
+from src.sync.jobs.repository import SyncJobsRepository
+from src.sync.jobs.request_service import SyncJobsRequestService
+from src.plaid.onboarding.orchestrator import OnboardingOrchestrator
+from src.plaid.webhooks.items_service import PlaidItemsWebhookService
+from src.plaid.webhooks.service import PlaidWebhookService
+from src.plaid.webhooks.transactions_service import PlaidTransactionsWebhookService
+from src.plaid.webhooks.verifier import PlaidWebhookVerifier
 
 
 def get_user_repository() -> UserRepository:
@@ -95,9 +104,12 @@ def get_plaid_item_repository():
 def get_plaid_item_service(
     plaid_item_repo: PlaidItemRepository = Depends(get_plaid_item_repository),
     membership_repo: MembershipRepository = Depends(get_membership_repository),
+    plaid_client: PlaidClient = Depends(get_plaid_client),
 ) -> PlaidItemService:
     return PlaidItemService(
-        plaid_item_repo=plaid_item_repo, membership_repo=membership_repo
+        plaid_item_repo=plaid_item_repo,
+        membership_repo=membership_repo,
+        plaid_client=plaid_client,
     )
 
 
@@ -109,3 +121,79 @@ def get_plaid_account_service(
     plaid_account_repo: PlaidAccountRepository = Depends(get_plaid_account_repository),
 ) -> PlaidAccountService:
     return PlaidAccountService(plaid_account_repo=plaid_account_repo)
+
+
+def get_sync_jobs_repository() -> SyncJobsRepository:
+    return SyncJobsRepository()
+
+
+def get_sync_jobs_request_service(
+    plaid_item_repo: PlaidItemRepository = Depends(get_plaid_item_repository),
+    sync_jobs_repo: SyncJobsRepository = Depends(get_sync_jobs_repository),
+) -> SyncJobsRequestService:
+    return SyncJobsRequestService(
+        plaid_items_repo=plaid_item_repo,
+        sync_jobs_repo=sync_jobs_repo,
+    )
+
+
+def get_onboarding_orchestrator(
+    plaid_item_service: PlaidItemService = Depends(get_plaid_item_service),
+    plaid_account_service: PlaidAccountService = Depends(get_plaid_account_service),
+    membership_service: MembershipService = Depends(get_membership_service),
+    sync_jobs_request_service: SyncJobsRequestService = Depends(
+        get_sync_jobs_request_service
+    ),
+) -> OnboardingOrchestrator:
+    return OnboardingOrchestrator(
+        plaid_item_service=plaid_item_service,
+        plaid_account_service=plaid_account_service,
+        membership_service=membership_service,
+        sync_jobs_request_service=sync_jobs_request_service,
+    )
+
+
+def get_plaid_webhook_verifier(
+    plaid_client: PlaidClient = Depends(get_plaid_client),
+) -> PlaidWebhookVerifier:
+    return PlaidWebhookVerifier(plaid_client=plaid_client)
+
+
+def get_plaid_transactions_webhook_service(
+    sync_jobs_request_service: SyncJobsRequestService = Depends(
+        get_sync_jobs_request_service
+    ),
+) -> PlaidTransactionsWebhookService:
+    return PlaidTransactionsWebhookService(
+        sync_jobs_request_service=sync_jobs_request_service
+    )
+
+
+def get_plaid_items_webhook_service(
+    plaid_item_repo: PlaidItemRepository = Depends(get_plaid_item_repository),
+    plaid_account_repo: PlaidAccountRepository = Depends(get_plaid_account_repository),
+    sync_jobs_request_service: SyncJobsRequestService = Depends(
+        get_sync_jobs_request_service
+    ),
+    sync_jobs_repo: SyncJobsRepository = Depends(get_sync_jobs_repository),
+) -> PlaidItemsWebhookService:
+    return PlaidItemsWebhookService(
+        plaid_item_repo=plaid_item_repo,
+        plaid_account_repo=plaid_account_repo,
+        sync_jobs_request_service=sync_jobs_request_service,
+        sync_jobs_repo=sync_jobs_repo,
+    )
+
+
+def get_plaid_webhook_service(
+    transactions_webhook_service: PlaidTransactionsWebhookService = Depends(
+        get_plaid_transactions_webhook_service
+    ),
+    items_webhook_service: PlaidItemsWebhookService = Depends(
+        get_plaid_items_webhook_service
+    ),
+) -> PlaidWebhookService:
+    return PlaidWebhookService(
+        transactions_webhook_service=transactions_webhook_service,
+        items_webhook_service=items_webhook_service,
+    )

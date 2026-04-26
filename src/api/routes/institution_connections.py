@@ -1,11 +1,16 @@
-import os
-import json
-import time
-from datetime import date, timedelta
 from uuid import UUID
-from fastapi import APIRouter, Depends, Form, HTTPException
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session, selectinload
+from fastapi import (
+    APIRouter,
+    Depends,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
+from pydantic import ValidationError as PydanticValidationError
+from sqlalchemy.orm import Session
 
 from ..dependencies import (
     get_db,
@@ -17,8 +22,22 @@ from ..dependencies import (
     get_membership_service,
     PlaidAccountService,
     get_plaid_account_service,
+    get_kms_service,
+    get_onboarding_orchestrator,
+    get_plaid_client,
+    get_plaid_webhook_service,
+    get_plaid_webhook_verifier,
+    KMSService,
+    PlaidClient,
 )
 from ...exceptions import NotFoundError
+from ...plaid.webhooks import (
+    PlaidWebhookPayload,
+    PlaidWebhookService,
+    PlaidWebhookVerificationError,
+    PlaidWebhookVerifier,
+)
+from ...plaid.onboarding.orchestrator import OnboardingOrchestrator
 
 from ...plaid.items.schema import (
     AddItemResponseDTO,
@@ -32,8 +51,6 @@ from ...plaid.accounts.schema import (
     AccountSimpleDTO,
 )
 
-from src.app.user.models import User
-
 # ---------- Routes ----------
 router = APIRouter(prefix="/api/v1/plaid", tags=["plaid"])
 
@@ -43,6 +60,36 @@ def create_link_token(
     plaid_item_service: PlaidItemService = Depends(get_plaid_item_service),
 ):
     return plaid_item_service.create_link_token()
+
+
+@router.post("/webhooks", status_code=status.HTTP_202_ACCEPTED)
+async def receive_plaid_webhook(
+    request: Request,
+    plaid_verification: str | None = Header(default=None, alias="Plaid-Verification"),
+    db: Session = Depends(get_db),
+    webhook_verifier: PlaidWebhookVerifier = Depends(get_plaid_webhook_verifier),
+    webhook_service: PlaidWebhookService = Depends(get_plaid_webhook_service),
+):
+    raw_body = await request.body()
+
+    try:
+        webhook_verifier.verify(
+            raw_body=raw_body,
+            plaid_verification=plaid_verification,
+        )
+    except PlaidWebhookVerificationError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+
+    try:
+        payload = PlaidWebhookPayload.model_validate_json(raw_body)
+    except PydanticValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.errors(),
+        )
+
+    webhook_service.dispatch(db=db, payload=payload)
+    return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.get("/items", response_model=GetItemsResponseDTO)
