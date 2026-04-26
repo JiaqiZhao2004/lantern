@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from .repository import PlaidItemRepository
 from ...app.membership.repository import MembershipRepository
-from ...exceptions import ConflictError, NotFoundError, ValidationError
+from ...exceptions import ConflictError, NotFoundError, ValidationError, InternalError
 from ...infrastructure import Session, PlaidClient
 from src.infrastructure.plaid.client import (
     PLAID_COUNTRY_CODES,
@@ -64,14 +64,14 @@ class PlaidItemService:
             resp = self.plaid_client.link_token_create(req)
             return resp.to_dict()
         except plaid.ApiException as e:
-            raise NotFoundError()
+            raise InternalError()
 
     def exchange_public_token(self, plaid_client: PlaidClient, link_public_token: str):
         try:
             req = ItemPublicTokenExchangeRequest(public_token=link_public_token)
             resp = plaid_client.item_public_token_exchange(req)
         except plaid.ApiException as e:
-            raise ValidationError()
+            raise InternalError()
 
         plaid_access_token: str = resp["access_token"]
         plaid_item_id: str = resp["item_id"]

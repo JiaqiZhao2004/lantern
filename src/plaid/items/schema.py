@@ -21,20 +21,6 @@ class CreateLinkTokenResponseDTO(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# POST /item
-# ---------------------------------------------------------------------------
-
-
-class AddItemResponseDTO(BaseModel):
-    """Confirmation returned after a public token is successfully exchanged."""
-
-    item_id: str = Field(
-        ..., description="Plaid item_id for the newly linked institution."
-    )
-    status: str = Field("ok", description="Always 'ok' on success.")
-
-
-# ---------------------------------------------------------------------------
 # GET /items
 # ---------------------------------------------------------------------------
 

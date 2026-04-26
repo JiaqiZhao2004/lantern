@@ -20,3 +20,8 @@ class ConflictError(AppError):
 class ValidationError(AppError):
     status_code = 422
     detail = "Validation failed"
+
+
+class InternalError(AppError):
+    status_code = 500
+    detail = "Internal error"
