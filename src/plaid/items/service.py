@@ -8,6 +8,7 @@ from ...infrastructure import Session, PlaidClient
 from src.infrastructure.plaid.client import (
     PLAID_COUNTRY_CODES,
     PLAID_REDIRECT_URI,
+    PLAID_WEBHOOK_URL,
     CountryCode,
     Products,
     products,
@@ -50,6 +51,9 @@ class PlaidItemService:
 
             if PLAID_REDIRECT_URI is not None:
                 req["redirect_uri"] = PLAID_REDIRECT_URI  # type: ignore
+
+            if PLAID_WEBHOOK_URL:
+                req["webhook"] = PLAID_WEBHOOK_URL  # type: ignore
 
             if Products("statements") in products:
                 req["statements"] = LinkTokenCreateRequestStatements(  # type: ignore
