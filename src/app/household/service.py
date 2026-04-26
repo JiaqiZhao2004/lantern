@@ -26,13 +26,10 @@ class HouseholdService:
         if existing_membership is not None:
             raise ConflictError(detail="User already belongs to a household")
 
-        with db.begin():
-            # create household and create household membership: creator as admin
-            household = self.household_repo.create(db=db, name=normalized_name)
-            self.membership_repo.create(
-                db=db, user_id=user_id, household_id=household.id, role="admin"
-            )
-        db.refresh(household)
+        household = self.household_repo.create(db=db, name=normalized_name)
+        self.membership_repo.create(
+            db=db, user_id=user_id, household_id=household.id, role="admin"
+        )
         return household
 
     def get_my_household(self, db: Session, user_id: UUID) -> Household:

@@ -24,5 +24,4 @@ class UserService:
 
         # Create user row owned by this token identity
         db_user = self.user_repo.create_user(db, firebase_uid, email)
-        db.commit()
         return db_user

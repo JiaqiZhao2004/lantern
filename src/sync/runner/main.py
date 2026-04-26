@@ -10,9 +10,10 @@ def process(
     sync_jobs_execution_service: SyncJobsExecutionService,
     transaction_service: TransactionService,
 ):
-    with db.begin():
+    try:
         job = sync_jobs_execution_service.claim_next_due_job(db=db)
         if job is None:
+            db.commit()
             return
 
         plaid_item = job.institution_connection
@@ -29,3 +30,8 @@ def process(
             sync_jobs_execution_service.handle_success(
                 db=db, job=job, plaid_item=plaid_item
             )
+
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise

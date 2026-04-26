@@ -17,4 +17,12 @@ def get_or_create_me(
     firebase_identity: dict = Depends(get_firebase_identity),
     user_service: UserService = Depends(get_user_service),
 ):
-    return user_service.get_or_create_me(db=db, firebase_identity=firebase_identity)
+    try:
+        user = user_service.get_or_create_me(db=db, firebase_identity=firebase_identity)
+        db.commit()
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        raise
+
+    return user

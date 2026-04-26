@@ -26,11 +26,18 @@ def create_household(
     ctx: RequestContext = Depends(get_request_context),
     household_service: HouseholdService = Depends(get_household_service),
 ):
-    household = household_service.create_household(
-        db=ctx.db,
-        user_id=ctx.user.id,
-        household_name=request.name,
-    )
+    try:
+        household = household_service.create_household(
+            db=ctx.db,
+            user_id=ctx.user.id,
+            household_name=request.name,
+        )
+        ctx.db.commit()
+        ctx.db.refresh(household)
+    except Exception:
+        ctx.db.rollback()
+        raise
+
     return household
 
 
@@ -64,11 +71,18 @@ def join_household(
     ctx: RequestContext = Depends(get_request_context),
     membership_service: MembershipService = Depends(get_membership_service),
 ):
-    membership = membership_service.join_household(
-        db=ctx.db,
-        user_id=ctx.user.id,
-        household_id=household_id,
-    )
+    try:
+        membership = membership_service.join_household(
+            db=ctx.db,
+            user_id=ctx.user.id,
+            household_id=household_id,
+        )
+        ctx.db.commit()
+        ctx.db.refresh(membership)
+    except Exception:
+        ctx.db.rollback()
+        raise
+
     return membership
 
 
@@ -92,9 +106,15 @@ def leave_household(
     ctx: RequestContext = Depends(get_request_context),
     membership_service: MembershipService = Depends(get_membership_service),
 ):
-    membership_service.leave_household(
-        db=ctx.db,
-        user_id=ctx.user.id,
-        household_id=household_id,
-    )
+    try:
+        membership_service.leave_household(
+            db=ctx.db,
+            user_id=ctx.user.id,
+            household_id=household_id,
+        )
+        ctx.db.commit()
+    except Exception:
+        ctx.db.rollback()
+        raise
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

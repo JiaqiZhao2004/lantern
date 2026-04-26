@@ -60,13 +60,19 @@ def add_item(
         get_onboarding_orchestrator
     ),
 ):
-    onboarding_orchestrator.onboard_new_item(
-        db=db,
-        kms=kms,
-        user=user,
-        plaid_client=plaid_client,
-        link_public_token=link_public_token,
-    )
+    try:
+        onboarding_orchestrator.onboard_new_item(
+            db=db,
+            kms=kms,
+            user=user,
+            plaid_client=plaid_client,
+            link_public_token=link_public_token,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     return Response(status_code=status.HTTP_201_CREATED)
 
 
