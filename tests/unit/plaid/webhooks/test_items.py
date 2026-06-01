@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
-from src.plaid.webhooks.items_service import PlaidItemsWebhookService
-from src.plaid.webhooks.schema import PlaidWebhookPayload
+from src.modules.plaid_webhooks.items_service import PlaidItemsWebhookService
+from src.modules.plaid_webhooks.schema import PlaidWebhookPayload
 
 
 class FakeDb:

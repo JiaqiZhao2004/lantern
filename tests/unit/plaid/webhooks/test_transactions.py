@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
-from src.plaid.webhooks.schema import PlaidWebhookPayload
-from src.plaid.webhooks.transactions_service import PlaidTransactionsWebhookService
+from src.modules.plaid_webhooks.schema import PlaidWebhookPayload
+from src.modules.plaid_webhooks.transactions_service import PlaidTransactionsWebhookService
 
 
 class FakeSyncJobsRequestService:

@@ -3,7 +3,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import Any
 from .models import PlaidAccount
-from ..items.models import PlaidItem
+from ..plaid_items.models import PlaidItem
 
 _UNSET = object()
 

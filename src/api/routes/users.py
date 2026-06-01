@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 
-from src.app.user import schemas
+from src.modules.user import schemas
 from ..dependencies import (
     get_user_service,
     get_firebase_identity,
     get_db,
 )
-from src.app.user.service import UserService
+from src.modules.user.service import UserService
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 

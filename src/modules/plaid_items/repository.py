@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from uuid import UUID
 from .models import PlaidItem, PlaidItemSyncState, PlaidItemStatus
-from ...app.user.models import User
+from ..user.models import User
 from ...infrastructure.aws.kms import KMSService
 
 

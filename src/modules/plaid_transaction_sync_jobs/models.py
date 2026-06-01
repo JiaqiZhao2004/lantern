@@ -1,6 +1,6 @@
 # Persistent entities for Database ORM mapping
 from src.infrastructure.db import Base
-from ...plaid.items.models import PlaidItem
+from ..plaid_items.models import PlaidItem
 from uuid6 import uuid7
 import uuid
 from datetime import datetime

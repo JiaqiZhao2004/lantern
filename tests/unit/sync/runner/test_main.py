@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from src.sync.runner.main import process
+from src.transactions_sync_runner import process
 
 
 class FakeDb:

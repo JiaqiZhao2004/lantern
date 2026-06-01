@@ -1,11 +1,11 @@
 from plaid.api.plaid_api import PlaidApi
-from ...infrastructure import Session, KMSService
-from ...app.user.models import User
-from ...app.membership.service import MembershipService
-from ..items.service import PlaidItemService
-from ..accounts.service import PlaidAccountService
-from ...sync.jobs.request_service import SyncJobsRequestService
-from ...exceptions import ConflictError, NotFoundError, ValidationError
+from src.infrastructure import Session, KMSService
+from src.modules.user.models import User
+from src.modules.household_membership.service import MembershipService
+from src.modules.plaid_items.service import PlaidItemService
+from src.modules.plaid_accounts.service import PlaidAccountService
+from src.modules.plaid_transaction_sync_jobs.request_service import SyncJobsRequestService
+from src.exceptions import ConflictError, NotFoundError, ValidationError
 
 
 class OnboardingOrchestrator:
@@ -65,6 +65,9 @@ class OnboardingOrchestrator:
             plaid_client=plaid_client, item=item, db=db, kms=kms
         )
 
-        self.sync_jobs_request_service.handle_onboarding(db=db, plaid_item=item)
+        # 6. Create first sync job
+        self.sync_jobs_request_service.create_onboarding_sync_job(
+            db=db, plaid_item=item
+        )
 
         return item

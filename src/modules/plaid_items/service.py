@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import date, datetime, timedelta
 
 from .repository import PlaidItemRepository
-from ...app.membership.repository import MembershipRepository
+from ..household_membership.repository import MembershipRepository
 from ...exceptions import ConflictError, NotFoundError, ValidationError, InternalError
 from ...infrastructure import Session, PlaidClient
 from src.infrastructure.plaid.client import (
@@ -104,3 +104,6 @@ class PlaidItemService:
         return self.plaid_item_repo.list_household_items(
             db=db, household_id=household_id
         )
+
+
+    

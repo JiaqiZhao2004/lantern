@@ -3,9 +3,9 @@ import json
 from typing import Dict, Any
 from .mapper import plaid_transaction_to_row
 from .repository import TransactionRepository
-from ..items.repository import PlaidItem, PlaidItemRepository
-from ..accounts.mapper import plaid_accounts_to_rows
-from ..accounts.repository import PlaidAccountRepository
+from ..plaid_items.repository import PlaidItem, PlaidItemRepository
+from ..plaid_accounts.mapper import plaid_accounts_to_rows
+from ..plaid_accounts.repository import PlaidAccountRepository
 from ...infrastructure import Session, PlaidClient, KMSService
 from ...exceptions import InternalError
 import plaid

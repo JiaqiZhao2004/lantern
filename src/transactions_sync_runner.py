@@ -10,12 +10,12 @@ load_dotenv()
 from src.infrastructure import KMSService, PlaidClient, Session
 from src.infrastructure import get_kms_service, get_plaid_client
 from src.infrastructure.db.database import SessionLocal
-from src.plaid.accounts.repository import PlaidAccountRepository
-from src.plaid.items.repository import PlaidItemRepository
-from src.plaid.transactions.repository import TransactionRepository
-from src.plaid.transactions.service import TransactionService
-from src.sync.jobs.execution_service import SyncJobsExecutionService
-from src.sync.jobs.repository import SyncJobsRepository
+from src.modules.plaid_accounts.repository import PlaidAccountRepository
+from src.modules.plaid_items.repository import PlaidItemRepository
+from src.modules.plaid_transactions.repository import TransactionRepository
+from src.modules.plaid_transactions.service import TransactionService
+from src.modules.plaid_transaction_sync_jobs.execution_service import SyncJobsExecutionService
+from src.modules.plaid_transaction_sync_jobs.repository import SyncJobsRepository
 
 logger = logging.getLogger(__name__)
 

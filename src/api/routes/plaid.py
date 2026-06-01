@@ -25,14 +25,14 @@ from ..dependencies import (
     PlaidClient,
 )
 from ...exceptions import NotFoundError
-from ...plaid.onboarding.orchestrator import OnboardingOrchestrator
+from ...workflows.onboarding import OnboardingOrchestrator
 
-from ...plaid.items.schema import (
+from ...modules.plaid_items.schema import (
     CreateLinkTokenResponseDTO,
     GetItemsResponseDTO,
     PlaidItemSimpleDTO,
 )
-from ...plaid.accounts.schema import (
+from ...modules.plaid_accounts.schema import (
     GetAccountsResponseDTO,
     ItemWithAccountsDTO,
     AccountSimpleDTO,
@@ -158,7 +158,9 @@ def get_household_accounts(
             )
             item_order.append(item.id)
 
-        items_by_id[item.id].accounts.append(AccountSimpleDTO.model_validate(account))
+        items_by_id[item.id].accounts.append(
+            AccountSimpleDTO.model_validate(account)
+        )
 
     for item_id in item_order:
         items_by_id[item_id].accounts.sort(

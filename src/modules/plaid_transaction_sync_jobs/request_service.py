@@ -1,6 +1,6 @@
 from uuid import UUID
 from ...infrastructure import Session
-from ...plaid.items.repository import PlaidItemRepository, PlaidItem
+from ..plaid_items.repository import PlaidItemRepository, PlaidItem
 from .repository import SyncJobsRepository, SyncJob, JobType, JobStatus
 from ...exceptions import ConflictError, NotFoundError, ValidationError
 
@@ -56,12 +56,12 @@ class SyncJobsRequestService:
         db.refresh(job)
         return job
 
-    def handle_onboarding(self, db: Session, plaid_item: PlaidItem):
+    def create_onboarding_sync_job(self, db: Session, plaid_item: PlaidItem):
         return self._create_sync_job(
             db=db, plaid_item=plaid_item, job_type=JobType.ONBOARDING
         )
 
-    def handle_webhook(self, db: Session, plaid_item_id: str):
+    def create_webhook_sync_job(self, db: Session, plaid_item_id: str):
         plaid_item = self.plaid_items_repo.get_by_plaid_item_id(
             db=db, plaid_item_id=plaid_item_id
         )

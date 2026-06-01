@@ -12,7 +12,7 @@ from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
 from ..dependencies import get_db, get_plaid_webhook_service, get_plaid_webhook_verifier
-from ...plaid.webhooks import (
+from ...modules.plaid_webhooks import (
     PlaidWebhookPayload,
     PlaidWebhookService,
     PlaidWebhookVerificationError,

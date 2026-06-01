@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from .repository import HouseholdRepository
-from ..membership.repository import MembershipRepository
+from ..household_membership.repository import MembershipRepository
 from .models import Household
 from ...exceptions import ConflictError, NotFoundError, ValidationError
 from uuid import UUID

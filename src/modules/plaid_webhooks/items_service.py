@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
 
 from src.exceptions import NotFoundError
-from src.plaid.accounts.repository import PlaidAccountRepository
-from src.plaid.items.repository import PlaidItemRepository
-from src.sync.jobs.repository import SyncJobsRepository
-from src.sync.jobs.request_service import SyncJobsRequestService
+from src.modules.plaid_accounts.repository import PlaidAccountRepository
+from src.modules.plaid_items.repository import PlaidItemRepository
+from src.modules.plaid_transaction_sync_jobs.repository import SyncJobsRepository
+from src.modules.plaid_transaction_sync_jobs.request_service import (
+    SyncJobsRequestService,
+)
 
 from .schema import PlaidWebhookPayload
 
@@ -65,7 +67,7 @@ class PlaidItemsWebhookService:
             return None
 
         try:
-            return self.sync_jobs_request_service.handle_webhook(
+            return self.sync_jobs_request_service.create_webhook_sync_job(
                 db=db,
                 plaid_item_id=plaid_item_id,
             )

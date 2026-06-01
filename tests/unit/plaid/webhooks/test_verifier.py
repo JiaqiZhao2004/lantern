@@ -6,7 +6,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from jwt.utils import base64url_encode
 
-from src.plaid.webhooks.verifier import (
+from src.modules.plaid_webhooks.verifier import (
     PlaidWebhookVerificationError,
     PlaidWebhookVerifier,
 )

@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
-from src.sync.jobs.models import JobStatus, JobType
-from src.sync.jobs.request_service import SyncJobsRequestService
+from src.modules.plaid_transaction_sync_jobs.models import JobStatus, JobType
+from src.modules.plaid_transaction_sync_jobs.request_service import (
+    SyncJobsRequestService,
+)
 
 
 class FakeDb:
@@ -82,7 +84,7 @@ def test_webhook_creates_job_for_idle_item():
         sync_jobs_repo=sync_repo,
     )
 
-    job = service.handle_webhook(db=FakeDb(), plaid_item_id="item-1")
+    job = service.create_webhook_sync_job(db=FakeDb(), plaid_item_id="item-1")
 
     assert job.job_type == JobType.WEBHOOK
     assert item_repo.marked_syncing is True
@@ -92,15 +94,13 @@ def test_webhook_creates_job_for_idle_item():
 def test_duplicate_webhook_while_queued_is_ignored():
     item = SimpleNamespace(id=uuid4(), syncing=True, needs_resync=False)
     item_repo = FakePlaidItemRepo(item=item)
-    sync_repo = FakeSyncJobsRepo(
-        existing_job=SimpleNamespace(status=JobStatus.QUEUED)
-    )
+    sync_repo = FakeSyncJobsRepo(existing_job=SimpleNamespace(status=JobStatus.QUEUED))
     service = SyncJobsRequestService(
         plaid_items_repo=item_repo,
         sync_jobs_repo=sync_repo,
     )
 
-    job = service.handle_webhook(db=FakeDb(), plaid_item_id="item-1")
+    job = service.create_webhook_sync_job(db=FakeDb(), plaid_item_id="item-1")
 
     assert job is None
     assert item.needs_resync is False
@@ -110,15 +110,13 @@ def test_duplicate_webhook_while_queued_is_ignored():
 def test_duplicate_webhook_while_running_sets_needs_resync():
     item = SimpleNamespace(id=uuid4(), syncing=True, needs_resync=False)
     item_repo = FakePlaidItemRepo(item=item)
-    sync_repo = FakeSyncJobsRepo(
-        existing_job=SimpleNamespace(status=JobStatus.RUNNING)
-    )
+    sync_repo = FakeSyncJobsRepo(existing_job=SimpleNamespace(status=JobStatus.RUNNING))
     service = SyncJobsRequestService(
         plaid_items_repo=item_repo,
         sync_jobs_repo=sync_repo,
     )
 
-    job = service.handle_webhook(db=FakeDb(), plaid_item_id="item-1")
+    job = service.create_webhook_sync_job(db=FakeDb(), plaid_item_id="item-1")
 
     assert job is None
     assert item.needs_resync is True
