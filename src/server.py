@@ -7,10 +7,10 @@ from fastapi.responses import JSONResponse
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
 from src.api.routes.households import router as households_router
-from src.api.routes.institution_connections import router as plaid_router
-from src.api.routes.webhooks import router as webhooks_router
+from src.api.routes.plaid import router as plaid_router
+from src.api.routes.plaid_webhooks import router as webhooks_router
 from src.api.routes.users import router as users_router
-from src.app import AppError
+from src.modules import AppError
 
 
 app = FastAPI()

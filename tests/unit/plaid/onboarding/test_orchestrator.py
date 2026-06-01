@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
-from src.plaid.onboarding.orchestrator import OnboardingOrchestrator
+from src.workflows.onboarding import OnboardingOrchestrator
 
 
 class FakePlaidItemService:

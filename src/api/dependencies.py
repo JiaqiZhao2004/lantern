@@ -2,8 +2,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from dataclasses import dataclass
 
-from src.app import *
-from src.plaid import *
+from src.modules import *
 from src.infrastructure import (
     get_db,
     get_firebase_identity,
@@ -12,14 +11,20 @@ from src.infrastructure import (
     KMSService,
     PlaidClient,
 )
-from src.sync.jobs.repository import SyncJobsRepository
-from src.sync.jobs.request_service import SyncJobsRequestService
-from src.sync.jobs.execution_service import SyncJobsExecutionService
-from src.plaid.onboarding.orchestrator import OnboardingOrchestrator
-from src.plaid.webhooks.items_service import PlaidItemsWebhookService
-from src.plaid.webhooks.service import PlaidWebhookService
-from src.plaid.webhooks.transactions_service import PlaidTransactionsWebhookService
-from src.plaid.webhooks.verifier import PlaidWebhookVerifier
+from src.modules.plaid_transaction_sync_jobs.repository import SyncJobsRepository
+from src.modules.plaid_transaction_sync_jobs.request_service import (
+    SyncJobsRequestService,
+)
+from src.modules.plaid_transaction_sync_jobs.execution_service import (
+    SyncJobsExecutionService,
+)
+from src.workflows.onboarding import OnboardingOrchestrator
+from src.modules.plaid_webhooks.items_service import PlaidItemsWebhookService
+from src.modules.plaid_webhooks.service import PlaidWebhookService
+from src.modules.plaid_webhooks.transactions_service import (
+    PlaidTransactionsWebhookService,
+)
+from src.modules.plaid_webhooks.verifier import PlaidWebhookVerifier
 
 
 def get_user_repository() -> UserRepository:

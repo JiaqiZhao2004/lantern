@@ -1,16 +1,15 @@
-from src.plaid.transactions.mapper import (
+from src.modules.plaid_transactions.mapper import (
     plaid_transaction_to_row,
     PaymentChannel,
     InterbankTransferInfo,
 )
-from src.plaid.transactions.models import Transaction
+from src.modules.plaid_transactions.models import Transaction
 import json
 import datetime
 from uuid import UUID
 from uuid6 import uuid7
 
-sync_response = json.loads(
-    """{
+sync_response = json.loads("""{
   "accounts": [
     {
       "account_id": "BxBXxLj1m4HMXBm9WZZmCWVbPjX16EHwv99vp",
@@ -169,8 +168,7 @@ sync_response = json.loads(
   "request_id": "Wvhy9PZHQLV8njG",
   "transactions_update_status": "HISTORICAL_UPDATE_COMPLETE"
 }
-"""
-)
+""")
 
 
 def test_mapper():

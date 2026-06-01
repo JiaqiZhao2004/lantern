@@ -5,7 +5,7 @@ from src.api.dependencies import (
     get_plaid_webhook_service,
     get_plaid_webhook_verifier,
 )
-from src.plaid.webhooks.verifier import PlaidWebhookVerificationError
+from src.modules.plaid_webhooks.verifier import PlaidWebhookVerificationError
 from src.server import app
 
 

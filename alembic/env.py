@@ -25,13 +25,13 @@ if config.config_file_name is not None:
 # Import every module that defines ORM models so their tables are
 # visible to autogenerate.
 from src.infrastructure.db.database import Base  # noqa: E402
-import src.app.user.models  # noqa: F401
-import src.app.household.models  # noqa: F401
-import src.app.membership.models  # noqa: F401
-import src.plaid.items.models  # noqa: F401
-import src.plaid.accounts.models  # noqa: F401
-import src.plaid.transactions.models  # noqa: F401
-import src.sync.jobs.models  # noqa: F401
+import src.modules.user.models  # noqa: F401
+import src.modules.household.models  # noqa: F401
+import src.modules.household_membership.models  # noqa: F401
+import src.modules.plaid_items.models  # noqa: F401
+import src.modules.plaid_accounts.models  # noqa: F401
+import src.modules.plaid_transactions.models  # noqa: F401
+import src.modules.plaid_transaction_sync_jobs.models  # noqa: F401
 
 target_metadata = Base.metadata
 

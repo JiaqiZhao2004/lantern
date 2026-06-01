@@ -1,5 +1,5 @@
-from src.plaid.webhooks.schema import PlaidWebhookPayload
-from src.plaid.webhooks.service import PlaidWebhookService
+from src.modules.plaid_webhooks.schema import PlaidWebhookPayload
+from src.modules.plaid_webhooks.service import PlaidWebhookService
 
 
 class FakeProductWebhookService:

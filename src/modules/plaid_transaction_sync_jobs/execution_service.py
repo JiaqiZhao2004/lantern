@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 from ...infrastructure import Session
-from ...plaid.items.repository import PlaidItemRepository, PlaidItem
+from ..plaid_items.repository import PlaidItemRepository, PlaidItem
 from .repository import SyncJobsRepository, SyncJob, JobType, SyncErrorType, JobStatus
 from ...exceptions import ConflictError, NotFoundError, ValidationError
 from datetime import timedelta

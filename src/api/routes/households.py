@@ -9,7 +9,7 @@ from ..dependencies import (
     get_membership_service,
     get_request_context,
 )
-from src.app import (
+from src.modules import (
     CreateHouseholdRequest,
     HouseholdResponse,
     HouseholdService,

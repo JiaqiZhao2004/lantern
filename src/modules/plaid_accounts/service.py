@@ -1,7 +1,7 @@
 from uuid import UUID
 from .mapper import plaid_accounts_to_rows
-from ..accounts.repository import PlaidAccountRepository
-from ..items.models import PlaidItem
+from .repository import PlaidAccountRepository
+from ..plaid_items.models import PlaidItem
 from ...infrastructure import Session, KMSService, PlaidClient
 from plaid.model.accounts_get_request import AccountsGetRequest
 

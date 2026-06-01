@@ -5,8 +5,8 @@ from fastapi.responses import JSONResponse
 
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
-from src.app import AppError
-from .api.routes.webhooks import router as webhooks_router
+from src.modules import AppError
+from .api.routes.plaid_webhooks import router as webhooks_router
 
 
 app = FastAPI()
