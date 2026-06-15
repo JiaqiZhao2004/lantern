@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  addItem,
   createLinkToken,
   getAccounts,
   getConnections,
@@ -38,6 +39,19 @@ export function useAccountsQuery(options: ConnectionsQueryOptions = {}) {
 export function useCreateLinkTokenMutation() {
   return useMutation({
     mutationFn: createLinkToken,
+  });
+}
+
+export function useAddItemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: addItem,
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: connectionsKeys.items() }),
+        queryClient.invalidateQueries({ queryKey: connectionsKeys.accounts() }),
+      ]),
   });
 }
 
