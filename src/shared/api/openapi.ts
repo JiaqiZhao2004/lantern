@@ -23,3 +23,14 @@ export type JsonRequest<
 }
   ? TRequest
   : never;
+
+export type FormRequest<
+  TPath extends keyof paths,
+  TMethod extends keyof paths[TPath]
+> = Operation<TPath, TMethod> extends {
+  requestBody: {
+    content: { "application/x-www-form-urlencoded": infer TRequest };
+  };
+}
+  ? TRequest
+  : never;

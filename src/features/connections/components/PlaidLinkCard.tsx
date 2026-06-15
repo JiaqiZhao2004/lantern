@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import {
+  useAddItemMutation,
   useCreateLinkTokenMutation,
   useRefreshConnections,
 } from "@/features/connections/api/queries";
@@ -13,6 +14,8 @@ const LINK_TOKEN_STORAGE_KEY = "family-finance:plaid-link-token";
 
 export function PlaidLinkCard() {
   const createLinkTokenMutation = useCreateLinkTokenMutation();
+  const addItemMutation = useAddItemMutation();
+  const { mutateAsync: addItem, isPending: isAddingItem } = addItemMutation;
   const refreshConnections = useRefreshConnections();
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,20 +29,30 @@ export function PlaidLinkCard() {
 
   const onSuccess = useCallback(
     async (
-      _publicToken: string,
+      publicToken: string,
       metadata: { institution: { name?: string } | null }
     ) => {
       const institutionName = metadata.institution?.name ?? "your institution";
 
-      setStatusMessage(
-        `Plaid Link completed for ${institutionName}. This frontend now follows the generated backend contract, which exposes token creation and data reads but not a public-token exchange route yet, so no new connection is persisted until the backend adds that endpoint.`
-      );
       setErrorMessage(null);
-      setLinkToken(null);
-      window.localStorage.removeItem(LINK_TOKEN_STORAGE_KEY);
-      await refreshConnections();
+
+      try {
+        await addItem({ link_public_token: publicToken });
+        setStatusMessage(
+          `Linked ${institutionName}. New connection data will appear after syncing finishes.`
+        );
+        setLinkToken(null);
+        window.localStorage.removeItem(LINK_TOKEN_STORAGE_KEY);
+        await refreshConnections();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Plaid Link completed, but the item could not be added."
+        );
+      }
     },
-    [refreshConnections]
+    [addItem, refreshConnections]
   );
 
   const onExit = useCallback((exitError: { display_message?: string } | null) => {
@@ -97,10 +110,8 @@ export function PlaidLinkCard() {
         </div>
 
         <InlineMessage tone="info">
-          The generated backend contract currently supports Plaid link-token creation
-          plus connection and account reads. It does not yet expose a public-token
-          exchange endpoint, so this card opens Plaid Link and refreshes cached data,
-          but completed links will not persist until that backend route exists.
+          Finish the Plaid flow to connect an institution. Linked accounts refresh
+          automatically after the connection syncs.
         </InlineMessage>
 
         {errorMessage ? <InlineMessage tone="error">{errorMessage}</InlineMessage> : null}
@@ -111,15 +122,23 @@ export function PlaidLinkCard() {
         <div className={styles.actions}>
           <Button
             onClick={handleLaunch}
-            disabled={createLinkTokenMutation.isPending || (Boolean(linkToken) && !ready)}
+            disabled={
+              createLinkTokenMutation.isPending ||
+              isAddingItem ||
+              (Boolean(linkToken) && !ready)
+            }
           >
-            {createLinkTokenMutation.isPending ? "Preparing Plaid Link..." : "Launch Plaid Link"}
+            {createLinkTokenMutation.isPending
+              ? "Preparing Plaid Link..."
+              : isAddingItem
+              ? "Adding institution..."
+              : "Launch Plaid Link"}
           </Button>
         </div>
 
         <p className={styles.caption}>
-          Once the backend exposes token exchange, this card can invalidate and show
-          newly linked institutions without another architecture change.
+          OAuth redirects resume automatically so the connection can finish after
+          returning to the dashboard.
         </p>
       </div>
     </Card>

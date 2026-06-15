@@ -1,7 +1,10 @@
 import {
+  ADD_ITEM_PATH,
   CREATE_LINK_TOKEN_PATH,
   GET_ACCOUNTS_PATH,
   GET_ITEMS_PATH,
+  type AddItemRequest,
+  type AddItemResponse,
   type CreateLinkTokenResponse,
   type GetAccountsResponse,
   type GetItemsResponse,
@@ -12,6 +15,21 @@ export async function createLinkToken(): Promise<CreateLinkTokenResponse> {
   const response = await httpClient.post<CreateLinkTokenResponse>(
     CREATE_LINK_TOKEN_PATH
   );
+  return response.data;
+}
+
+export async function addItem(
+  payload: AddItemRequest
+): Promise<AddItemResponse> {
+  const body = new URLSearchParams();
+  body.set("link_public_token", payload.link_public_token);
+
+  const response = await httpClient.post<AddItemResponse>(ADD_ITEM_PATH, body, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+
   return response.data;
 }
 

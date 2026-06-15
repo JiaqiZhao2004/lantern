@@ -1,6 +1,7 @@
-import type { JsonResponse } from "@/shared/api/openapi";
+import type { FormRequest, JsonResponse } from "@/shared/api/openapi";
 
 export const CREATE_LINK_TOKEN_PATH = "/api/v1/plaid/create_link_token" as const;
+export const ADD_ITEM_PATH = "/api/v1/plaid/item" as const;
 export const GET_ITEMS_PATH = "/api/v1/plaid/items" as const;
 export const GET_ACCOUNTS_PATH = "/api/v1/plaid/accounts" as const;
 
@@ -8,6 +9,8 @@ export type CreateLinkTokenResponse = JsonResponse<
   typeof CREATE_LINK_TOKEN_PATH,
   "post"
 >;
+export type AddItemRequest = FormRequest<typeof ADD_ITEM_PATH, "post">;
+export type AddItemResponse = unknown;
 export type GetItemsResponse = JsonResponse<typeof GET_ITEMS_PATH, "get">;
 export type GetAccountsResponse = JsonResponse<typeof GET_ACCOUNTS_PATH, "get">;
 export type PlaidItem = GetItemsResponse["items"][number];

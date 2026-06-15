@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plaid/item": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Item */
+        post: operations["add_item_api_v1_plaid_item_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plaid/items": {
         parameters: {
             query?: never;
@@ -62,6 +79,23 @@ export interface paths {
         get: operations["get_household_accounts_api_v1_plaid_accounts_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plaid/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive Plaid Webhook */
+        post: operations["receive_plaid_webhook_api_v1_plaid_webhooks_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -243,6 +277,11 @@ export interface components {
              * @description User-defined display ordering.
              */
             display_order?: number | null;
+        };
+        /** Body_add_item_api_v1_plaid_item_post */
+        Body_add_item_api_v1_plaid_item_post: {
+            /** Link Public Token */
+            link_public_token: string;
         };
         /** CreateHouseholdRequest */
         CreateHouseholdRequest: {
@@ -434,6 +473,39 @@ export interface operations {
             };
         };
     };
+    add_item_api_v1_plaid_item_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_add_item_api_v1_plaid_item_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_household_items_api_v1_plaid_items_get: {
         parameters: {
             query?: never;
@@ -470,6 +542,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAccountsResponseDTO"];
+                };
+            };
+        };
+    };
+    receive_plaid_webhook_api_v1_plaid_webhooks_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Plaid-Verification"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
