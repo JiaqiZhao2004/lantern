@@ -1,8 +1,8 @@
 alembic==1.18.4
-awscrt==0.31.2
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
+awscrt==0.31.2
 blinker==1.9.0
 boto3==1.42.59
 botocore==1.42.59
@@ -35,13 +35,17 @@ httpcore==1.0.9
 httpx==0.28.1
 hyperframe==6.1.0
 idna==3.11
+iniconfig==2.3.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jmespath==1.1.0
+Mako==1.3.10
 MarkupSafe==3.0.3
 msgpack==1.1.2
 nulltype==2.3.1
+packaging==26.0
 plaid-python==38.0.0
+pluggy==1.6.0
 proto-plus==1.27.0
 protobuf==6.33.4
 psycopg==3.3.2
@@ -51,7 +55,9 @@ pyasn1_modules==0.4.2
 pycparser==2.23
 pydantic==2.12.5
 pydantic_core==2.41.5
+Pygments==2.20.0
 PyJWT==2.10.1
+pytest==8.4.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 python-multipart==0.0.21
