@@ -47,7 +47,7 @@ class FakeSyncJobsRequestService:
     def __init__(self):
         self.onboarding_item_ids = []
 
-    def handle_onboarding(self, db, plaid_item):
+    def create_onboarding_sync_job(self, db, plaid_item):
         self.onboarding_item_ids.append(plaid_item)
 
 
