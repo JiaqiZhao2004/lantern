@@ -9,7 +9,7 @@ class FakeSyncJobsRequestService:
     def __init__(self):
         self.webhook_item_ids = []
 
-    def handle_webhook(self, db, plaid_item_id):
+    def create_webhook_sync_job(self, db, plaid_item_id):
         self.webhook_item_ids.append(plaid_item_id)
         return SimpleNamespace(id=uuid4())
 
