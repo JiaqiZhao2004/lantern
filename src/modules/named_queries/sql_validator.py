@@ -12,6 +12,7 @@ Rules enforced:
 from typing import NamedTuple
 
 import sqlglot
+import sqlglot.errors
 import sqlglot.expressions as exp
 
 
@@ -53,7 +54,8 @@ def validate_named_query_sql(sql: str) -> ValidationResult:
 
     for table in table_refs:
         name = table.name.lower() if table.name else ""
-        if name not in ALLOWED_TABLES:
+        schema = table.db.lower() if table.db else ""
+        if name not in ALLOWED_TABLES or schema:
             return ValidationResult(
                 False,
                 f"Table '{table.name}' is not allowed. Use widget_transactions or widget_accounts",
