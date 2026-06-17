@@ -1,0 +1,10 @@
+.grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.topGrid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
