@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
 from src.api.routes.households import router as households_router
+from src.api.routes.named_queries import router as named_queries_router
 from src.api.routes.plaid import router as plaid_router
 from src.api.routes.plaid_webhooks import router as webhooks_router
 from src.api.routes.users import router as users_router
@@ -44,3 +45,4 @@ app.include_router(router=plaid_router)
 app.include_router(router=webhooks_router)
 app.include_router(router=users_router)
 app.include_router(router=households_router)
+app.include_router(router=named_queries_router)
