@@ -75,3 +75,7 @@ _Avoid_: Job Type, Cause, Source
 **Sync State**:
 The current health of an InstitutionConnection's sync — one of `in_sync`, `syncing`, `retry_scheduled`, `needs_reauth`, or `disabled`. Lives on the InstitutionConnection because there is only one Sync Subject today (transactions); the state implicitly refers to that subject. If a second subject is ever added, this field has to be either split per-subject or redefined as an aggregate.
 _Avoid_: Status (overloaded), Health
+
+**Named Query**:
+A SQL SELECT that belongs to a Household and can be run by any Member at any time against that Household's Transaction data. Named Queries are a Household resource — they are not owned by the Member who created them. Each Named Query has a name, a SQL body, and a chart type hint for the frontend. Running a Named Query always reflects the current state of the Household's Transactions.
+_Avoid_: Widget, Report, Saved Query, Personal Widget

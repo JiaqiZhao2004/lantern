@@ -28,10 +28,10 @@ from src.infrastructure.db.database import Base  # noqa: E402
 import src.modules.user.models  # noqa: F401
 import src.modules.household.models  # noqa: F401
 import src.modules.household_membership.models  # noqa: F401
-import src.modules.plaid_items.models  # noqa: F401
-import src.modules.plaid_accounts.models  # noqa: F401
+import src.modules.institution_connections.models  # noqa: F401
+import src.modules.accounts.models  # noqa: F401
 import src.modules.plaid_transactions.models  # noqa: F401
-import src.modules.plaid_transaction_sync_jobs.models  # noqa: F401
+import src.modules.sync_jobs.models  # noqa: F401
 
 target_metadata = Base.metadata
 

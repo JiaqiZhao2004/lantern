@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "b1a2c3d4e5f7"
-down_revision: Union[str, Sequence[str], None] = "6c7d8e9f0123"
+down_revision: Union[str, Sequence[str], None] = ("6c7d8e9f0123", "a2b3c4d5e6f7")
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -296,6 +296,11 @@ def upgrade() -> None:
         ["household_id", "is_removed", "occurred_at"],
     )
 
+    # Negate all existing amounts: Plaid convention (positive=outflow) → domain
+    # convention (positive=inflow). The mapper now does this at ingest time;
+    # this one-time UPDATE brings historical rows into alignment.
+    _exec("UPDATE transactions SET amount = -amount")
+
 
 # ---------------------------------------------------------------------------
 # downgrade
@@ -305,6 +310,8 @@ def downgrade() -> None:
     # -----------------------------------------------------------------------
     # 4. transactions  (reverse)
     # -----------------------------------------------------------------------
+
+    _exec("UPDATE transactions SET amount = -amount")
 
     op.drop_index("idx_transactions_household_active_occurred_at", table_name="transactions")
     op.create_index(
