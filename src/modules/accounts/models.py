@@ -1,4 +1,3 @@
-# Persistent entities for Database ORM mapping
 from src.infrastructure.db import Base
 from uuid6 import uuid7
 import uuid
@@ -8,25 +7,22 @@ from decimal import Decimal
 from sqlalchemy import (
     String,
     Text,
-    Enum,
     ForeignKey,
-    LargeBinary,
     DateTime,
     Numeric,
     Boolean,
     Integer,
     func,
-    Index,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
-class PlaidAccount(Base):
-    __tablename__ = "plaid_accounts"
+class Account(Base):
+    __tablename__ = "accounts"
     __table_args__ = (
-        UniqueConstraint("item_id", "plaid_account_id", name="uq_item_plaid_account"),
+        UniqueConstraint("institution_connection_id", "plaid_account_id", name="uq_connection_plaid_account"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -35,9 +31,9 @@ class PlaidAccount(Base):
         default=uuid7,
     )
 
-    item_id: Mapped[uuid.UUID] = mapped_column(
+    institution_connection_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("plaid_items.id", ondelete="CASCADE"),
+        ForeignKey("institution_connections.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -92,4 +88,4 @@ class PlaidAccount(Base):
         nullable=False,
     )
 
-    item = relationship("PlaidItem", back_populates="accounts")
+    institution_connection = relationship("InstitutionConnection", back_populates="accounts")

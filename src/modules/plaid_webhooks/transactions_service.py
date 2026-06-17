@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from src.exceptions import NotFoundError
-from src.modules.plaid_transaction_sync_jobs.request_service import (
+from src.modules.sync_jobs.request_service import (
     SyncJobsRequestService,
 )
 

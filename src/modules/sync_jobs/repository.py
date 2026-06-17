@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from uuid import UUID
-from .models import SyncJob, JobType, JobStatus, SyncErrorType
+from .models import SyncJob, SyncTrigger, SyncSubject, JobStatus, SyncErrorType
 
 
 class SyncJobsRepository:
@@ -11,11 +11,13 @@ class SyncJobsRepository:
         self,
         db: Session,
         institution_connection_id: UUID,
-        job_type: JobType,
+        trigger: SyncTrigger,
+        subject: SyncSubject = SyncSubject.TRANSACTIONS,
     ):
         job = SyncJob(
             institution_connection_id=institution_connection_id,
-            job_type=job_type,
+            trigger=trigger,
+            subject=subject,
             next_attempt_at=datetime.now(timezone.utc),
         )
         db.add(job)

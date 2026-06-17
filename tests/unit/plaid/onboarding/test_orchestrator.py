@@ -1,13 +1,13 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
-from src.workflows.onboarding import OnboardingOrchestrator
+from src.workflows.link_institution_connection import LinkInstitutionConnectionWorkflow
 
 
-class FakePlaidItemService:
-    def __init__(self, item):
-        self.item = item
-        self.plaid_item_repo = self
+class FakeConnectionService:
+    def __init__(self, connection):
+        self.connection = connection
+        self.connection_repo = self
 
     def exchange_public_token(self, plaid_client, link_public_token):
         return "plaid-item-1", "access-token"
@@ -26,16 +26,16 @@ class FakePlaidItemService:
         institution_id,
         institution_name,
     ):
-        self.item.plaid_item_id = plaid_item_id
-        return self.item
+        self.connection.plaid_item_id = plaid_item_id
+        return self.connection
 
 
-class FakePlaidAccountService:
+class FakeAccountService:
     def __init__(self):
-        self.synced_items = []
+        self.synced_connections = []
 
-    def sync_accounts_for_item(self, plaid_client, item, db, kms):
-        self.synced_items.append(item)
+    def sync_accounts_for_connection(self, plaid_client, connection, db, kms):
+        self.synced_connections.append(connection)
 
 
 class FakeMembershipService:
@@ -45,24 +45,24 @@ class FakeMembershipService:
 
 class FakeSyncJobsRequestService:
     def __init__(self):
-        self.onboarding_item_ids = []
+        self.initial_link_connections = []
 
-    def create_onboarding_sync_job(self, db, plaid_item):
-        self.onboarding_item_ids.append(plaid_item)
+    def create_initial_link_sync_job(self, db, connection):
+        self.initial_link_connections.append(connection)
 
 
-def test_onboarding_enqueues_initial_sync_job():
-    item = SimpleNamespace(id=uuid4())
-    account_service = FakePlaidAccountService()
+def test_link_enqueues_initial_sync_job():
+    connection = SimpleNamespace(id=uuid4())
+    account_service = FakeAccountService()
     sync_jobs_request_service = FakeSyncJobsRequestService()
-    orchestrator = OnboardingOrchestrator(
-        plaid_item_service=FakePlaidItemService(item=item),
-        plaid_account_service=account_service,
+    workflow = LinkInstitutionConnectionWorkflow(
+        connection_service=FakeConnectionService(connection=connection),
+        account_service=account_service,
         membership_service=FakeMembershipService(),
         sync_jobs_request_service=sync_jobs_request_service,
     )
 
-    result = orchestrator.onboard_new_item(
+    result = workflow.link_new_connection(
         db=SimpleNamespace(),
         kms=SimpleNamespace(),
         user=SimpleNamespace(id=uuid4()),
@@ -70,6 +70,6 @@ def test_onboarding_enqueues_initial_sync_job():
         link_public_token="public-token",
     )
 
-    assert result is item
-    assert account_service.synced_items == [item]
-    assert sync_jobs_request_service.onboarding_item_ids == [item]
+    assert result is connection
+    assert account_service.synced_connections == [connection]
+    assert sync_jobs_request_service.initial_link_connections == [connection]

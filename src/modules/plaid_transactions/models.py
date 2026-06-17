@@ -73,10 +73,10 @@ class Transaction(Base):
         index=True,
     )
 
-    household_id: Mapped[UUID] = mapped_column(
+    household_id: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("households.id", ondelete="CASCADE"),
-        nullable=False,
+        ForeignKey("households.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
 
@@ -109,10 +109,10 @@ class Transaction(Base):
         doc="Plaid 'date' field (posting date)",
     )
 
-    effective_date: Mapped[datetime] = mapped_column(
+    occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        doc="authorized_date ?? posted_date",
+        doc="authorized_date ?? posted_date — the date the Transaction happened from the Member's perspective",
         index=True,
     )
 
@@ -195,10 +195,10 @@ class Transaction(Base):
 
 
 Index(
-    "idx_transactions_household_active_effective_date",
+    "idx_transactions_household_active_occurred_at",
     "household_id",
     "is_removed",
-    "effective_date",
+    "occurred_at",
 )
 
 Index(

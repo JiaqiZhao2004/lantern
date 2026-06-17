@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import date, datetime, timedelta
 
-from .repository import PlaidItemRepository
+from .repository import InstitutionConnectionRepository
 from ..household_membership.repository import MembershipRepository
 from ...exceptions import ConflictError, NotFoundError, ValidationError, InternalError
 from ...infrastructure import Session, PlaidClient
@@ -28,14 +28,14 @@ from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 
 
-class PlaidItemService:
+class InstitutionConnectionService:
     def __init__(
         self,
-        plaid_item_repo: PlaidItemRepository,
+        connection_repo: InstitutionConnectionRepository,
         membership_repo: MembershipRepository,
         plaid_client: PlaidClient,
     ):
-        self.plaid_item_repo = plaid_item_repo
+        self.connection_repo = connection_repo
         self.membership_repo = membership_repo
         self.plaid_client = plaid_client
 
@@ -100,10 +100,7 @@ class PlaidItemService:
 
         return institution_id, institution_name
 
-    def list_household_items(self, db: Session, household_id: UUID):
-        return self.plaid_item_repo.list_household_items(
+    def list_household_connections(self, db: Session, household_id: UUID):
+        return self.connection_repo.list_household_connections(
             db=db, household_id=household_id
         )
-
-
-    

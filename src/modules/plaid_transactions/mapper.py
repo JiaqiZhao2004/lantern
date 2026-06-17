@@ -40,10 +40,10 @@ def plaid_transaction_to_row(
         "household_id": household_id,
         "is_removed": False,
         "pending": tx["pending"],
-        "amount": tx["amount"],
+        "amount": -tx["amount"],
         "authorized_date": tx["authorized_date"],
         "posted_date": tx["date"],
-        "effective_date": tx["authorized_date"] if tx["authorized_date"] else tx["date"],
+        "occurred_at": tx["authorized_date"] if tx["authorized_date"] else tx["date"],
         "merchant_name": tx["merchant_name"],
         "category_primary": (
             personal_finance_category["primary"] if personal_finance_category else None
