@@ -1,14 +1,14 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: family_finance
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - ./backend/postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -22,7 +22,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/family_finance
+      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/postgres
     depends_on:
       db:
         condition: service_healthy
@@ -37,6 +37,3 @@ services:
       VITE_BACKEND_HOST: http://backend:8000
     depends_on:
       - backend
-
-volumes:
-  postgres-data:
