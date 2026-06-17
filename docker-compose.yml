@@ -23,18 +23,20 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/postgres
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - /Users/i-jzhao/.secrets/family-finance-d31cd-firebase-adminsdk-fbsvc-b1de073ddb.json:/run/secrets/firebase-adminsdk.json:ro
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     environment:
-      VITE_BACKEND_HOST: http://backend:8000
+      VITE_BACKEND_HOST: http://localhost:8000
     depends_on:
       - backend
     volumes:
