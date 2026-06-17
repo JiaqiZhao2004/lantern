@@ -1,0 +1,14 @@
+.card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.padding-md {
+  padding: 1.25rem;
+}
+
+.padding-lg {
+  padding: 1.5rem;
+}

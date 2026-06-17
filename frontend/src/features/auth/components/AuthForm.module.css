@@ -1,0 +1,20 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.footerLink {
+  color: var(--brand-700);
+  font-weight: 600;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}

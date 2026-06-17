@@ -1,0 +1,24 @@
+.message {
+  border-radius: 0.9rem;
+  border: 1px solid transparent;
+  padding: 0.85rem 0.95rem;
+  font-size: 0.92rem;
+}
+
+.info {
+  background: rgba(39, 110, 241, 0.08);
+  border-color: rgba(39, 110, 241, 0.18);
+  color: var(--brand-700);
+}
+
+.success {
+  background: rgba(18, 138, 95, 0.09);
+  border-color: rgba(18, 138, 95, 0.18);
+  color: var(--success-700);
+}
+
+.error {
+  background: rgba(198, 40, 40, 0.08);
+  border-color: rgba(198, 40, 40, 0.16);
+  color: var(--danger-700);
+}
