@@ -2,29 +2,29 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime
 from typing import Any
-from .models import PlaidAccount
-from ..plaid_items.models import PlaidItem
+from .models import Account
+from ..institution_connections.models import InstitutionConnection
 
 _UNSET = object()
 
 
-class PlaidAccountRepository:
+class AccountRepository:
     def get_by_id(
         self,
         db: Session,
-        item_id: UUID,
+        institution_connection_id: UUID,
         plaid_account_id: str,
     ):
         return (
-            db.query(PlaidAccount)
-            .filter_by(item_id=item_id, plaid_account_id=plaid_account_id)
+            db.query(Account)
+            .filter_by(institution_connection_id=institution_connection_id, plaid_account_id=plaid_account_id)
             .first()
         )
 
     def upsert_one(
         self,
         db: Session,
-        item_id: UUID,
+        institution_connection_id: UUID,
         plaid_account_id: str,
         mask: str | None | object = _UNSET,
         name: str | None | object = _UNSET,
@@ -41,9 +41,9 @@ class PlaidAccountRepository:
         is_hidden: bool | object = _UNSET,
         display_order: int | None | object = _UNSET,
         last_balance_update_at: datetime | None | object = _UNSET,
-    ) -> PlaidAccount:
+    ) -> Account:
         existing = self.get_by_id(
-            db=db, item_id=item_id, plaid_account_id=plaid_account_id
+            db=db, institution_connection_id=institution_connection_id, plaid_account_id=plaid_account_id
         )
 
         fields = dict(
@@ -68,10 +68,9 @@ class PlaidAccountRepository:
         if existing:
             for key, value in fields.items():
                 setattr(existing, key, value)
-
         else:
-            account = PlaidAccount(
-                item_id=item_id,
+            account = Account(
+                institution_connection_id=institution_connection_id,
                 plaid_account_id=plaid_account_id,
                 **fields,
             )
@@ -83,18 +82,18 @@ class PlaidAccountRepository:
     def upsert_many(
         self,
         db: Session,
-        item_id: UUID,
+        institution_connection_id: UUID,
         account_rows: list[dict[str, Any]],
-    ) -> list[PlaidAccount]:
+    ) -> list[Account]:
         if not account_rows:
             return []
 
         plaid_account_ids = [row["plaid_account_id"] for row in account_rows]
         existing_accounts = (
-            db.query(PlaidAccount)
+            db.query(Account)
             .filter(
-                PlaidAccount.item_id == item_id,
-                PlaidAccount.plaid_account_id.in_(plaid_account_ids),
+                Account.institution_connection_id == institution_connection_id,
+                Account.plaid_account_id.in_(plaid_account_ids),
             )
             .all()
         )
@@ -102,7 +101,7 @@ class PlaidAccountRepository:
             account.plaid_account_id: account for account in existing_accounts
         }
 
-        upserted_accounts: list[PlaidAccount] = []
+        upserted_accounts: list[Account] = []
         for row in account_rows:
             plaid_account_id = row["plaid_account_id"]
             fields = {
@@ -116,8 +115,8 @@ class PlaidAccountRepository:
                 upserted_accounts.append(existing)
                 continue
 
-            account = PlaidAccount(
-                item_id=item_id,
+            account = Account(
+                institution_connection_id=institution_connection_id,
                 plaid_account_id=plaid_account_id,
                 **fields,
             )
@@ -129,22 +128,22 @@ class PlaidAccountRepository:
 
     def list_household_accounts(self, db: Session, household_id: UUID):
         return (
-            db.query(PlaidAccount)
-            .join(PlaidAccount.item)
-            .filter(PlaidItem.household_id == household_id)
-            .order_by(PlaidItem.created_at, PlaidAccount.created_at)
+            db.query(Account)
+            .join(Account.institution_connection)
+            .filter(InstitutionConnection.household_id == household_id)
+            .order_by(InstitutionConnection.created_at, Account.created_at)
             .all()
         )
 
     def mark_inactive_by_plaid_id(
         self,
         db: Session,
-        item_id: UUID,
+        institution_connection_id: UUID,
         plaid_account_id: str,
     ):
         account = self.get_by_id(
             db=db,
-            item_id=item_id,
+            institution_connection_id=institution_connection_id,
             plaid_account_id=plaid_account_id,
         )
         if account is None:

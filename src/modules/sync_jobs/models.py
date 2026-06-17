@@ -1,6 +1,4 @@
-# Persistent entities for Database ORM mapping
 from src.infrastructure.db import Base
-from ..plaid_items.models import PlaidItem
 from uuid6 import uuid7
 import uuid
 from datetime import datetime
@@ -15,7 +13,7 @@ from sqlalchemy import (
     func,
     Index,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -23,10 +21,14 @@ def enum_values(enum_cls: type[StrEnum]) -> list[str]:
     return [member.value for member in enum_cls]
 
 
-class JobType(StrEnum):
+class SyncTrigger(StrEnum):
     WEBHOOK = "webhook"
-    ONBOARDING = "onboarding"
+    INITIAL_LINK = "initial_link"
     MANUAL_RESYNC = "manual_resync"
+
+
+class SyncSubject(StrEnum):
+    TRANSACTIONS = "transactions"
 
 
 class JobStatus(StrEnum):
@@ -48,8 +50,9 @@ class SyncJob(Base):
     __tablename__ = "sync_jobs"
     __table_args__ = (
         Index(
-            "uq_active_sync_job_per_connection",
+            "uq_active_sync_job_per_connection_subject",
             "institution_connection_id",
+            "subject",
             unique=True,
             postgresql_where=text("status IN ('queued', 'running')"),
         ),
@@ -60,7 +63,6 @@ class SyncJob(Base):
         ),
     )
 
-    # Internal ID for your own app logic
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -69,19 +71,29 @@ class SyncJob(Base):
 
     institution_connection_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("plaid_items.id", ondelete="CASCADE"),
+        ForeignKey("institution_connections.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
-    job_type: Mapped[JobType] = mapped_column(
+    trigger: Mapped[SyncTrigger] = mapped_column(
         Enum(
-            JobType,
+            SyncTrigger,
             values_callable=enum_values,
-            name="job_type",
+            name="sync_trigger",
         ),
         nullable=False,
-        server_default="webhook",
+        server_default=SyncTrigger.WEBHOOK,
+    )
+
+    subject: Mapped[SyncSubject] = mapped_column(
+        Enum(
+            SyncSubject,
+            values_callable=enum_values,
+            name="sync_subject",
+        ),
+        nullable=False,
+        server_default=SyncSubject.TRANSACTIONS,
     )
 
     status: Mapped[JobStatus] = mapped_column(
@@ -120,7 +132,6 @@ class SyncJob(Base):
         nullable=True,
     )
 
-    # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -144,6 +155,6 @@ class SyncJob(Base):
         nullable=True,
     )
 
-    institution_connection: Mapped[PlaidItem] = relationship(
-        "PlaidItem", back_populates="sync_jobs"
+    institution_connection = relationship(
+        "InstitutionConnection", back_populates="sync_jobs"
     )

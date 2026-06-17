@@ -10,12 +10,12 @@ load_dotenv()
 from src.infrastructure import KMSService, PlaidClient, Session
 from src.infrastructure import get_kms_service, get_plaid_client
 from src.infrastructure.db.database import SessionLocal
-from src.modules.plaid_accounts.repository import PlaidAccountRepository
-from src.modules.plaid_items.repository import PlaidItemRepository
+from src.modules.accounts.repository import AccountRepository
+from src.modules.institution_connections.repository import InstitutionConnectionRepository
 from src.modules.plaid_transactions.repository import TransactionRepository
 from src.modules.plaid_transactions.service import TransactionService
-from src.modules.plaid_transaction_sync_jobs.execution_service import SyncJobsExecutionService
-from src.modules.plaid_transaction_sync_jobs.repository import SyncJobsRepository
+from src.modules.sync_jobs.execution_service import SyncJobsExecutionService
+from src.modules.sync_jobs.repository import SyncJobsRepository
 
 logger = logging.getLogger(__name__)
 
@@ -29,19 +29,19 @@ class RunnerServices:
 
 
 def build_runner_services() -> RunnerServices:
-    plaid_item_repo = PlaidItemRepository()
+    connection_repo = InstitutionConnectionRepository()
     sync_jobs_repo = SyncJobsRepository()
 
     return RunnerServices(
         kms=get_kms_service(),
         plaid_client=get_plaid_client(),
         sync_jobs_execution_service=SyncJobsExecutionService(
-            plaid_items_repo=plaid_item_repo,
+            connection_repo=connection_repo,
             sync_jobs_repo=sync_jobs_repo,
         ),
         transaction_service=TransactionService(
-            plaid_item_repo=plaid_item_repo,
-            plaid_account_repo=PlaidAccountRepository(),
+            connection_repo=connection_repo,
+            account_repo=AccountRepository(),
             transaction_repo=TransactionRepository(),
         ),
     )
@@ -59,19 +59,19 @@ def process(
         if job is None:
             return False
 
-        plaid_item = job.institution_connection
+        connection = job.institution_connection
 
         try:
             transaction_service.sync(
-                db=db, kms=kms, plaid_client=plaid_client, plaid_item=plaid_item
+                db=db, kms=kms, plaid_client=plaid_client, connection=connection
             )
         except Exception as e:
             sync_jobs_execution_service.handle_failure(
-                db=db, job=job, plaid_item=plaid_item, error=e
+                db=db, job=job, connection=connection, error=e
             )
         else:
             sync_jobs_execution_service.handle_success(
-                db=db, job=job, plaid_item=plaid_item
+                db=db, job=job, connection=connection
             )
         return True
 

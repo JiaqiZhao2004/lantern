@@ -29,7 +29,7 @@ class TransactionRepository:
                 "amount": stmt.excluded.amount,
                 "authorized_date": stmt.excluded.authorized_date,
                 "posted_date": stmt.excluded.posted_date,
-                "effective_date": stmt.excluded.effective_date,
+                "occurred_at": stmt.excluded.occurred_at,
                 "merchant_name": stmt.excluded.merchant_name,
                 "category_primary": stmt.excluded.category_primary,
                 "category_detailed": stmt.excluded.category_detailed,

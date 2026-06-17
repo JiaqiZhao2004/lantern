@@ -1,22 +1,17 @@
-from uuid import UUID
-from datetime import datetime, timezone
-from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone, timedelta
 from ...infrastructure import Session
-from ..plaid_items.repository import PlaidItemRepository, PlaidItem
-from .repository import SyncJobsRepository, SyncJob, JobType, SyncErrorType, JobStatus
+from ..institution_connections.repository import InstitutionConnectionRepository, InstitutionConnection
+from .repository import SyncJobsRepository, SyncJob, SyncErrorType, JobStatus
 from ...exceptions import ConflictError, NotFoundError, ValidationError
-from datetime import timedelta
 
 
 def is_retryable(error_type: SyncErrorType):
-    # TODO
     if error_type == SyncErrorType.TRANSIENT or error_type == SyncErrorType.RATE_LIMIT:
         return True
     return False
 
 
 def infer_error_type(error):
-    # TODO
     return SyncErrorType.UNKNOWN
 
 
@@ -27,10 +22,10 @@ def compute_backoff(attempt_count: int):
 class SyncJobsExecutionService:
     def __init__(
         self,
-        plaid_items_repo: PlaidItemRepository,
+        connection_repo: InstitutionConnectionRepository,
         sync_jobs_repo: SyncJobsRepository,
     ):
-        self.plaid_items_repo = plaid_items_repo
+        self.connection_repo = connection_repo
         self.sync_jobs_repo = sync_jobs_repo
 
     def claim_next_due_job(self, db: Session):
@@ -39,10 +34,10 @@ class SyncJobsExecutionService:
             if job is None:
                 return None
 
-            plaid_item = job.institution_connection
-            if not self.plaid_items_repo.is_active(
-                plaid_item
-            ) or self.plaid_items_repo.is_unable_to_sync(plaid_item):
+            connection = job.institution_connection
+            if not self.connection_repo.is_active(
+                connection
+            ) or self.connection_repo.is_unable_to_sync(connection):
                 self.sync_jobs_repo.set_cancelled(
                     db=db,
                     job=job,
@@ -51,26 +46,24 @@ class SyncJobsExecutionService:
                 continue
 
             job = self.sync_jobs_repo.set_running(db=db, job=job)
-            self.plaid_items_repo.mark_syncing(db=db, plaid_item=plaid_item)
+            self.connection_repo.mark_syncing(db=db, connection=connection)
             return job
 
-    def handle_success(self, db: Session, job: SyncJob, plaid_item: PlaidItem):
+    def handle_success(self, db: Session, job: SyncJob, connection: InstitutionConnection):
         self.sync_jobs_repo.set_succeeded(db=db, job=job)
-        if not self.plaid_items_repo.is_active(
-            plaid_item
-        ) or self.plaid_items_repo.is_unable_to_sync(plaid_item):
+        if not self.connection_repo.is_active(
+            connection
+        ) or self.connection_repo.is_unable_to_sync(connection):
             return
 
-        self.plaid_items_repo.mark_in_sync(db=db, plaid_item=plaid_item)
-        if plaid_item.needs_resync:
+        self.connection_repo.mark_in_sync(db=db, connection=connection)
+        if connection.needs_resync:
             self.sync_jobs_repo.create(
-                db=db, institution_connection_id=plaid_item.id, job_type=job.job_type
+                db=db, institution_connection_id=connection.id, trigger=job.trigger
             )
-            self.plaid_items_repo.clear_need_resync(db=db, plaid_item=plaid_item)
+            self.connection_repo.clear_need_resync(db=db, connection=connection)
 
-    def handle_failure(self, db: Session, job: SyncJob, plaid_item: PlaidItem, error):
-
-        # if error is retryable and attempt count < 3, schedule retry
+    def handle_failure(self, db: Session, job: SyncJob, connection: InstitutionConnection, error):
         error_type = infer_error_type(error)
         if is_retryable(error_type=error_type) and job.attempt_count < 3:
             next_attempt_at = compute_backoff(job.attempt_count)
@@ -81,10 +74,9 @@ class SyncJobsExecutionService:
                 last_error=str(error),
                 last_error_type=error_type,
             )
-            self.plaid_items_repo.mark_sync_retry_scheduled(
-                db=db, plaid_item=plaid_item, error=str(error)
+            self.connection_repo.mark_sync_retry_scheduled(
+                db=db, connection=connection, error=str(error)
             )
-        # else, mark as dead letter and update plaid item sync state to disabled
         else:
             self.sync_jobs_repo.set_dead_letter(
                 db=db,
@@ -93,10 +85,10 @@ class SyncJobsExecutionService:
                 last_error_type=error_type,
             )
             if error_type == SyncErrorType.REAUTH_REQUIRED:
-                self.plaid_items_repo.mark_sync_needs_reauth(
-                    db=db, plaid_item=job.institution_connection, error=str(error)
+                self.connection_repo.mark_sync_needs_reauth(
+                    db=db, connection=job.institution_connection, error=str(error)
                 )
             elif error_type == SyncErrorType.UNKNOWN:
-                self.plaid_items_repo.mark_sync_disabled(
-                    db=db, plaid_item=job.institution_connection, error=str(error)
+                self.connection_repo.mark_sync_disabled(
+                    db=db, connection=job.institution_connection, error=str(error)
                 )

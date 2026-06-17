@@ -3,9 +3,9 @@ import json
 from typing import Dict, Any
 from .mapper import plaid_transaction_to_row
 from .repository import TransactionRepository
-from ..plaid_items.repository import PlaidItem, PlaidItemRepository
-from ..plaid_accounts.mapper import plaid_accounts_to_rows
-from ..plaid_accounts.repository import PlaidAccountRepository
+from ..institution_connections.repository import InstitutionConnection, InstitutionConnectionRepository
+from ..accounts.mapper import plaid_accounts_to_rows
+from ..accounts.repository import AccountRepository
 from ...infrastructure import Session, PlaidClient, KMSService
 from ...exceptions import InternalError
 import plaid
@@ -50,12 +50,12 @@ def transactions_sync(plaid_client: PlaidClient, cursor: str, access_token: str)
 class TransactionService:
     def __init__(
         self,
-        plaid_item_repo: PlaidItemRepository,
-        plaid_account_repo: PlaidAccountRepository,
+        connection_repo: InstitutionConnectionRepository,
+        account_repo: AccountRepository,
         transaction_repo: TransactionRepository,
     ):
-        self.plaid_item_repo = plaid_item_repo
-        self.plaid_account_repo = plaid_account_repo
+        self.connection_repo = connection_repo
+        self.account_repo = account_repo
         self.transaction_repo = transaction_repo
 
     def sync(
@@ -63,13 +63,13 @@ class TransactionService:
         db: Session,
         kms: KMSService,
         plaid_client: PlaidClient,
-        plaid_item: PlaidItem,
+        connection: InstitutionConnection,
     ):
-        cursor = plaid_item.transactions_cursor or ""
+        cursor = connection.transactions_cursor or ""
         access_token = kms.decrypt_secret(
-            encrypted_data_key=plaid_item.access_token_encrypted_data_key,
-            nonce=plaid_item.access_token_nonce,
-            ciphertext=plaid_item.access_token_ciphertext,
+            encrypted_data_key=connection.plaid_access_token_encrypted_data_key,
+            nonce=connection.plaid_access_token_nonce,
+            ciphertext=connection.plaid_access_token_ciphertext,
         )
         sync_results = transactions_sync(plaid_client, cursor, access_token)
         accounts_updates = sync_results["accounts"]
@@ -78,21 +78,21 @@ class TransactionService:
         transactions_removed = sync_results["removed"]
         next_cursor = sync_results["next_cursor"]
 
-        plaid_accounts = self.plaid_account_repo.upsert_many(
+        accounts = self.account_repo.upsert_many(
             db=db,
-            item_id=plaid_item.id,
+            institution_connection_id=connection.id,
             account_rows=plaid_accounts_to_rows(accounts_updates),
         )
-        plaid_accounts_by_id = {
-            account.plaid_account_id: account for account in plaid_accounts
+        accounts_by_plaid_id = {
+            account.plaid_account_id: account for account in accounts
         }
 
         transaction_rows = [
             plaid_transaction_to_row(
                 tx,
-                account_id=plaid_accounts_by_id[tx["account_id"]].id,
-                item_id=plaid_item.id,
-                household_id=plaid_item.household_id,
+                account_id=accounts_by_plaid_id[tx["account_id"]].id,
+                item_id=connection.id,
+                household_id=connection.household_id,
             )
             for tx in transactions_added + transactions_modified
         ]
@@ -107,6 +107,6 @@ class TransactionService:
             plaid_transaction_ids=[tx["transaction_id"] for tx in transactions_removed],
         )
 
-        self.plaid_item_repo.update_cursor(
-            db=db, plaid_item=plaid_item, cursor=next_cursor
+        self.connection_repo.update_cursor(
+            db=db, connection=connection, cursor=next_cursor
         )

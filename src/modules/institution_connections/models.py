@@ -1,5 +1,3 @@
-# features/plaid/entities.py
-# Persistent entities for Database ORM mapping
 from src.infrastructure.db import Base
 from uuid6 import uuid7
 import uuid
@@ -17,7 +15,7 @@ from sqlalchemy import (
     Index,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -25,12 +23,13 @@ def enum_values(enum_cls: type[StrEnum]) -> list[str]:
     return [member.value for member in enum_cls]
 
 
-class PlaidItemStatus(StrEnum):
+class InstitutionConnectionStatus(StrEnum):
     ACTIVE = "active"
     REVOKED = "revoked"
+    MEMBER_DEPARTED = "member_departed"
 
 
-class PlaidItemSyncState(StrEnum):
+class InstitutionConnectionSyncState(StrEnum):
     IN_SYNC = "in_sync"
     SYNCING = "syncing"
     RETRY_SCHEDULED = "retry_scheduled"
@@ -38,22 +37,18 @@ class PlaidItemSyncState(StrEnum):
     DISABLED = "disabled"
 
 
-class PlaidItem(Base):
-    __tablename__ = "plaid_items"
+class InstitutionConnection(Base):
+    __tablename__ = "institution_connections"
     __table_args__ = (
-        # One Plaid item_id should be unique, and typically you
-        # also only want one row per user/item combination.
         UniqueConstraint("user_id", "plaid_item_id", name="uq_user_plaid_item"),
     )
 
-    # Internal ID for your own app logic
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid7,
     )
 
-    # Link back to your app's user
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -68,7 +63,6 @@ class PlaidItem(Base):
         index=True,
     )
 
-    # Plaid's own identifiers
     plaid_item_id: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
@@ -80,7 +74,6 @@ class PlaidItem(Base):
     institution_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
-        doc="Plaid institution_id, if you choose to store it",
     )
 
     institution_name: Mapped[str | None] = mapped_column(
@@ -89,53 +82,40 @@ class PlaidItem(Base):
         doc="Human-readable institution name resolved from institutions/get_by_id at link time",
     )
 
-    status: Mapped[PlaidItemStatus] = mapped_column(
+    status: Mapped[InstitutionConnectionStatus] = mapped_column(
         Enum(
-            PlaidItemStatus,
+            InstitutionConnectionStatus,
             values_callable=enum_values,
-            name="plaid_item_status",
+            name="institution_connection_status",
         ),
         nullable=False,
-        server_default=PlaidItemStatus.ACTIVE,
+        server_default=InstitutionConnectionStatus.ACTIVE,
     )
 
-    # ---- Encrypted access token fields (envelope encryption) ----
-    #
-    # access_token_plaintext is NEVER stored in DB.
-    # Instead you store:
-    #   - encrypted_data_key: result of KMS GenerateDataKey().CiphertextBlob
-    #   - ciphertext: AES-GCM(ciphertext) of the access token using the data key
-    #   - nonce: per-encryption random nonce/IV for AES-GCM
-    #
-    # You can also store an auth_tag separately if your AES-GCM implementation
-    # returns it, or just include it in `ciphertext`.
-
-    access_token_ciphertext: Mapped[bytes] = mapped_column(
+    plaid_access_token_ciphertext: Mapped[bytes] = mapped_column(
         LargeBinary,
         nullable=False,
         doc="AES-GCM ciphertext of the Plaid access_token",
     )
 
-    access_token_nonce: Mapped[bytes] = mapped_column(
+    plaid_access_token_nonce: Mapped[bytes] = mapped_column(
         LargeBinary,
         nullable=False,
         doc="Nonce/IV used for AES-GCM when encrypting the access_token",
     )
 
-    access_token_encrypted_data_key: Mapped[bytes] = mapped_column(
+    plaid_access_token_encrypted_data_key: Mapped[bytes] = mapped_column(
         LargeBinary,
         nullable=False,
         doc="KMS-encrypted data key (CiphertextBlob) used to encrypt the access_token",
     )
 
-    # Optional: store which KMS key you used (useful if you ever have multiple)
     kms_key_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         doc="Optional: KMS CMK ARN or ID used to generate the data key",
     )
 
-    # Sync tracking
     transactions_cursor: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
@@ -148,31 +128,30 @@ class PlaidItem(Base):
         doc="Timestamp of the last successful transactions sync",
     )
 
-    sync_state: Mapped[PlaidItemSyncState] = mapped_column(
+    sync_state: Mapped[InstitutionConnectionSyncState] = mapped_column(
         Enum(
-            PlaidItemSyncState,
+            InstitutionConnectionSyncState,
             values_callable=enum_values,
-            name="plaid_item_sync_state",
+            name="institution_connection_sync_state",
         ),
         nullable=False,
-        server_default=PlaidItemSyncState.SYNCING,
-        doc="Current sync lifecycle state for the Plaid item",
+        server_default=InstitutionConnectionSyncState.SYNCING,
+        doc="Current sync lifecycle state for the institution connection",
     )
 
     needs_resync: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default="false",
-        doc="Whether the item should be resynced from Plaid",
+        doc="Whether the connection should be resynced from Plaid",
     )
 
     last_sync_error: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-        doc="Most recent sync error message for the Plaid item",
+        doc="Most recent sync error message",
     )
 
-    # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -187,7 +166,7 @@ class PlaidItem(Base):
     )
 
     accounts = relationship(
-        "PlaidAccount", back_populates="item", cascade="all, delete-orphan"
+        "Account", back_populates="institution_connection", cascade="all, delete-orphan"
     )
     sync_jobs = relationship(
         "SyncJob",
@@ -196,15 +175,14 @@ class PlaidItem(Base):
     )
 
 
-# Optional composite index if you frequently query by (user_id, status)
 Index(
-    "ix_plaid_items_user_status",
-    PlaidItem.user_id,
-    PlaidItem.status,
+    "ix_institution_connections_user_status",
+    InstitutionConnection.user_id,
+    InstitutionConnection.status,
 )
 
 Index(
-    "ix_plaid_items_household_status",
-    PlaidItem.household_id,
-    PlaidItem.status,
+    "ix_institution_connections_household_status",
+    InstitutionConnection.household_id,
+    InstitutionConnection.status,
 )

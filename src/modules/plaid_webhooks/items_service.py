@@ -1,12 +1,10 @@
 from sqlalchemy.orm import Session
 
 from src.exceptions import NotFoundError
-from src.modules.plaid_accounts.repository import PlaidAccountRepository
-from src.modules.plaid_items.repository import PlaidItemRepository
-from src.modules.plaid_transaction_sync_jobs.repository import SyncJobsRepository
-from src.modules.plaid_transaction_sync_jobs.request_service import (
-    SyncJobsRequestService,
-)
+from src.modules.accounts.repository import AccountRepository
+from src.modules.institution_connections.repository import InstitutionConnectionRepository
+from src.modules.sync_jobs.repository import SyncJobsRepository
+from src.modules.sync_jobs.request_service import SyncJobsRequestService
 
 from .schema import PlaidWebhookPayload
 
@@ -14,13 +12,13 @@ from .schema import PlaidWebhookPayload
 class PlaidItemsWebhookService:
     def __init__(
         self,
-        plaid_item_repo: PlaidItemRepository,
-        plaid_account_repo: PlaidAccountRepository,
+        connection_repo: InstitutionConnectionRepository,
+        account_repo: AccountRepository,
         sync_jobs_request_service: SyncJobsRequestService,
         sync_jobs_repo: SyncJobsRepository,
     ):
-        self.plaid_item_repo = plaid_item_repo
-        self.plaid_account_repo = plaid_account_repo
+        self.connection_repo = connection_repo
+        self.account_repo = account_repo
         self.sync_jobs_request_service = sync_jobs_request_service
         self.sync_jobs_repo = sync_jobs_repo
 
@@ -83,38 +81,38 @@ class PlaidItemsWebhookService:
         if plaid_item_id is None:
             return None
 
-        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+        connection = self.connection_repo.get_by_plaid_item_id(
             db=db,
             plaid_item_id=plaid_item_id,
         )
-        if plaid_item is None:
+        if connection is None:
             return None
 
-        self.plaid_item_repo.mark_sync_needs_reauth(
+        self.connection_repo.mark_sync_needs_reauth(
             db=db,
-            plaid_item=plaid_item,
+            connection=connection,
             error=error,
         )
         self.sync_jobs_repo.cancel_queued_or_running_for_connection(
             db=db,
-            institution_connection_id=plaid_item.id,
+            institution_connection_id=connection.id,
             last_error=error,
         )
-        return plaid_item
+        return connection
 
     def _handle_login_repaired(self, db: Session, plaid_item_id: str | None):
         if plaid_item_id is None:
             return None
 
-        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+        connection = self.connection_repo.get_by_plaid_item_id(
             db=db,
             plaid_item_id=plaid_item_id,
         )
-        if plaid_item is None:
+        if connection is None:
             return None
 
-        self.plaid_item_repo.mark_item_active(db=db, plaid_item=plaid_item)
-        self.plaid_item_repo.clear_sync_error(db=db, plaid_item=plaid_item)
+        self.connection_repo.mark_active(db=db, connection=connection)
+        self.connection_repo.clear_sync_error(db=db, connection=connection)
 
         return self._enqueue_webhook_sync(db=db, plaid_item_id=plaid_item_id)
 
@@ -122,24 +120,24 @@ class PlaidItemsWebhookService:
         if plaid_item_id is None:
             return None
 
-        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+        connection = self.connection_repo.get_by_plaid_item_id(
             db=db,
             plaid_item_id=plaid_item_id,
         )
-        if plaid_item is None:
+        if connection is None:
             return None
 
-        self.plaid_item_repo.mark_item_revoked_and_disabled(
+        self.connection_repo.mark_revoked_and_disabled(
             db=db,
-            plaid_item=plaid_item,
+            connection=connection,
             error="USER_PERMISSION_REVOKED",
         )
         self.sync_jobs_repo.cancel_queued_or_running_for_connection(
             db=db,
-            institution_connection_id=plaid_item.id,
+            institution_connection_id=connection.id,
             last_error="USER_PERMISSION_REVOKED",
         )
-        return plaid_item
+        return connection
 
     def _mark_account_revoked(
         self,
@@ -150,15 +148,15 @@ class PlaidItemsWebhookService:
         if plaid_item_id is None or plaid_account_id is None:
             return None
 
-        plaid_item = self.plaid_item_repo.get_by_plaid_item_id(
+        connection = self.connection_repo.get_by_plaid_item_id(
             db=db,
             plaid_item_id=plaid_item_id,
         )
-        if plaid_item is None:
+        if connection is None:
             return None
 
-        return self.plaid_account_repo.mark_inactive_by_plaid_id(
+        return self.account_repo.mark_inactive_by_plaid_id(
             db=db,
-            item_id=plaid_item.id,
+            institution_connection_id=connection.id,
             plaid_account_id=plaid_account_id,
         )

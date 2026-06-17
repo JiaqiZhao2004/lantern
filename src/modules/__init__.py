@@ -13,9 +13,9 @@ from .household_membership.schemas import *
 from .user.models import User
 
 
-from .plaid_items.repository import PlaidItemRepository
-from .plaid_items.service import PlaidItemService
-from .plaid_accounts.repository import PlaidAccountRepository
-from .plaid_accounts.service import PlaidAccountService
+from .institution_connections.repository import InstitutionConnectionRepository
+from .institution_connections.service import InstitutionConnectionService
+from .accounts.repository import AccountRepository
+from .accounts.service import AccountService
 from .plaid_transactions.repository import TransactionRepository
 from .plaid_transactions.service import TransactionService
