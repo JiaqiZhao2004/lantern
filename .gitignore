@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+*.env
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Postgres data
+backend/postgres-data/
+
+# IDE
+.idea/
+.vscode/
