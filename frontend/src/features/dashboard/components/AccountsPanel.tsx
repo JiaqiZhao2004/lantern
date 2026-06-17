@@ -32,7 +32,7 @@ export default function AccountsPanel({
           const accounts = item.accounts ?? [];
 
           return (
-            <Card key={item.item_id} padding="md">
+            <Card key={item.connection_id} padding="md">
               <div className={styles.institutionBlock}>
                 <div>
                   <h3 className={styles.institutionTitle}>

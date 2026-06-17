@@ -45,12 +45,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Household Items
-         * @description Return all Plaid items belonging to the authenticated user's household.
-         *     TODO: Add pagination (skip / limit) if a user can have many linked items.
-         */
-        get: operations["get_household_items_api_v1_plaid_items_get"];
+        /** Get Household Connections */
+        get: operations["get_household_connections_api_v1_plaid_items_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -66,16 +62,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Household Accounts
-         * @description Return all accounts for the authenticated user's household, grouped by linked item
-         *     (institution).  Each item carries its institution name so the client
-         *     can render a grouped list without a second request.
-         *
-         *     Only active accounts (is_active=True) are returned.  Hidden accounts
-         *     (is_hidden=True) are included so the client can render a 'hidden'
-         *     section — filter them out client-side if not needed.
-         */
+        /** Get Household Accounts */
         get: operations["get_household_accounts_api_v1_plaid_accounts_get"];
         put?: never;
         post?: never;
@@ -221,14 +208,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/named-queries/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Named Query */
+        post: operations["preview_named_query_api_v1_named_queries_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/named-queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Named Queries */
+        get: operations["list_named_queries_api_v1_named_queries_get"];
+        put?: never;
+        /** Create Named Query */
+        post: operations["create_named_query_api_v1_named_queries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/named-queries/{named_query_id}/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Named Query Data */
+        get: operations["get_named_query_data_api_v1_named_queries__named_query_id__data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/named-queries/{named_query_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Named Query */
+        delete: operations["delete_named_query_api_v1_named_queries__named_query_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Named Query */
+        patch: operations["patch_named_query_api_v1_named_queries__named_query_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
          * AccountSimpleDTO
-         * @description A single bank account within a linked item, with only the fields the
-         *     client needs to display it.  Sensitive / internal fields are omitted.
+         * @description A single Account with only the fields the client needs to display it.
          */
         AccountSimpleDTO: {
             /**
@@ -283,6 +339,40 @@ export interface components {
             /** Link Public Token */
             link_public_token: string;
         };
+        /** ColumnMeta */
+        ColumnMeta: {
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+        };
+        /**
+         * ConnectionWithAccountsDTO
+         * @description An InstitutionConnection together with all its Accounts.
+         */
+        ConnectionWithAccountsDTO: {
+            /**
+             * Connection Id
+             * Format: uuid
+             * @description Internal app UUID for this connection.
+             */
+            connection_id: string;
+            /**
+             * Institution Name
+             * @description Human-readable institution name, e.g. 'Chase'.
+             */
+            institution_name?: string | null;
+            /**
+             * Status
+             * @description Connection status: active | revoked | member_departed.
+             */
+            status: string;
+            /**
+             * Accounts
+             * @description Accounts belonging to this connection, ordered by display_order then name.
+             */
+            accounts?: components["schemas"]["AccountSimpleDTO"][];
+        };
         /** CreateHouseholdRequest */
         CreateHouseholdRequest: {
             /** Name */
@@ -312,19 +402,19 @@ export interface components {
         };
         /**
          * GetAccountsResponseDTO
-         * @description All items with their accounts for the authenticated user.
+         * @description All InstitutionConnections with their Accounts for the authenticated user.
          */
         GetAccountsResponseDTO: {
             /** Items */
-            items: components["schemas"]["ItemWithAccountsDTO"][];
+            items: components["schemas"]["ConnectionWithAccountsDTO"][];
         };
         /**
-         * GetItemsResponseDTO
-         * @description Wrapper around the list of linked Plaid items.
+         * GetConnectionsResponseDTO
+         * @description Wrapper around the list of linked institution connections.
          */
-        GetItemsResponseDTO: {
+        GetConnectionsResponseDTO: {
             /** Items */
-            items: components["schemas"]["PlaidItemSimpleDTO"][];
+            items: components["schemas"]["InstitutionConnectionSimpleDTO"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -342,32 +432,38 @@ export interface components {
             name: string;
         };
         /**
-         * ItemWithAccountsDTO
-         * @description A linked item (institution connection) together with all its accounts.
-         *     This is the primary shape the client uses to render the accounts list.
+         * InstitutionConnectionSimpleDTO
+         * @description A single linked institution connection belonging to the user.
          */
-        ItemWithAccountsDTO: {
+        InstitutionConnectionSimpleDTO: {
             /**
-             * Item Id
+             * Id
              * Format: uuid
-             * @description Internal app UUID for this item.
+             * @description Internal app UUID for this connection.
              */
-            item_id: string;
+            id: string;
             /**
              * Institution Name
-             * @description Human-readable institution name, e.g. 'Chase'.
+             * @description Human-readable institution name (e.g. 'Chase'), resolved at link time.
              */
             institution_name?: string | null;
             /**
              * Status
-             * @description Item status: active | revoked | error.
+             * @description Connection status: active | revoked | member_departed.
              */
             status: string;
             /**
-             * Accounts
-             * @description Accounts belonging to this item, ordered by display_order then name.
+             * Created At
+             * Format: date-time
+             * @description When this connection was first linked.
              */
-            accounts?: components["schemas"]["AccountSimpleDTO"][];
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description When this connection was last modified.
+             */
+            updated_at: string;
         };
         /** MembershipResponse */
         MembershipResponse: {
@@ -384,37 +480,80 @@ export interface components {
             /** Role */
             role: string;
         };
-        /**
-         * PlaidItemSimpleDTO
-         * @description A single linked Plaid item (institution connection) belonging to the user.
-         */
-        PlaidItemSimpleDTO: {
+        /** NamedQueryCreateRequest */
+        NamedQueryCreateRequest: {
+            /**
+             * Name
+             * @description Human-readable label for this Named Query
+             */
+            name: string;
+            /**
+             * Sql Query
+             * @description Flat SELECT against widget_transactions or widget_accounts
+             */
+            sql_query: string;
+            /**
+             * Chart Type
+             * @description Opaque chart type hint for the frontend
+             */
+            chart_type?: string | null;
+        };
+        /** NamedQueryDataResponse */
+        NamedQueryDataResponse: {
+            /** Columns */
+            columns: components["schemas"]["ColumnMeta"][];
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** NamedQueryPatchRequest */
+        NamedQueryPatchRequest: {
+            /** Name */
+            name?: string | null;
+            /** Sql Query */
+            sql_query?: string | null;
+            /** Chart Type */
+            chart_type?: string | null;
+        };
+        /** NamedQueryPreviewRequest */
+        NamedQueryPreviewRequest: {
+            /**
+             * Sql Query
+             * @description Flat SELECT to preview without saving
+             */
+            sql_query: string;
+        };
+        /** NamedQueryResponse */
+        NamedQueryResponse: {
             /**
              * Id
              * Format: uuid
-             * @description Internal app UUID for this account.
              */
             id: string;
             /**
-             * Institution Name
-             * @description Human-readable institution name (e.g. 'Chase'), resolved at link time.
+             * Household Id
+             * Format: uuid
              */
-            institution_name?: string | null;
-            /**
-             * Status
-             * @description Item status: active | revoked | error.
-             */
-            status: string;
+            household_id: string;
+            /** Name */
+            name: string;
+            /** Sql Query */
+            sql_query: string;
+            /** Referenced Columns */
+            referenced_columns: string[] | null;
+            /** Chart Type */
+            chart_type: string | null;
             /**
              * Created At
              * Format: date-time
-             * @description When this item was first linked.
              */
             created_at: string;
             /**
              * Updated At
              * Format: date-time
-             * @description When this item was last modified.
              */
             updated_at: string;
         };
@@ -506,7 +645,7 @@ export interface operations {
             };
         };
     };
-    get_household_items_api_v1_plaid_items_get: {
+    get_household_connections_api_v1_plaid_items_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -521,7 +660,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetItemsResponseDTO"];
+                    "application/json": components["schemas"]["GetConnectionsResponseDTO"];
                 };
             };
         };
@@ -749,6 +888,187 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_named_query_api_v1_named_queries_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NamedQueryPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NamedQueryDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_named_queries_api_v1_named_queries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NamedQueryResponse"][];
+                };
+            };
+        };
+    };
+    create_named_query_api_v1_named_queries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NamedQueryCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NamedQueryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_named_query_data_api_v1_named_queries__named_query_id__data_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                named_query_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NamedQueryDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_named_query_api_v1_named_queries__named_query_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                named_query_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_named_query_api_v1_named_queries__named_query_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                named_query_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NamedQueryPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NamedQueryResponse"];
+                };
             };
             /** @description Validation Error */
             422: {
