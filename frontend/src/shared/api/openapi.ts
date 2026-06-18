@@ -15,6 +15,15 @@ export type JsonResponse<
   ? TResponse
   : never;
 
+export type JsonCreatedResponse<
+  TPath extends keyof paths,
+  TMethod extends keyof paths[TPath]
+> = Operation<TPath, TMethod> extends {
+  responses: { 201: { content: { "application/json": infer TResponse } } };
+}
+  ? TResponse
+  : never;
+
 export type JsonRequest<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath]

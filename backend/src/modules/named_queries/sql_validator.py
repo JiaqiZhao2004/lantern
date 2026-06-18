@@ -28,7 +28,7 @@ class ValidationResult(NamedTuple):
 def validate_named_query_sql(sql: str) -> ValidationResult:
     try:
         statements = sqlglot.parse(sql, dialect="postgres")
-    except sqlglot.errors.ParseError as e:
+    except (sqlglot.errors.ParseError, sqlglot.errors.TokenError) as e:
         return ValidationResult(False, f"SQL parse error: {e}", [])
 
     if not statements or len(statements) != 1:

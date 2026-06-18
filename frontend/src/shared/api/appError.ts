@@ -62,6 +62,17 @@ export function normalizeApiError(error: unknown): AppError {
       );
     }
 
+    if (status === 422) {
+      const detail = error.response?.data?.detail;
+      const message =
+        typeof detail === "string"
+          ? detail
+          : Array.isArray(detail)
+            ? detail.map((d: { msg: string }) => d.msg).join("; ")
+            : "The request was invalid.";
+      return new AppError("api/request-failed", message, error, status);
+    }
+
     if (!error.response) {
       return new AppError(
         "network/offline",

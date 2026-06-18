@@ -1,20 +1,20 @@
+import { useNavigate } from "react-router-dom";
 import styles from "@/features/dashboard/pages/DashboardPage.module.css";
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
-import { useAccountsQuery, useConnectionsQuery } from "@/features/connections/api/queries";
-import { PlaidLinkCard } from "@/features/connections/components/PlaidLinkCard";
-import AccountsPanel from "@/features/dashboard/components/AccountsPanel";
-import ConnectionsPanel from "@/features/dashboard/components/ConnectionsPanel";
 import { useHouseholdQuery } from "@/features/household/api/queries";
 import { useViewerQuery } from "@/features/viewer/api/queries";
+import { NamedQueryCard } from "@/features/named-queries/components/NamedQueryCard";
+import { useNamedQueriesQuery } from "@/features/named-queries/api/queries";
 import { AppShell } from "@/shared/ui/AppShell/AppShell";
+import { Button } from "@/shared/ui/Button/Button";
 import { PageSection } from "@/shared/ui/PageSection/PageSection";
 
 export default function DashboardPage() {
   const { logout, user } = useAuthSession();
   const viewerQuery = useViewerQuery({ enabled: true });
   const householdQuery = useHouseholdQuery({ enabled: true });
-  const connectionsQuery = useConnectionsQuery({ enabled: true });
-  const accountsQuery = useAccountsQuery({ enabled: true });
+  const namedQueriesQuery = useNamedQueriesQuery();
+  const navigate = useNavigate();
 
   const title =
     householdQuery.data?.name ?? viewerQuery.data?.name ?? "Dashboard";
@@ -22,43 +22,54 @@ export default function DashboardPage() {
   return (
     <AppShell
       title={title}
-      subtitle="Review linked institutions, explore account structure, and keep the onboarding surface clean."
       email={user?.email ?? viewerQuery.data?.email}
       onLogout={logout}
     >
       <div className={styles.grid}>
-        <div className={styles.topGrid}>
-          <PlaidLinkCard />
-        </div>
-
         <PageSection
-          title="Linked institutions"
-          description="Every institution currently visible from the backend contract."
+          title="Named Queries"
+          action={
+            <Button onClick={() => navigate("/queries/new")}>
+              + New Query
+            </Button>
+          }
         >
-          <ConnectionsPanel
-            items={connectionsQuery.data?.items ?? []}
-            isLoading={connectionsQuery.isLoading}
-            errorMessage={
-              connectionsQuery.error instanceof Error
-                ? connectionsQuery.error.message
-                : null
-            }
-          />
-        </PageSection>
-
-        <PageSection
-          title="Accounts"
-          description="Accounts are grouped by institution and ordered by the backend response."
-        >
-          <AccountsPanel
-            items={accountsQuery.data?.items ?? []}
-            isLoading={accountsQuery.isLoading}
-            errorMessage={
-              accountsQuery.error instanceof Error
-                ? accountsQuery.error.message
-                : null
-            }
-          />
+          {namedQueriesQuery.isLoading && (
+            <p style={{ color: "var(--text-muted)" }}>Loading…</p>
+          )}
+          {namedQueriesQuery.isError && (
+            <p style={{ color: "var(--danger-700)" }}>
+              {namedQueriesQuery.error instanceof Error
+                ? namedQueriesQuery.error.message
+                : "Failed to load Named Queries."}
+            </p>
+          )}
+          {namedQueriesQuery.data && namedQueriesQuery.data.length === 0 && (
+            <p style={{ color: "var(--text-muted)" }}>
+              No Named Queries yet.{" "}
+              <button
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--brand-700)",
+                  cursor: "pointer",
+                  font: "inherit",
+                  fontWeight: 600,
+                  padding: 0,
+                }}
+                onClick={() => navigate("/queries/new")}
+              >
+                Create your first one.
+              </button>
+            </p>
+          )}
+          {namedQueriesQuery.data && namedQueriesQuery.data.length > 0 && (
+            <div className={styles.queryGrid}>
+              {namedQueriesQuery.data.map((query) => (
+                <NamedQueryCard key={query.id} query={query} />
+              ))}
+            </div>
+          )}
         </PageSection>
       </div>
     </AppShell>
