@@ -1,0 +1,48 @@
+import styles from "@/features/named-queries/components/NamedQueryResultTable.module.css";
+import type { ColumnMeta } from "@/features/named-queries/api/contracts";
+
+type Props = {
+  columns: ColumnMeta[];
+  rows: Record<string, unknown>[];
+  truncated: boolean;
+};
+
+export function NamedQueryResultTable({ columns, rows, truncated }: Props) {
+  if (rows.length === 0) {
+    return <p className={styles.empty}>No results.</p>;
+  }
+
+  return (
+    <div>
+      <div className={styles.wrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={col.name} className={styles.th}>
+                  {col.name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i}>
+                {columns.map((col) => (
+                  <td key={col.name} className={styles.td}>
+                    {String(row[col.name] ?? "")}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {truncated && (
+        <p className={styles.truncated}>
+          Showing the first 500 rows — refine your query to see more.
+        </p>
+      )}
+    </div>
+  );
+}

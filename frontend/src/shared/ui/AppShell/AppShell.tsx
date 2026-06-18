@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { NavLink } from "react-router-dom";
 import { Button } from "@/shared/ui/Button/Button";
 import styles from "@/shared/ui/AppShell/AppShell.module.css";
 
@@ -29,6 +30,24 @@ export function AppShell({
             {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
           </div>
           <div className={styles.meta}>
+            <nav className={styles.nav}>
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+                }
+              >
+                Dashboard
+              </NavLink>
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+                }
+              >
+                Settings
+              </NavLink>
+            </nav>
             {email ? <span className={styles.email}>{email}</span> : null}
             {onLogout ? (
               <Button variant="secondary" onClick={onLogout}>

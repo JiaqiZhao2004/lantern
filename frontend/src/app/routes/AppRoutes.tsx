@@ -4,6 +4,8 @@ import RegisterPage from "@/features/auth/pages/RegisterPage";
 import EmailVerificationPage from "@/features/auth/pages/EmailVerificationPage";
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import HouseholdSetupPage from "@/features/household/pages/HouseholdSetupPage";
+import SettingsPage from "@/features/settings/pages/SettingsPage";
+import NamedQueryEditorPage from "@/features/named-queries/pages/NamedQueryEditorPage";
 import {
   EmailVerificationLayout,
   HouseholdRequiredLayout,
@@ -31,6 +33,9 @@ export function AppRoutes() {
 
         <Route element={<HouseholdRequiredLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/queries/new" element={<NamedQueryEditorPage />} />
+          <Route path="/queries/:id/edit" element={<NamedQueryEditorPage />} />
         </Route>
       </Route>
 

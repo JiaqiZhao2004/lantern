@@ -3,8 +3,8 @@
   gap: 1.25rem;
 }
 
-.topGrid {
+.queryGrid {
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
 }

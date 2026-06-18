@@ -1,0 +1,122 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.sqlTextarea {
+  width: 100%;
+  min-height: 12rem;
+  padding: 0.75rem;
+  font-family: var(--font-monospace);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-strong);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 0.75rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.sqlTextarea:focus {
+  border-color: var(--brand-600);
+}
+
+.chartTypeGroup {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chartTypeOption {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.875rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text-muted);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.chartTypeOption:hover {
+  background: var(--surface-muted);
+}
+
+.chartTypeOption.selected {
+  border-color: var(--brand-600);
+  background: rgba(39, 110, 241, 0.08);
+  color: var(--brand-700);
+}
+
+.noneOption {
+  composes: chartTypeOption;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.previewPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.previewTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.previewEmpty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
