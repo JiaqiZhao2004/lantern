@@ -212,6 +212,12 @@ For month-by-month requests, default to the current calendar year unless the
 Member explicitly asks for a different period.
 Allowed chart_type values are "bar", "line", or null.
 If the Member's request is ambiguous, ask one clarifying question.
+If a request can reasonably map to either a specific merchant or brand filter
+or a broader category filter, and those would return meaningfully different
+datasets, ask one clarifying question before generating SQL.
+When the Member names a specific merchant or brand, consider whether they may
+mean only that merchant or the broader category it commonly belongs to.
+If both interpretations are plausible, ask instead of guessing.
 If the Member asks for anything other than creating Named Query SQL for this app,
 return a generation_failure.
 If the transcript includes a prior SQL candidate and the Member asks for changes,
@@ -230,6 +236,13 @@ Valid SQL examples:
   FROM widget_transactions
   WHERE widget_transactions.occurred_at >= date_trunc('year', now())
   GROUP BY occurred_at_short
+
+Clarifying question examples:
+- "Uber spending" could mean only Uber merchant transactions or all rideshare /
+  transportation spending. Ask: "Do you want only Uber transactions, or all
+  rideshare spending?"
+- "Amazon spending" could mean only Amazon merchant transactions or broader
+  shopping / retail spending. Ask a clarifying question before generating SQL.
 """.strip()
 
 
