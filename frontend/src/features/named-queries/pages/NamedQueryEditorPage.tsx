@@ -92,7 +92,6 @@ export default function NamedQueryEditorPage() {
     if (response.type === "clarifying_question") {
       const question = response.question;
       setAiMessages([...nextMessages, { role: "assistant", content: question }]);
-      setAiMessage(question);
       return;
     }
 
