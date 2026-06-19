@@ -1,7 +1,11 @@
 import pytest
+from types import SimpleNamespace
+from uuid import uuid4
 
-from src.exceptions import ValidationError
-from src.modules.named_queries.service import NamedQueryService
+from src.exceptions import InternalError, RateLimitError, ValidationError
+from src.infrastructure.llm import LLMProviderError
+from src.modules.named_queries.schemas import NamedQueryGenerationMessage
+from src.modules.named_queries.service import NamedQueryGenerationService, NamedQueryService
 from src.modules.named_queries.sql_validator import validate_named_query_sql
 
 
@@ -19,6 +23,53 @@ class FakeDbError:
 
 class FakeSqlAlchemyError(Exception):
     orig = FakeDbError()
+
+
+class FakeUsageRepo:
+    def __init__(self, usage=None):
+        self.usage = usage or SimpleNamespace(
+            quota_units_used=0,
+            llm_calls=0,
+            clarifying_questions=0,
+            validation_failures=0,
+            repair_attempts=0,
+            generation_failures=0,
+            provider_failures=0,
+        )
+
+    def get_or_create_for_date(self, db, household_id, usage_date):
+        return self.usage
+
+    def increment(self, db, usage, **counters):
+        for name, amount in counters.items():
+            setattr(usage, name, getattr(usage, name) + amount)
+        return usage
+
+
+class FakeLLMClient:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def generate_structured(self, *, messages, schema_name, json_schema):
+        self.calls.append(messages)
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
+def _generation_service(responses, usage_repo=None, daily_quota=100, repair_attempts=2):
+    return NamedQueryGenerationService(
+        llm_client=FakeLLMClient(responses),
+        usage_repo=usage_repo or FakeUsageRepo(),
+        daily_quota=daily_quota,
+        repair_attempts=repair_attempts,
+    )
+
+
+def _message(content="show spending by category"):
+    return [NamedQueryGenerationMessage(role="member", content=content)]
 
 
 def test_household_filter_is_injected_before_grouping():
@@ -119,3 +170,166 @@ def test_query_execution_error_omits_sqlalchemy_sql_context():
     message = service._format_query_execution_error(error)
 
     assert message == 'Query execution failed: column "category_primar" does not exist'
+
+
+def test_generation_returns_valid_candidate_and_consumes_quota():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [
+            {
+                "type": "named_query_candidate",
+                "name": "Spending by category",
+                "candidate": {
+                    "sql_query": (
+                        "SELECT category_primary, SUM(amount) AS total "
+                        "FROM widget_transactions "
+                        "GROUP BY category_primary"
+                    ),
+                    "chart_type": "bar",
+                },
+            }
+        ],
+        usage_repo=usage_repo,
+    )
+
+    response = service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    assert response.type == "named_query_candidate"
+    assert response.candidate.chart_type == "bar"
+    assert usage_repo.usage.quota_units_used == 1
+    assert usage_repo.usage.llm_calls == 1
+
+
+def test_generation_prompt_asks_for_separate_stored_query_name():
+    service = _generation_service(
+        [
+            {
+                "type": "named_query_candidate",
+                "name": "Grocery Spending by Month",
+                "candidate": {
+                    "sql_query": (
+                        "SELECT category_primary, SUM(amount) AS total "
+                        "FROM widget_transactions "
+                        "GROUP BY category_primary"
+                    ),
+                    "chart_type": "bar",
+                },
+            }
+        ],
+    )
+
+    service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    system_message = service.llm_client.calls[0][0].content
+    assert "top-level name field" in system_message
+    assert "candidate object is only the SQL" in system_message
+    assert "Grocery Spending by Month" in system_message
+
+
+def test_generation_returns_clarifying_question_and_consumes_quota():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [{"type": "clarifying_question", "question": "Which category do you mean?"}],
+        usage_repo=usage_repo,
+    )
+
+    response = service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    assert response.type == "clarifying_question"
+    assert usage_repo.usage.quota_units_used == 1
+    assert usage_repo.usage.clarifying_questions == 1
+
+
+def test_generation_repairs_invalid_sql_without_consuming_extra_quota():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [
+            {
+                "type": "named_query_candidate",
+                "name": "Bad query",
+                "candidate": {
+                    "sql_query": "SELECT * FROM transactions",
+                    "chart_type": "line",
+                },
+            },
+            {
+                "type": "named_query_candidate",
+                "name": "Fixed query",
+                "candidate": {
+                    "sql_query": "SELECT occurred_at, amount FROM widget_transactions",
+                    "chart_type": "line",
+                },
+            },
+        ],
+        usage_repo=usage_repo,
+    )
+
+    response = service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    assert response.type == "named_query_candidate"
+    assert response.name == "Fixed query"
+    assert usage_repo.usage.quota_units_used == 1
+    assert usage_repo.usage.validation_failures == 1
+    assert usage_repo.usage.repair_attempts == 1
+    assert usage_repo.usage.llm_calls == 2
+
+
+def test_generation_failure_after_invalid_repairs_does_not_consume_quota():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [
+            {
+                "type": "named_query_candidate",
+                "name": "Bad query",
+                "candidate": {
+                    "sql_query": "SELECT * FROM transactions",
+                    "chart_type": "bar",
+                },
+            }
+        ],
+        usage_repo=usage_repo,
+        repair_attempts=0,
+    )
+
+    response = service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    assert response.type == "generation_failure"
+    assert usage_repo.usage.quota_units_used == 0
+    assert usage_repo.usage.generation_failures == 1
+
+
+def test_provider_failure_does_not_consume_quota():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [LLMProviderError("provider down")],
+        usage_repo=usage_repo,
+    )
+
+    with pytest.raises(InternalError):
+        service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    assert usage_repo.usage.quota_units_used == 0
+    assert usage_repo.usage.provider_failures == 1
+
+
+def test_exhausted_quota_returns_rate_limit_before_llm_call():
+    usage = SimpleNamespace(
+        quota_units_used=1,
+        llm_calls=0,
+        clarifying_questions=0,
+        validation_failures=0,
+        repair_attempts=0,
+        generation_failures=0,
+        provider_failures=0,
+    )
+    usage_repo = FakeUsageRepo(usage=usage)
+    service = _generation_service(
+        [{"type": "clarifying_question", "question": "unused"}],
+        usage_repo=usage_repo,
+        daily_quota=1,
+    )
+
+    with pytest.raises(RateLimitError):
+        service.generate(db=None, household_id=uuid4(), messages=_message())
+
+    assert usage_repo.usage.llm_calls == 0

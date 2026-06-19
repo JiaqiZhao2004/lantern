@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -19,6 +19,51 @@ class NamedQueryPatchRequest(BaseModel):
 
 class NamedQueryPreviewRequest(BaseModel):
     sql_query: str = Field(..., description="Flat SELECT to preview without saving")
+
+
+class NamedQueryGenerationMessage(BaseModel):
+    role: Literal["member", "assistant"]
+    content: str = Field(..., min_length=1)
+
+
+class NamedQueryGenerateRequest(BaseModel):
+    messages: list[NamedQueryGenerationMessage] = Field(..., min_length=1)
+
+
+class NamedQueryCandidate(BaseModel):
+    sql_query: str
+    chart_type: str | None = None
+
+
+class NamedQueryClarifyingQuestionResponse(BaseModel):
+    type: Literal["clarifying_question"] = "clarifying_question"
+    question: str
+
+
+class NamedQueryCandidateResponse(BaseModel):
+    type: Literal["named_query_candidate"] = "named_query_candidate"
+    name: str
+    candidate: NamedQueryCandidate
+
+
+class NamedQueryGenerationFailureResponse(BaseModel):
+    type: Literal["generation_failure"] = "generation_failure"
+    message: str
+    reason: (
+        Literal[
+            "provider_quota_exceeded",
+            "provider_not_configured",
+            "provider_unavailable",
+        ]
+        | None
+    ) = None
+
+
+NamedQueryGenerateResponse = (
+    NamedQueryClarifyingQuestionResponse
+    | NamedQueryCandidateResponse
+    | NamedQueryGenerationFailureResponse
+)
 
 
 class NamedQueryResponse(BaseModel):

@@ -2,6 +2,8 @@ import httpClient from "@/shared/api/httpClient";
 import type {
   CreateNamedQueryRequest,
   CreateNamedQueryResponse,
+  GenerateNamedQueryRequest,
+  GenerateNamedQueryResponse,
   NamedQueryDataResponse,
   NamedQueryResponse,
   PatchNamedQueryRequest,
@@ -52,6 +54,16 @@ export async function previewNamedQuery(
 ): Promise<PreviewNamedQueryResponse> {
   const response = await httpClient.post<PreviewNamedQueryResponse>(
     "/api/v1/named-queries/preview",
+    payload
+  );
+  return response.data;
+}
+
+export async function generateNamedQueryCandidate(
+  payload: GenerateNamedQueryRequest
+): Promise<GenerateNamedQueryResponse> {
+  const response = await httpClient.post<GenerateNamedQueryResponse>(
+    "/api/v1/named-queries/generate",
     payload
   );
   return response.data;

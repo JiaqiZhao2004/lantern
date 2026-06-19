@@ -225,6 +225,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/named-queries/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Named Query */
+        post: operations["generate_named_query_api_v1_named_queries_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/named-queries": {
         parameters: {
             query?: never;
@@ -498,6 +515,28 @@ export interface components {
              */
             chart_type?: string | null;
         };
+        /** NamedQueryCandidate */
+        NamedQueryCandidate: {
+            /** Sql Query */
+            sql_query: string;
+            /** Chart Type */
+            chart_type?: string | null;
+        };
+        /** NamedQueryCandidateResponse */
+        NamedQueryCandidateResponse: {
+            /** Type */
+            type?: "named_query_candidate";
+            /** Name */
+            name: string;
+            candidate: components["schemas"]["NamedQueryCandidate"];
+        };
+        /** NamedQueryClarifyingQuestionResponse */
+        NamedQueryClarifyingQuestionResponse: {
+            /** Type */
+            type?: "clarifying_question";
+            /** Question */
+            question: string;
+        };
         /** NamedQueryDataResponse */
         NamedQueryDataResponse: {
             /** Columns */
@@ -508,6 +547,25 @@ export interface components {
             }[];
             /** Truncated */
             truncated: boolean;
+        };
+        /** NamedQueryGenerateRequest */
+        NamedQueryGenerateRequest: {
+            /** Messages */
+            messages: components["schemas"]["NamedQueryGenerationMessage"][];
+        };
+        /** NamedQueryGenerationFailureResponse */
+        NamedQueryGenerationFailureResponse: {
+            /** Type */
+            type?: "generation_failure";
+            /** Message */
+            message: string;
+        };
+        /** NamedQueryGenerationMessage */
+        NamedQueryGenerationMessage: {
+            /** Role */
+            role: "member" | "assistant";
+            /** Content */
+            content: string;
         };
         /** NamedQueryPatchRequest */
         NamedQueryPatchRequest: {
@@ -888,6 +946,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_named_query_api_v1_named_queries_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NamedQueryGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["NamedQueryClarifyingQuestionResponse"]
+                        | components["schemas"]["NamedQueryCandidateResponse"]
+                        | components["schemas"]["NamedQueryGenerationFailureResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

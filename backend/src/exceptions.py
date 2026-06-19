@@ -22,6 +22,11 @@ class ValidationError(AppError):
     detail = "Validation failed"
 
 
+class RateLimitError(AppError):
+    status_code = 429
+    detail = "Rate limit exceeded"
+
+
 class InternalError(AppError):
     status_code = 500
     detail = "Internal error"

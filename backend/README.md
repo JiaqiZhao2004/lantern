@@ -10,6 +10,16 @@ fill in .env
 copy over postgres-data
 copy over google app secret
 
+For AI-assisted Named Query generation, set:
+
+```bash
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Keep the OpenAI key in the backend `.env` only. The frontend already calls the
+backend generation endpoint, so the browser never needs direct access to the key.
+
 ```bash
 uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ```
