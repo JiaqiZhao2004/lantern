@@ -3,6 +3,7 @@ import type { JsonCreatedResponse, JsonRequest, JsonResponse } from "@/shared/ap
 export const LIST_NAMED_QUERIES_PATH = "/api/v1/named-queries" as const;
 export const CREATE_NAMED_QUERY_PATH = "/api/v1/named-queries" as const;
 export const PREVIEW_NAMED_QUERY_PATH = "/api/v1/named-queries/preview" as const;
+export const GENERATE_NAMED_QUERY_PATH = "/api/v1/named-queries/generate" as const;
 export const NAMED_QUERY_DATA_PATH = "/api/v1/named-queries/{named_query_id}/data" as const;
 export const NAMED_QUERY_PATH = "/api/v1/named-queries/{named_query_id}" as const;
 
@@ -18,6 +19,10 @@ export type PatchNamedQueryResponse = JsonResponse<typeof NAMED_QUERY_PATH, "pat
 
 export type PreviewNamedQueryRequest = JsonRequest<typeof PREVIEW_NAMED_QUERY_PATH, "post">;
 export type PreviewNamedQueryResponse = JsonResponse<typeof PREVIEW_NAMED_QUERY_PATH, "post">;
+
+export type GenerateNamedQueryRequest = JsonRequest<typeof GENERATE_NAMED_QUERY_PATH, "post">;
+export type GenerateNamedQueryResponse = JsonResponse<typeof GENERATE_NAMED_QUERY_PATH, "post">;
+export type NamedQueryGenerationMessage = GenerateNamedQueryRequest["messages"][number];
 
 export type ChartType = "bar" | "line";
 export const KNOWN_CHART_TYPES: ChartType[] = ["bar", "line"];

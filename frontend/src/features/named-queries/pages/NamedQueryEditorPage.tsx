@@ -5,12 +5,16 @@ import styles from "@/features/named-queries/pages/NamedQueryEditorPage.module.c
 import { NamedQueryResultTable } from "@/features/named-queries/components/NamedQueryResultTable";
 import {
   useCreateNamedQueryMutation,
+  useGenerateNamedQueryMutation,
   useNamedQueriesQuery,
   usePatchNamedQueryMutation,
   usePreviewNamedQueryMutation,
 } from "@/features/named-queries/api/queries";
 import { KNOWN_CHART_TYPES } from "@/features/named-queries/api/contracts";
-import type { ChartType } from "@/features/named-queries/api/contracts";
+import type {
+  ChartType,
+  NamedQueryGenerationMessage,
+} from "@/features/named-queries/api/contracts";
 import { AppShell } from "@/shared/ui/AppShell/AppShell";
 import { Button } from "@/shared/ui/Button/Button";
 import { Card } from "@/shared/ui/Card/Card";
@@ -34,6 +38,9 @@ export default function NamedQueryEditorPage() {
   const [name, setName] = useState("");
   const [sql, setSql] = useState("");
   const [chartType, setChartType] = useState<ChartType | null>(null);
+  const [aiInput, setAiInput] = useState("");
+  const [aiMessages, setAiMessages] = useState<NamedQueryGenerationMessage[]>([]);
+  const [aiMessage, setAiMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (existing) {
@@ -50,6 +57,7 @@ export default function NamedQueryEditorPage() {
   const createMutation = useCreateNamedQueryMutation();
   const patchMutation = usePatchNamedQueryMutation(id ?? "");
   const previewMutation = usePreviewNamedQueryMutation();
+  const generateMutation = useGenerateNamedQueryMutation();
 
   const isSaving = createMutation.isPending || patchMutation.isPending;
   const saveError = createMutation.error ?? patchMutation.error;
@@ -68,6 +76,55 @@ export default function NamedQueryEditorPage() {
     navigate("/dashboard");
   };
 
+  const handleGenerate = async () => {
+    const content = aiInput.trim();
+    if (!content || isEditing) return;
+
+    const nextMessages: NamedQueryGenerationMessage[] = [
+      ...aiMessages,
+      { role: "member", content },
+    ];
+    setAiMessages(nextMessages);
+    setAiInput("");
+    setAiMessage(null);
+
+    const response = await generateMutation.mutateAsync({ messages: nextMessages });
+    if (response.type === "clarifying_question") {
+      const question = response.question;
+      setAiMessages([...nextMessages, { role: "assistant", content: question }]);
+      setAiMessage(question);
+      return;
+    }
+
+    if (response.type === "generation_failure") {
+      setAiMessage(response.message);
+      return;
+    }
+
+    if (response.type === "named_query_candidate") {
+      setName(response.name);
+      setSql(response.candidate.sql_query);
+      setChartType(
+        KNOWN_CHART_TYPES.includes(response.candidate.chart_type as ChartType)
+          ? (response.candidate.chart_type as ChartType)
+          : null
+      );
+      setAiMessages([
+        ...nextMessages,
+        {
+          role: "assistant",
+          content: [
+            `Generated name: ${response.name}`,
+            `chart_type: ${response.candidate.chart_type ?? "table"}`,
+            "sql_query:",
+            response.candidate.sql_query,
+          ].join("\n"),
+        },
+      ]);
+      setAiMessage("Generated a query candidate. Review it, preview it, then save.");
+    }
+  };
+
   const title = householdQuery.data?.name ?? viewerQuery.data?.name ?? "Dashboard";
 
   return (
@@ -79,6 +136,68 @@ export default function NamedQueryEditorPage() {
       <div className={styles.layout}>
         <Card padding="lg">
           <div className={styles.form}>
+            {!isEditing && (
+              <div className={styles.aiPanel}>
+                <div>
+                  <h2 className={styles.aiTitle}>AI assist</h2>
+                  <p className={styles.hint}>
+                    Describe the Named Query you want. The assistant can ask one
+                    clarifying question, then it will fill the form below.
+                  </p>
+                </div>
+
+                {aiMessages.length > 0 && (
+                  <div className={styles.aiTranscript}>
+                    {aiMessages.map((message, index) => (
+                      <div
+                        key={`${message.role}-${index}`}
+                        className={classNames(
+                          styles.aiBubble,
+                          message.role === "member" ? styles.memberBubble : styles.assistantBubble
+                        )}
+                      >
+                        {message.content}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {aiMessage && <InlineMessage>{aiMessage}</InlineMessage>}
+                {generateMutation.isError && (
+                  <InlineMessage tone="error">
+                    {generateMutation.error instanceof Error
+                      ? generateMutation.error.message
+                      : "Generation failed."}
+                  </InlineMessage>
+                )}
+
+                <div className={styles.aiControls}>
+                  <input
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    placeholder={
+                      aiMessages.some((message) => message.role === "assistant")
+                        ? "Answer the clarifying question"
+                        : "e.g. Show grocery spending by month"
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleGenerate();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={handleGenerate}
+                    disabled={generateMutation.isPending || !aiInput.trim()}
+                  >
+                    {generateMutation.isPending ? "Generating…" : "Generate"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className={styles.field}>
               <label className={styles.label} htmlFor="nq-name">
                 Name

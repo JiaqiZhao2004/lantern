@@ -1,9 +1,10 @@
 import uuid
+from datetime import date
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from .models import NamedQuery
+from .models import NamedQuery, NamedQueryGenerationUsage
 
 _UNSET = object()
 
@@ -64,3 +65,39 @@ class NamedQueryRepository:
     def delete(self, db: Session, named_query: NamedQuery) -> None:
         db.delete(named_query)
         db.flush()
+
+
+class NamedQueryGenerationUsageRepository:
+    def get_or_create_for_date(
+        self,
+        db: Session,
+        household_id: UUID,
+        usage_date: date,
+    ) -> NamedQueryGenerationUsage:
+        usage = (
+            db.query(NamedQueryGenerationUsage)
+            .filter_by(household_id=household_id, usage_date=usage_date)
+            .with_for_update()
+            .first()
+        )
+        if usage is not None:
+            return usage
+
+        usage = NamedQueryGenerationUsage(
+            household_id=household_id,
+            usage_date=usage_date,
+        )
+        db.add(usage)
+        db.flush()
+        return usage
+
+    def increment(
+        self,
+        db: Session,
+        usage: NamedQueryGenerationUsage,
+        **counters: int,
+    ) -> NamedQueryGenerationUsage:
+        for name, amount in counters.items():
+            setattr(usage, name, getattr(usage, name) + amount)
+        db.flush()
+        return usage

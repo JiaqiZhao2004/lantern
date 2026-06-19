@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createNamedQuery,
   deleteNamedQuery,
+  generateNamedQueryCandidate,
   getNamedQueryData,
   listNamedQueries,
   patchNamedQuery,
@@ -9,6 +10,7 @@ import {
 } from "@/features/named-queries/api/client";
 import type {
   CreateNamedQueryRequest,
+  GenerateNamedQueryRequest,
   PatchNamedQueryRequest,
   PreviewNamedQueryRequest,
 } from "@/features/named-queries/api/contracts";
@@ -64,6 +66,14 @@ export function useDeleteNamedQueryMutation() {
 export function usePreviewNamedQueryMutation() {
   return useMutation({
     mutationFn: (payload: PreviewNamedQueryRequest) => previewNamedQuery(payload),
+    retry: false,
+  });
+}
+
+export function useGenerateNamedQueryMutation() {
+  return useMutation({
+    mutationFn: (payload: GenerateNamedQueryRequest) =>
+      generateNamedQueryCandidate(payload),
     retry: false,
   });
 }
