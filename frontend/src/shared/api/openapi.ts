@@ -4,16 +4,15 @@ type Defined<T> = Exclude<T, undefined | null | never>;
 type ApiVersionPrefix = "/api/v1";
 type PrefixedPath<TPath extends string> =
   TPath extends `${ApiVersionPrefix}${string}` ? TPath : `${ApiVersionPrefix}${TPath}`;
-type Operation<
-  TPath extends string,
-  TMethod extends keyof paths[PrefixedPath<TPath> & keyof paths]
-> = Defined<paths[TPath][TMethod]>;
+type ResolvedPath<TPath extends string> = PrefixedPath<TPath> & keyof paths;
+type OperationMethod<TPath extends string> = keyof paths[ResolvedPath<TPath>];
+type Operation<TPath extends string, TMethod extends OperationMethod<TPath>> = Defined<
+  paths[ResolvedPath<TPath>][TMethod]
+>;
 
 export type JsonResponse<
   TPath extends string,
-  TResolvedPath extends PrefixedPath<TPath> & keyof paths = PrefixedPath<TPath> &
-    keyof paths,
-  TMethod extends keyof paths[TResolvedPath] = keyof paths[TResolvedPath]
+  TMethod extends OperationMethod<TPath> = OperationMethod<TPath>
 > = Operation<TPath, TMethod> extends {
   responses: { 200: { content: { "application/json": infer TResponse } } };
 }
@@ -22,9 +21,7 @@ export type JsonResponse<
 
 export type JsonCreatedResponse<
   TPath extends string,
-  TResolvedPath extends PrefixedPath<TPath> & keyof paths = PrefixedPath<TPath> &
-    keyof paths,
-  TMethod extends keyof paths[TResolvedPath] = keyof paths[TResolvedPath]
+  TMethod extends OperationMethod<TPath> = OperationMethod<TPath>
 > = Operation<TPath, TMethod> extends {
   responses: { 201: { content: { "application/json": infer TResponse } } };
 }
@@ -33,9 +30,7 @@ export type JsonCreatedResponse<
 
 export type JsonRequest<
   TPath extends string,
-  TResolvedPath extends PrefixedPath<TPath> & keyof paths = PrefixedPath<TPath> &
-    keyof paths,
-  TMethod extends keyof paths[TResolvedPath] = keyof paths[TResolvedPath]
+  TMethod extends OperationMethod<TPath> = OperationMethod<TPath>
 > = Operation<TPath, TMethod> extends {
   requestBody: { content: { "application/json": infer TRequest } };
 }
@@ -44,9 +39,7 @@ export type JsonRequest<
 
 export type FormRequest<
   TPath extends string,
-  TResolvedPath extends PrefixedPath<TPath> & keyof paths = PrefixedPath<TPath> &
-    keyof paths,
-  TMethod extends keyof paths[TResolvedPath] = keyof paths[TResolvedPath]
+  TMethod extends OperationMethod<TPath> = OperationMethod<TPath>
 > = Operation<TPath, TMethod> extends {
   requestBody: {
     content: { "application/x-www-form-urlencoded": infer TRequest };
