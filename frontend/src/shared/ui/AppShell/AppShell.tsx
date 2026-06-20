@@ -15,7 +15,7 @@ type AppShellProps = {
 export function AppShell({
   children,
   email,
-  eyebrow = "Family Finance",
+  eyebrow = "Lantern",
   onLogout,
   subtitle,
   title,

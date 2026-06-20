@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <AuthPageLayout
       title="Sign in"
-      description="Use your existing Family Finance account to get back to your dashboard."
+      description="Use your existing Lantern account to get back to your dashboard."
       footer={
         <>
           Don&apos;t have an account?{" "}

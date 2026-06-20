@@ -40,8 +40,8 @@ uvicorn src.dev_webhook_server:app --reload --host 0.0.0.0 --port 8001
 ## docker
 
 ```bash
-docker build . -t family-finance-backend
-docker run --rm --env-file .env -p 8000:8000 family-finance-backend
+docker build . -t lantern-backend
+docker run --rm --env-file .env -p 8000:8000 lantern-backend
 ```
 
 ## postgres
