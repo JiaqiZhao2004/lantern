@@ -1,4 +1,4 @@
-# Family Finance Backend
+# Lantern Backend
 
 A backend that lets a family pool their bank accounts (via Plaid) into a shared household and see all their transactions in one place. Scoped specifically to families because members can see each other's transactions — the trust model does not extend to friends or roommates.
 

@@ -10,7 +10,7 @@ import { Button } from "@/shared/ui/Button/Button";
 import { InlineMessage } from "@/shared/ui/InlineMessage/InlineMessage";
 import styles from "@/features/connections/components/PlaidLinkCard.module.css";
 
-const LINK_TOKEN_STORAGE_KEY = "family-finance:plaid-link-token";
+const LINK_TOKEN_STORAGE_KEY = "lantern:plaid-link-token";
 
 export function PlaidLinkCard() {
   const createLinkTokenMutation = useCreateLinkTokenMutation();

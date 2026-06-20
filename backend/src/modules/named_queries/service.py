@@ -60,7 +60,7 @@ _GENERATION_SCHEMA: dict[str, Any] = {
 }
 
 _SYSTEM_PROMPT = """
-You generate SQL candidates for this family finance app's Named Query feature.
+You generate SQL candidates for Lantern's Named Query feature.
 Return only structured JSON matching the requested schema.
 
 For named_query_candidate responses, put the stored Named Query label in the

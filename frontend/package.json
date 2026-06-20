@@ -1,5 +1,5 @@
 {
-  "name": "plaid_react_quickstart",
+  "name": "lantern",
   "version": "0.1.0",
   "dependencies": {
     "@tanstack/react-query": "^5.96.2",

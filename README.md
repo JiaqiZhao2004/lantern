@@ -1,6 +1,6 @@
-# Family Finance
+# Lantern
 
-Monorepo for the family finance app.
+Monorepo for Lantern, a household finance app that brings clarity and control to shared financial life.
 
 | Directory | Description |
 |---|---|
