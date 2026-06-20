@@ -39,7 +39,7 @@ export async function joinHousehold(
   householdId: string
 ): Promise<JoinHouseholdResponse> {
   const response = await httpClient.post<JoinHouseholdResponse>(
-    `/api/v1/households/${householdId}/join`
+    `/households/${householdId}/join`
   );
   return response.data;
 }

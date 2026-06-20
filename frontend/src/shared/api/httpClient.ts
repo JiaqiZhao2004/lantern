@@ -2,8 +2,11 @@ import axios from "axios";
 import { auth } from "@/features/auth/api/firebase/firebaseApp";
 import { normalizeApiError } from "@/shared/api/appError";
 
+const API_BASE_PATH = "/api/v1";
+const backendHost = import.meta.env.VITE_BACKEND_HOST?.replace(/\/$/, "") ?? "";
+
 const httpClient = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_HOST,
+  baseURL: `${backendHost}${API_BASE_PATH}`,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
