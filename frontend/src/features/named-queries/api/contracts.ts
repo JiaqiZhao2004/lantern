@@ -1,11 +1,11 @@
 import type { JsonCreatedResponse, JsonRequest, JsonResponse } from "@/shared/api/openapi";
 
-export const LIST_NAMED_QUERIES_PATH = "/api/v1/named-queries" as const;
-export const CREATE_NAMED_QUERY_PATH = "/api/v1/named-queries" as const;
-export const PREVIEW_NAMED_QUERY_PATH = "/api/v1/named-queries/preview" as const;
-export const GENERATE_NAMED_QUERY_PATH = "/api/v1/named-queries/generate" as const;
-export const NAMED_QUERY_DATA_PATH = "/api/v1/named-queries/{named_query_id}/data" as const;
-export const NAMED_QUERY_PATH = "/api/v1/named-queries/{named_query_id}" as const;
+export const LIST_NAMED_QUERIES_PATH = "/named-queries" as const;
+export const CREATE_NAMED_QUERY_PATH = "/named-queries" as const;
+export const PREVIEW_NAMED_QUERY_PATH = "/named-queries/preview" as const;
+export const GENERATE_NAMED_QUERY_PATH = "/named-queries/generate" as const;
+export const NAMED_QUERY_DATA_PATH = "/named-queries/{named_query_id}/data" as const;
+export const NAMED_QUERY_PATH = "/named-queries/{named_query_id}" as const;
 
 export type NamedQueryResponse = JsonResponse<typeof LIST_NAMED_QUERIES_PATH, "get">[number];
 export type NamedQueryDataResponse = JsonResponse<typeof NAMED_QUERY_DATA_PATH, "get">;
