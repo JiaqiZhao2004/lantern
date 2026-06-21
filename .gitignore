@@ -30,3 +30,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 *.auto.tfvars.local
+
+# Ops runtime artifacts
+ops/runtime/backend/backups/
+ops/runtime/backend/compose/compose.env
+ops/runtime/backend/compose/backend.env
+ops/runtime/backend/compose/db.env
