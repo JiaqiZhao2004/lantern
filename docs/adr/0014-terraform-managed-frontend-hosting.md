@@ -1,0 +1,3 @@
+# Terraform-Managed Frontend Hosting
+
+Lantern's frontend hosting infrastructure will be managed in-repo with Terraform under `ops/terraform/`, using a shared S3 state bucket in `us-east-2`, a private S3 frontend bucket behind CloudFront Origin Access Control, Cloudflare-managed DNS for `lantern.royzhao.dev`, and an ACM certificate in `us-east-1` for CloudFront. We chose this over console-managed infrastructure or a separate infra repo because the hosting shape is tightly coupled to this app and worth keeping reviewable, reproducible, and guarded by code; the first slice includes baseline security guardrails and a dedicated GitHub Actions OIDC deploy role, but deliberately leaves `/api/*` CloudFront routing out until the Cloudflare Tunnel-backed backend origin is real.
