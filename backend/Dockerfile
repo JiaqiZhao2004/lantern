@@ -9,5 +9,4 @@ COPY . .
 
 ENV FASTAPI_APP=/app/src/server.py
 EXPOSE 8000
-ENTRYPOINT ["uvicorn"]
-CMD ["src.server:app", "--host=0.0.0.0", "--port=8000", "--reload"]
+CMD ["uvicorn", "src.server:app", "--host=0.0.0.0", "--port=8000"]

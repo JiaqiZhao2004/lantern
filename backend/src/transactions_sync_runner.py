@@ -2,6 +2,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -18,6 +19,16 @@ from src.modules.sync_jobs.execution_service import SyncJobsExecutionService
 from src.modules.sync_jobs.repository import SyncJobsRepository
 
 logger = logging.getLogger(__name__)
+
+
+def write_heartbeat():
+    heartbeat_path = os.getenv("SYNC_RUNNER_HEARTBEAT_PATH")
+    if not heartbeat_path:
+        return
+
+    path = Path(heartbeat_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch()
 
 
 @dataclass(frozen=True)
@@ -101,6 +112,8 @@ def run_forever(
             process_once(services=services)
         except Exception:
             logger.exception("Unhandled sync runner error")
+        finally:
+            write_heartbeat()
         time.sleep(sleep_seconds)
 
 
