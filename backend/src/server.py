@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 load_dotenv(verbose=True)  # Load environment variables before importing other modules
 
@@ -11,10 +12,36 @@ from src.api.routes.named_queries import router as named_queries_router
 from src.api.routes.plaid import router as plaid_router
 from src.api.routes.plaid_webhooks import router as webhooks_router
 from src.api.routes.users import router as users_router
+from src.infrastructure.db.database import SessionLocal
 from src.modules import AppError
 
 
 app = FastAPI()
+
+
+def database_ready() -> bool:
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
+@app.get("/health/live")
+async def health_live():
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def health_ready():
+    if not database_ready():
+        return JSONResponse(
+            status_code=503,
+            content={"status": "degraded", "detail": "Database unavailable"},
+        )
+
+    return {"status": "ok"}
 
 
 @app.exception_handler(AppError)
