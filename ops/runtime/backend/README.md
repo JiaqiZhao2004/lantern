@@ -13,6 +13,7 @@ This slice is intentionally runtime-focused. Backend monitoring lives separately
 
 - single Ubuntu LTS host
 - one shared backend image for web and worker roles
+- release-triggered backend image publication to GHCR
 - Docker Compose runtime for `nginx + backend + worker + postgres`
 - explicit deploy script with backup, migration, rollout, and health verification
 - mounted Firebase admin credential file as the one runtime secret exception

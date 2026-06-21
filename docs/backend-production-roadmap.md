@@ -38,6 +38,7 @@ This document captures the first backend production planning pass for Lantern. I
 
 1. Server runtime slice
    - production-oriented backend image
+   - release-triggered GHCR publishing workflow for the shared backend image
    - runtime Compose stack
    - `nginx`
    - web and worker health checks
@@ -70,6 +71,7 @@ This document captures the first backend production planning pass for Lantern. I
 - Alembic migrations are an explicit deployment step, not hidden in container startup.
 - Schema changes should follow expand-contract and aim for backward compatibility where reasonably possible.
 - Images are published with immutable commit SHA tags, and the server should deploy pinned image tags rather than mutable tags.
+- Backend image publication is release-triggered from GitHub Actions rather than push-triggered, so production candidate artifacts are intentional.
 - Database rollback is a documented recovery operation, not an automatic deploy-script feature.
 
 ## Health model
