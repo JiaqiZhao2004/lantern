@@ -15,12 +15,14 @@ This document captures the first backend production planning pass for Lantern. I
 
 ## Repo-facing deliverables
 
+- `ops/bootstrap/`
+  - thin bring-up driver for fresh-host and replacement-host flows
 - `ops/deployment/backend/`
-  - production Compose files
-  - `nginx` config
-  - env templates
-  - deploy script
-  - backend deployment docs and runbooks
+  - `backend-ingress/` for first-time Cloudflare Tunnel bring-up artifacts
+  - `reverse-proxy/` for local `nginx` config and loopback validation guidance
+  - `app-runtime/` for Compose runtime files, env templates, deploy script, and rollout docs
+- `ops/operations/backend/`
+  - future steady-state backend operator workflows, mirroring deployment components
 - `ops/durability/backend/`
   - backup script
   - backup env template
@@ -34,10 +36,6 @@ This document captures the first backend production planning pass for Lantern. I
   - backup bucket
   - backup-write identity
   - retention and lifecycle policy
-- `ops/terraform/backend-ingress/`
-  - Cloudflare Tunnel resources
-  - backend ingress DNS/routing
-  - later CloudFront `/api/*` integration once the backend path is working
 
 ## Implementation order
 
@@ -58,17 +56,23 @@ This document captures the first backend production planning pass for Lantern. I
    - retention policy: 6-hour backups for 3 days, weekly backups for 4 weeks
    - documented restore drill target
 3. Backend ingress slice
-   - Terraform-managed Cloudflare Tunnel
+   - Cloudflare Tunnel-backed temporary proof hostname: `lantern-api.royzhao.dev`
+   - locally managed tunnel setup with repo-owned helper script and runbook
    - backend reachable only through the tunnel
    - no public backend or Postgres ports
-4. Backend monitoring slice
+   - acceptance:
+     - local loopback `GET /health/ready`
+     - public `GET https://lantern-api.royzhao.dev/health/ready`
+     - `cloudflared` survives service restart and host reboot
+4. Frontend/backend edge integration slice
+   - CloudFront `/api/*` forwarding to the tunnel-backed backend
+   - same-origin production model on `lantern.royzhao.dev`
+   - remove the temporary proof hostname after cutover
+5. Backend monitoring slice
    - Prometheus + Grafana
    - host/container/Postgres/backend metrics
    - small alert set: backend down, Postgres down, backups missing/failing
    - email delivery first
-5. Frontend/backend edge integration slice
-   - CloudFront `/api/*` forwarding to the tunnel-backed backend
-   - same-origin production model on `lantern.royzhao.dev`
 
 ## Operational rules
 
@@ -105,11 +109,12 @@ This document captures the first backend production planning pass for Lantern. I
 - Postgres should not be exposed outside the Docker internal network.
 - `nginx` is the local ingress boundary on the machine.
 - Cloudflare Tunnel is the only public app ingress path.
+- The first tunnel proof step uses a disposable backend-only hostname before same-origin `/api/*` routing is introduced.
 - Keep host hardening explicit but minimal in phase one; document what is and is not done.
 
 ## Required runbooks
 
-- Server bootstrap
+- Backend host bring-up
 - Deploy and migrate
 - Backup and restore
 

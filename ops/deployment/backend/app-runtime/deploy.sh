@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/compose/compose.yml"
-COMPOSE_ENV="$ROOT_DIR/compose/compose.env"
-BACKEND_ENV="$ROOT_DIR/compose/backend.env"
-DB_ENV="$ROOT_DIR/compose/db.env"
-DURABILITY_DIR="${DURABILITY_DIR:-$ROOT_DIR/../../durability/backend}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMPOSE_FILE="$ROOT_DIR/compose.yml"
+COMPOSE_ENV="$ROOT_DIR/compose.env"
+BACKEND_ENV="$ROOT_DIR/backend.env"
+DB_ENV="$ROOT_DIR/db.env"
+DURABILITY_DIR="${DURABILITY_DIR:-$ROOT_DIR/../../../durability/backend}"
 BACKUP_SCRIPT="$DURABILITY_DIR/backup-db.sh"
 
 for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV"; do
