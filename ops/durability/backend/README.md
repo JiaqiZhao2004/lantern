@@ -38,6 +38,8 @@ sudo systemctl enable --now short-retention-backup.timer
 sudo systemctl enable --now weekly-retention-backup.timer
 ```
 
+Enable the timers only after the backend runtime is configured and healthy enough for `backup-db.sh` to succeed. Installing the unit files earlier is fine; early timer activation is not.
+
 The short-retention timer runs every 6 hours. The weekly-retention timer runs Sunday at `03:00` server local time. Both use `Persistent=true`, so missed runs are caught up after reboot.
 
 Useful inspection commands:
@@ -96,7 +98,7 @@ The disaster-recovery target for phase one is: restore Lantern onto a fresh Ubun
 5. download the chosen backup from S3 if needed:
    - `aws s3 cp s3://$BACKUP_S3_BUCKET/<chosen-object-key> /tmp/postgres-restore.sql.gz`
 6. load it into Postgres:
-   - `gunzip -c /tmp/postgres-restore.sql.gz | docker compose --env-file ../deployment/backend/compose/compose.env -f ../deployment/backend/compose/compose.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'`
+   - `gunzip -c /tmp/postgres-restore.sql.gz | docker compose --env-file ../deployment/backend/app-runtime/compose.env -f ../deployment/backend/app-runtime/compose.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'`
 7. run the deploy flow with the intended image tag
 8. verify `/health/ready`
 
