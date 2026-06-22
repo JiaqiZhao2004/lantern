@@ -24,6 +24,7 @@ This document captures the first backend production planning pass for Lantern. I
 - `ops/durability/backend/`
   - backup script
   - backup env template
+  - `systemd` scheduler units
   - backup and restore runbook
 - `ops/observability/backend/`
   - Prometheus config
@@ -52,6 +53,8 @@ This document captures the first backend production planning pass for Lantern. I
    - S3 backup bucket in `us-east-2`
    - narrow backup-upload identity
    - compressed logical Postgres backups
+   - host-side `systemd` backup scheduling
+   - host-side local backup cleanup
    - retention policy: 6-hour backups for 3 days, weekly backups for 4 weeks
    - documented restore drill target
 3. Backend ingress slice

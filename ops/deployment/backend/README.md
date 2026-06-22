@@ -29,6 +29,6 @@ The real runtime files are intentionally gitignored.
 
 ## Current limitations
 
-- DB backups and restore docs are separate under `ops/durability/backend/`, and backup cadence is still operator-managed until scheduled automation is added
+- DB backups and restore docs are separate under `ops/durability/backend/`; scheduled backup automation is installed separately on the host through the checked-in `systemd` units
 - tunnel and CloudFront `/api/*` routing are not wired here; that belongs to `ops/terraform/backend-ingress/`
 - monitoring configuration is intentionally separate from runtime config

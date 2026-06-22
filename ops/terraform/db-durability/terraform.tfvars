@@ -1,0 +1,8 @@
+aws_region              = "us-east-2"
+backup_bucket_name      = "lantern-db-backups"
+backup_upload_user_name = "lantern-backup-upload"
+
+tags = {
+  Environment = "production"
+  Owner       = "royzhao"
+}
