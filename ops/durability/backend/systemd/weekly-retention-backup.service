@@ -1,0 +1,10 @@
+[Unit]
+Description=Lantern weekly-retention database backup
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/lantern/ops/durability/backend
+Environment=BACKUP_S3_UPLOAD_WEEKLY_COPY=1
+ExecStart=/srv/lantern/ops/durability/backend/backup-db.sh

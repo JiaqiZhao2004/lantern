@@ -29,11 +29,11 @@ Prepare a fresh Ubuntu LTS server to run the first Lantern backend deployment an
 10. Make the operational scripts executable:
    - `chmod +x ops/deployment/backend/compose/deploy.sh`
    - `chmod +x ops/durability/backend/backup-db.sh`
-11. Bring up the database first, then run the deploy script for the full stack.
+11. Install the durability `systemd` units from `ops/durability/backend/systemd/`, reload `systemd`, and enable both backup timers.
+12. Bring up the database first, then run the deploy script for the full stack.
 
 ## Explicit non-goals in this runbook
 
 - tunnel installation and CloudFront `/api/*` wiring
-- automated six-hourly and weekly backup scheduling
 - full monitoring stack bootstrap
 - automated restore verification

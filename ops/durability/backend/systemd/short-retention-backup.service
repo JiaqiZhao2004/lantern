@@ -1,0 +1,9 @@
+[Unit]
+Description=Lantern short-retention database backup
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/lantern/ops/durability/backend
+ExecStart=/srv/lantern/ops/durability/backend/backup-db.sh

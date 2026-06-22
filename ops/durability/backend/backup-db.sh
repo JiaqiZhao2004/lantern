@@ -7,6 +7,7 @@ COMPOSE_FILE="$DEPLOYMENT_DIR/compose/compose.yml"
 COMPOSE_ENV="$DEPLOYMENT_DIR/compose/compose.env"
 BACKUP_ENV="$ROOT_DIR/backup.env"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
+BACKUP_LOCAL_RETENTION_DAYS="${BACKUP_LOCAL_RETENTION_DAYS:-7}"
 
 if [[ -f "$BACKUP_ENV" ]]; then
   set -a
@@ -72,4 +73,13 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
 
     upload_backup "$BACKUP_S3_BUCKET" "$BACKUP_S3_WEEKLY_PREFIX"
   fi
+fi
+
+if [[ "$BACKUP_LOCAL_RETENTION_DAYS" =~ ^[0-9]+$ ]] && [[ "$BACKUP_LOCAL_RETENTION_DAYS" -gt 0 ]]; then
+  find "$BACKUP_DIR" \
+    -type f \
+    -name 'postgres-*.sql.gz' \
+    -mtime +"$BACKUP_LOCAL_RETENTION_DAYS" \
+    -delete
+  echo "Removed local backups older than ${BACKUP_LOCAL_RETENTION_DAYS} days."
 fi
