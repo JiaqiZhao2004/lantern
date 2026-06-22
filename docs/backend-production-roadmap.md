@@ -15,12 +15,16 @@ This document captures the first backend production planning pass for Lantern. I
 
 ## Repo-facing deliverables
 
-- `ops/runtime/backend/`
+- `ops/deployment/backend/`
   - production Compose files
   - `nginx` config
   - env templates
-  - deploy scripts
-  - backend runtime docs and runbooks
+  - deploy script
+  - backend deployment docs and runbooks
+- `ops/durability/backend/`
+  - backup script
+  - backup env template
+  - backup and restore runbook
 - `ops/observability/backend/`
   - Prometheus config
   - Grafana provisioning

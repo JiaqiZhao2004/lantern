@@ -15,10 +15,10 @@ The first-pass deployment order is:
 
 ## Commands
 
-From `ops/runtime/backend/` on the server:
+From `ops/deployment/backend/` on the server:
 
 ```bash
-./scripts/deploy.sh
+./compose/deploy.sh
 ```
 
 ## Why this order exists
