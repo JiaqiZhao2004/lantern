@@ -1,13 +1,12 @@
-# Backend Runtime
+# Backend Deployment
 
-This directory is the first production runtime slice for the Lantern backend. It contains:
+This directory is the first production deployment slice for the Lantern backend. It contains:
 
-- `compose/` for the production app stack definition and env templates
+- `compose/` for the production app stack definition, env templates, and deploy entrypoint
 - `nginx/` for the local reverse-proxy config
-- `scripts/` for repeatable operational commands
 - `docs/` for runbooks
 
-This slice is intentionally runtime-focused. Backend monitoring lives separately under `ops/observability/backend/`, and AWS durability or ingress infrastructure lives under `ops/terraform/`.
+This slice is intentionally deployment-focused. Backend durability lives separately under `ops/durability/backend/`. Monitoring lives under `ops/observability/backend/`, and AWS durability or ingress infrastructure lives under `ops/terraform/`.
 
 ## First-pass scope
 
@@ -30,6 +29,6 @@ The real runtime files are intentionally gitignored.
 
 ## Current limitations
 
-- DB backups are created locally first; S3 upload belongs to the upcoming `ops/terraform/db-durability/` slice
+- DB backups and restore docs are separate under `ops/durability/backend/`, and backup cadence is still operator-managed until scheduled automation is added
 - tunnel and CloudFront `/api/*` routing are not wired here; that belongs to `ops/terraform/backend-ingress/`
 - monitoring configuration is intentionally separate from runtime config

@@ -6,6 +6,8 @@ COMPOSE_FILE="$ROOT_DIR/compose/compose.yml"
 COMPOSE_ENV="$ROOT_DIR/compose/compose.env"
 BACKEND_ENV="$ROOT_DIR/compose/backend.env"
 DB_ENV="$ROOT_DIR/compose/db.env"
+DURABILITY_DIR="${DURABILITY_DIR:-$ROOT_DIR/../../durability/backend}"
+BACKUP_SCRIPT="$DURABILITY_DIR/backup-db.sh"
 
 for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV"; do
   if [[ ! -f "$required_file" ]]; then
@@ -13,6 +15,11 @@ for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV"; do
     exit 1
   fi
 done
+
+if [[ ! -x "$BACKUP_SCRIPT" ]]; then
+  echo "Missing executable backup script: $BACKUP_SCRIPT" >&2
+  exit 1
+fi
 
 compose() {
   docker compose --env-file "$COMPOSE_ENV" -f "$COMPOSE_FILE" "$@"
@@ -25,7 +32,7 @@ echo "Ensuring database is running before backup and migration..."
 compose up -d db
 
 echo "Creating pre-deploy backup..."
-"$ROOT_DIR/scripts/backup-db.sh"
+"$BACKUP_SCRIPT"
 
 echo "Running Alembic migrations..."
 compose run --rm backend alembic upgrade head
