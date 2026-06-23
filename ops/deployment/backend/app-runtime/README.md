@@ -22,6 +22,14 @@ The real runtime files stay on the host and are intentionally gitignored.
 
 Place the Firebase admin credential file on the server at the path referenced by `FIREBASE_ADMIN_CREDENTIALS_PATH`.
 
+Authenticate Docker on the host to the image registry before the first deploy if `BACKEND_IMAGE` points at a private image such as `ghcr.io/jiaqizhao2004/lantern-backend`. For GitHub Container Registry, create a GitHub personal access token (classic) with at least the `read:packages` scope, then use it for `docker login`:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+```
+
+The token used for `docker login` must be allowed to pull the backend package.
+
 ## Deployment contract
 
 Lantern deploys are explicit and operator-invoked. Migrations are not hidden in container startup.

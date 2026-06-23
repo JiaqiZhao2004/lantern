@@ -24,7 +24,7 @@ The proof hostname must stay proxied through Cloudflare. `DNS only` is not suffi
 - [config.yml.example](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/backend-ingress/config.yml.example)
 - [render-config.sh](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/backend-ingress/render-config.sh)
 
-## Canonical bring-up flow
+## Pre-deploy ingress setup
 
 1. Install `cloudflared` on the Ubuntu host from Cloudflare's package instructions.
 2. On an operator machine, authenticate with Cloudflare and create the named tunnel for Lantern:
@@ -32,14 +32,25 @@ The proof hostname must stay proxied through Cloudflare. `DNS only` is not suffi
    - `cloudflared tunnel create lantern-backend`
 3. Create the proxied DNS route for the proof hostname:
    - `cloudflared tunnel route dns lantern-backend lantern-api.royzhao.dev`
-4. Securely copy the generated tunnel credentials JSON file to the host under `/etc/cloudflared/`.
+4. Securely copy the generated tunnel credentials JSON file to the host under `/etc/cloudflared/`:
+   - `sudo mkdir -p /etc/cloudflared`
+   - `sudo cp <tunnel-uuid>.json /etc/cloudflared/`
 5. Render a host-local config file from the checked-in template:
-   - `./render-config.sh --hostname lantern-api.royzhao.dev --tunnel-id <tunnel-uuid> --credentials-file /etc/cloudflared/<tunnel-uuid>.json --output /etc/cloudflared/config.yml`
+   - `./render-config.sh --hostname lantern-api.royzhao.dev --tunnel-id <tunnel-uuid> --credentials-file /etc/cloudflared/<tunnel-uuid>.json --output /tmp/cloudflared-config.yml`
+   - `sudo cp /tmp/cloudflared-config.yml /etc/cloudflared/config.yml`
 6. Validate the config before touching `systemd`:
-   - `cloudflared tunnel ingress validate --config /etc/cloudflared/config.yml`
+   - `sudo cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate`
+
+After step 6, return to [backend-host-bring-up.md](/Users/i-jzhao/Documents/family-finance/ops/bootstrap/backend-host-bring-up.md:1) and complete the first backend deploy from the `app-runtime` component before continuing here.
+
+## Post-deploy ingress validation
+
 7. Validate the local origin before public tunnel testing:
    - `curl --fail --silent http://127.0.0.1:${NGINX_BIND_PORT:-8080}/health/ready`
-8. Install or enable the packaged `cloudflared` service and start it.
+8. On the Ubuntu backend host, enable and start the packaged `cloudflared` service:
+   - `sudo systemctl enable cloudflared`
+   - `sudo systemctl start cloudflared`
+   - `sudo systemctl status cloudflared`
 9. Validate the public proof hostname:
    - `curl --fail --silent https://lantern-api.royzhao.dev/health/ready`
 10. Re-check after a service restart and after a host reboot.
