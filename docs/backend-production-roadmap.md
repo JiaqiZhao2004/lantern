@@ -56,7 +56,7 @@ This document captures the first backend production planning pass for Lantern. I
    - retention policy: 6-hour backups for 3 days, weekly backups for 4 weeks
    - documented restore drill target
 3. Backend ingress slice
-   - Cloudflare Tunnel-backed temporary proof hostname: `lantern-api.royzhao.dev`
+   - Cloudflare Tunnel-backed initial proof hostname: `lantern-api.royzhao.dev`
    - locally managed tunnel setup with repo-owned helper script and runbook
    - backend reachable only through the tunnel
    - no public backend or Postgres ports
@@ -67,7 +67,8 @@ This document captures the first backend production planning pass for Lantern. I
 4. Frontend/backend edge integration slice
    - CloudFront `/api/*` forwarding to the tunnel-backed backend
    - same-origin production model on `lantern.royzhao.dev`
-   - remove the temporary proof hostname after cutover
+   - keep `lantern-api.royzhao.dev` as the protected CloudFront backend origin
+   - block ordinary public access to the backend origin with Cloudflare Access
 5. Backend monitoring slice
    - Prometheus + Grafana
    - host/container/Postgres/backend metrics
