@@ -8,6 +8,16 @@ variable "cloudflare_zone_name" {
   type        = string
 }
 
+variable "cloudflare_account_id" {
+  description = "Cloudflare account ID used for Zero Trust Access resources."
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.cloudflare_account_id)) > 0
+    error_message = "cloudflare_account_id must be set to the Cloudflare account that owns Lantern Zero Trust Access."
+  }
+}
+
 variable "frontend_domain_name" {
   description = "Public Lantern frontend hostname."
   type        = string

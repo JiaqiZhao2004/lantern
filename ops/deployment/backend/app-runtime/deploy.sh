@@ -16,6 +16,11 @@ for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV"; do
   fi
 done
 
+set -a
+# shellcheck disable=SC1090
+source "$COMPOSE_ENV"
+set +a
+
 if [[ ! -x "$BACKUP_SCRIPT" ]]; then
   echo "Missing executable backup script: $BACKUP_SCRIPT" >&2
   exit 1

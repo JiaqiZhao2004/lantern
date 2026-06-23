@@ -30,4 +30,4 @@ This is the thin driver for bringing a Lantern backend host to a working state f
 ## Notes
 
 - The bootstrap layer stays intentionally thin. Component-specific commands live with their components.
-- The temporary ingress hostname is a proof endpoint and should be removed after same-origin `/api/*` integration is live.
+- The initial ingress hostname starts as a proof endpoint and is promoted to the protected CloudFront backend origin during same-origin `/api/*` integration.

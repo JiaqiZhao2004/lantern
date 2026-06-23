@@ -276,6 +276,28 @@ resource "aws_cloudfront_distribution" "frontend" {
     origin_id                = local.origin_id
   }
 
+  origin {
+    domain_name = local.backend_origin_domain_name
+    origin_id   = local.backend_origin_id
+
+    custom_header {
+      name  = "CF-Access-Client-Id"
+      value = cloudflare_zero_trust_access_service_token.backend_origin.client_id
+    }
+
+    custom_header {
+      name  = "CF-Access-Client-Secret"
+      value = cloudflare_zero_trust_access_service_token.backend_origin.client_secret
+    }
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
@@ -297,6 +319,19 @@ resource "aws_cloudfront_distribution" "frontend" {
       function_arn = aws_cloudfront_function.spa_rewrite.arn
     }
 
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
+    compress         = true
+    target_origin_id = local.backend_origin_id
+
+    viewer_protocol_policy     = "redirect-to-https"
+    cache_policy_id            = data.aws_cloudfront_cache_policy.api_caching_disabled.id
+    origin_request_policy_id   = aws_cloudfront_origin_request_policy.api.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend.id
   }
 
