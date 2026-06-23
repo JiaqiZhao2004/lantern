@@ -16,10 +16,11 @@ This is the thin driver for bringing a Lantern backend host to a working state f
    - Docker Engine
    - Docker Compose plugin
    - AWS CLI if S3 backup upload is enabled
-3. Prepare the reverse-proxy component in [ops/deployment/backend/reverse-proxy/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/reverse-proxy/README.md).
+3. Review the reverse-proxy component in [ops/deployment/backend/reverse-proxy/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/reverse-proxy/README.md).
 4. Prepare the app runtime component in [ops/deployment/backend/app-runtime/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-runtime/README.md).
-5. Enroll and configure the backend ingress component in [ops/deployment/backend/backend-ingress/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/backend-ingress/README.md).
+5. Enroll and configure the backend ingress component in [ops/deployment/backend/backend-ingress/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/backend-ingress/README.md), but defer the local-origin and public-host validation steps until after the first backend deploy.
 6. Run the first backend deploy from the `app-runtime` component.
+   - After the deploy succeeds, return to the backend ingress component and complete the post-deploy validation steps.
 7. Enable the backup timers described in [ops/durability/backend/README.md](/Users/i-jzhao/Documents/family-finance/ops/durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
 8. Validate:
    - local loopback `GET /health/ready`
