@@ -1,0 +1,11 @@
+groups:
+  - name: postgres
+    rules:
+      - alert: LanternPostgresDown
+        expr: pg_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern Postgres exporter reports database down"
+          description: "postgres_exporter cannot connect to the Lantern database."

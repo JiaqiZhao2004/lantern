@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Lantern Backend
+    orgId: 1
+    folder: Lantern
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

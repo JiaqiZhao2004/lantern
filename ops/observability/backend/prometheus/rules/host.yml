@@ -1,0 +1,20 @@
+groups:
+  - name: host
+    rules:
+      - alert: LanternHostDiskHigh
+        expr: 100 * (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) > 85
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern host root disk usage is high"
+          description: "Root filesystem usage has been above 85% for at least 15 minutes."
+
+      - alert: LanternPrometheusTargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target is down"
+          description: "Prometheus target {{ $labels.job }} / {{ $labels.instance }} has been down for at least 5 minutes."

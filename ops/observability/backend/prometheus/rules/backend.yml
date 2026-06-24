@@ -1,0 +1,20 @@
+groups:
+  - name: backend-availability
+    rules:
+      - alert: LanternBackendReadinessDown
+        expr: probe_success{instance="http://nginx:8080/health/ready"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern backend readiness is down"
+          description: "The local nginx /health/ready probe has failed for at least 5 minutes."
+
+      - alert: LanternBackendLivenessDown
+        expr: probe_success{instance="http://nginx:8080/health/live"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern backend liveness is down"
+          description: "The local nginx /health/live probe has failed for at least 5 minutes."
