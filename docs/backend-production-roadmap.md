@@ -18,9 +18,8 @@ This document captures the first backend production planning pass for Lantern. I
 - `ops/bootstrap/`
   - thin bring-up driver for fresh-host and replacement-host flows
 - `ops/deployment/backend/`
-  - `backend-ingress/` for first-time Cloudflare Tunnel bring-up artifacts
-  - `reverse-proxy/` for local `nginx` config and loopback validation guidance
-  - `app-runtime/` for Compose runtime files, env templates, deploy script, and rollout docs
+  - `app-stack/` for Compose runtime files, env templates, `nginx` config, deploy script, and rollout docs
+  - `tunnel/` for first-time Cloudflare Tunnel bring-up artifacts
 - `ops/operations/backend/`
   - future steady-state backend operator workflows, mirroring deployment components
 - `ops/durability/backend/`

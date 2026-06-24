@@ -32,9 +32,9 @@ override.tf.json
 *.auto.tfvars.local
 
 # Ops deployment artifacts
-ops/deployment/backend/compose/compose.env
-ops/deployment/backend/compose/backend.env
-ops/deployment/backend/compose/db.env
+ops/deployment/backend/app-stack/compose.env
+ops/deployment/backend/app-stack/backend.env
+ops/deployment/backend/app-stack/db.env
 
 # Ops durability artifacts
 ops/durability/backend/backups/

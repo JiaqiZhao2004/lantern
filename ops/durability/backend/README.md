@@ -98,7 +98,7 @@ The disaster-recovery target for phase one is: restore Lantern onto a fresh Ubun
 5. download the chosen backup from S3 if needed:
    - `aws s3 cp s3://$BACKUP_S3_BUCKET/<chosen-object-key> /tmp/postgres-restore.sql.gz`
 6. load it into Postgres:
-   - `gunzip -c /tmp/postgres-restore.sql.gz | docker compose --env-file ../deployment/backend/app-runtime/compose.env -f ../deployment/backend/app-runtime/compose.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'`
+   - `gunzip -c /tmp/postgres-restore.sql.gz | docker compose --env-file ../deployment/backend/app-stack/compose.env -f ../deployment/backend/app-stack/compose.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'`
 7. run the deploy flow with the intended image tag
 8. verify `/health/ready`
 

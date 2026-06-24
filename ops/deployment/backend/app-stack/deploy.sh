@@ -30,6 +30,16 @@ compose() {
   docker compose --env-file "$COMPOSE_ENV" -f "$COMPOSE_FILE" "$@"
 }
 
+if [[ -n "${GITHUB_USERNAME:-}" || -n "${GHCR_TOKEN:-}" ]]; then
+  if [[ -z "${GITHUB_USERNAME:-}" || -z "${GHCR_TOKEN:-}" ]]; then
+    echo "Set both GITHUB_USERNAME and GHCR_TOKEN in compose.env to authenticate to GHCR." >&2
+    exit 1
+  fi
+
+  echo "Authenticating Docker to ghcr.io..."
+  printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+fi
+
 echo "Pulling runtime images..."
 compose pull nginx backend worker db
 

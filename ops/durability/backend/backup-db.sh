@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEPLOYMENT_DIR="${DEPLOYMENT_DIR:-$ROOT_DIR/../../deployment/backend/app-runtime}"
+DEPLOYMENT_DIR="${DEPLOYMENT_DIR:-$ROOT_DIR/../../deployment/backend/app-stack}"
 COMPOSE_FILE="$DEPLOYMENT_DIR/compose.yml"
 COMPOSE_ENV="$DEPLOYMENT_DIR/compose.env"
 BACKUP_ENV="$ROOT_DIR/backup.env"
