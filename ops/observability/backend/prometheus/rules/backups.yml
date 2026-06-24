@@ -1,0 +1,29 @@
+groups:
+  - name: backend-backups
+    rules:
+      - alert: LanternSixHourlyBackupStale
+        expr: absent(lantern_backup_last_success_timestamp_seconds{tier="six-hourly", stage="local"}) or time() - lantern_backup_last_success_timestamp_seconds{tier="six-hourly", stage="local"} > 28800
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern six-hour backup is stale"
+          description: "No successful local six-hour backup marker has been written in more than 8 hours."
+
+      - alert: LanternSixHourlyBackupUploadStale
+        expr: absent(lantern_backup_last_success_timestamp_seconds{tier="six-hourly", stage="s3"}) or time() - lantern_backup_last_success_timestamp_seconds{tier="six-hourly", stage="s3"} > 28800
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern six-hour backup upload is stale"
+          description: "No successful S3 upload marker has been written in more than 8 hours."
+
+      - alert: LanternWeeklyBackupStale
+        expr: absent(lantern_backup_last_success_timestamp_seconds{tier="weekly", stage="s3"}) or time() - lantern_backup_last_success_timestamp_seconds{tier="weekly", stage="s3"} > 777600
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern weekly backup is stale"
+          description: "No successful weekly S3 backup marker has been written in more than 9 days."

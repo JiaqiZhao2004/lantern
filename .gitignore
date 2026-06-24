@@ -39,3 +39,8 @@ ops/deployment/backend/app-stack/db.env
 # Ops durability artifacts
 ops/durability/backend/backups/
 ops/durability/backend/backup.env
+
+# Ops observability artifacts
+ops/observability/backend/observability.env
+ops/observability/backend/generated/
+ops/observability/backend/textfile_collector/

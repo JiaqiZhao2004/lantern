@@ -8,6 +8,7 @@ COMPOSE_ENV="$DEPLOYMENT_DIR/compose.env"
 BACKUP_ENV="$ROOT_DIR/backup.env"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
 BACKUP_LOCAL_RETENTION_DAYS="${BACKUP_LOCAL_RETENTION_DAYS:-7}"
+BACKUP_TIER="${BACKUP_TIER:-six-hourly}"
 
 if [[ -f "$BACKUP_ENV" ]]; then
   set -a
@@ -19,7 +20,33 @@ fi
 mkdir -p "$BACKUP_DIR"
 
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
+started_at_epoch="$(date +%s)"
 backup_path="$BACKUP_DIR/postgres-$timestamp.sql.gz"
+
+write_prom_marker() {
+  local tier="$1"
+  local stage="$2"
+  local succeeded_at_epoch="$3"
+  local duration_seconds="$4"
+  local size_bytes="$5"
+
+  if [[ -z "${BACKUP_PROM_TEXTFILE_DIR:-}" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$BACKUP_PROM_TEXTFILE_DIR"
+
+  local marker_path="$BACKUP_PROM_TEXTFILE_DIR/lantern-backup-${tier}-${stage}.prom"
+  local tmp_path="${marker_path}.$$"
+
+  {
+    printf 'lantern_backup_last_success_timestamp_seconds{tier="%s",stage="%s"} %s\n' "$tier" "$stage" "$succeeded_at_epoch"
+    printf 'lantern_backup_last_success_duration_seconds{tier="%s",stage="%s"} %s\n' "$tier" "$stage" "$duration_seconds"
+    printf 'lantern_backup_last_success_size_bytes{tier="%s",stage="%s"} %s\n' "$tier" "$stage" "$size_bytes"
+  } > "$tmp_path"
+
+  mv "$tmp_path" "$marker_path"
+}
 
 docker compose \
   --env-file "$COMPOSE_ENV" \
@@ -28,6 +55,10 @@ docker compose \
   | gzip > "$backup_path"
 
 echo "Created local backup: $backup_path"
+
+completed_at_epoch="$(date +%s)"
+backup_size_bytes="$(wc -c < "$backup_path" | tr -d ' ')"
+write_prom_marker "$BACKUP_TIER" "local" "$completed_at_epoch" "$((completed_at_epoch - started_at_epoch))" "$backup_size_bytes"
 
 if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
   if ! command -v aws >/dev/null 2>&1; then
@@ -44,8 +75,11 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
   upload_backup() {
     local bucket="$1"
     local prefix="$2"
+    local tier="$3"
     local object_key
     local destination
+    local upload_started_at_epoch
+    local upload_completed_at_epoch
 
     object_key="$(basename "$backup_path")"
     if [[ -n "$prefix" ]]; then
@@ -54,6 +88,7 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
 
     destination="s3://${bucket}/${object_key}"
 
+    upload_started_at_epoch="$(date +%s)"
     aws s3 cp \
       "$backup_path" \
       "$destination" \
@@ -61,9 +96,11 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
       --only-show-errors
 
     echo "Uploaded backup to: $destination"
+    upload_completed_at_epoch="$(date +%s)"
+    write_prom_marker "$tier" "s3" "$upload_completed_at_epoch" "$((upload_completed_at_epoch - upload_started_at_epoch))" "$backup_size_bytes"
   }
 
-  upload_backup "$BACKUP_S3_BUCKET" "${BACKUP_S3_PREFIX:-}"
+  upload_backup "$BACKUP_S3_BUCKET" "${BACKUP_S3_PREFIX:-}" "six-hourly"
 
   if [[ "${BACKUP_S3_UPLOAD_WEEKLY_COPY:-0}" == "1" ]]; then
     if [[ -z "${BACKUP_S3_WEEKLY_PREFIX:-}" ]]; then
@@ -71,7 +108,7 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
       exit 1
     fi
 
-    upload_backup "$BACKUP_S3_BUCKET" "$BACKUP_S3_WEEKLY_PREFIX"
+    upload_backup "$BACKUP_S3_BUCKET" "$BACKUP_S3_WEEKLY_PREFIX" "weekly"
   fi
 fi
 
