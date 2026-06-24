@@ -60,6 +60,9 @@ echo "Creating pre-deploy backup..."
 echo "Running Alembic migrations..."
 compose run --rm backend alembic upgrade head
 
+echo "Reconciling Plaid item webhook URLs..."
+compose run --rm backend python -m src.plaid_webhook_reconciler --apply
+
 echo "Updating runtime services..."
 compose up -d nginx backend worker
 
