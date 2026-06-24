@@ -17,14 +17,14 @@ This is the thin driver for bringing a Lantern backend host to a working state f
    - Docker Engine
    - Docker Compose plugin
    - AWS CLI
-2. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](/Users/i-jzhao/Documents/family-finance/ops/terraform/db-durability/README.md).
+2. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
 3. Create the shared Docker network used by the app stack and observability stack:
    - `docker network create lantern-backend`
-4. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
-5. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/README.md).
-6. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/tunnel/README.md).
-7. Enable the backup timers described in [ops/durability/backend/README.md](/Users/i-jzhao/Documents/family-finance/ops/durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
-8. Bring up backend observability from [ops/observability/backend/README.md](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/README.md).
+4. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
+5. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](../deployment/backend/app-stack/README.md).
+6. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md).
+7. Enable the backup timers described in [ops/durability/backend/README.md](../durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
+8. Bring up backend observability from [ops/observability/backend/README.md](../observability/backend/README.md).
 
 ## Notes
 
@@ -154,9 +154,11 @@ sudo ./aws/install
 aws --version
 ```
 
-Configure credentials for the backup-upload identity outside the repo, using one of the
-standard AWS credential-chain locations such as environment variables or
-`~/.aws/credentials`.
+After the DB durability Terraform stack creates `backup_upload_access_key_id` and
+`backup_upload_secret_access_key`, store them outside the repo in a dedicated AWS CLI
+profile as described in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
+Then set that profile name in `ops/durability/backend/backup.env` with
+`BACKUP_AWS_PROFILE`.
 
 ### Repository Checkout
 

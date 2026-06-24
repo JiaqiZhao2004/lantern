@@ -35,16 +35,16 @@ host, containers, Postgres database, backend service, and backup posture.
 
 ## Files
 
-- [compose.yml](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/compose.yml)
-- [observability.env.example](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/observability.env.example)
-- [render-alertmanager-config.sh](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/render-alertmanager-config.sh)
-- [prometheus/prometheus.yml](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/prometheus/prometheus.yml)
-- [prometheus/rules/](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/prometheus/rules)
-- [blackbox/blackbox.yml](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/blackbox/blackbox.yml)
-- [grafana/provisioning/](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/grafana/provisioning)
-- [grafana/dashboards/](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/grafana/dashboards)
-- [postgres/create-monitoring-role.sh](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/postgres/create-monitoring-role.sh)
-- [postgres/create-monitoring-role.sql](/Users/i-jzhao/Documents/family-finance/ops/observability/backend/postgres/create-monitoring-role.sql)
+- [compose.yml](../../observability/backend/compose.yml)
+- [observability.env.example](../../observability/backend/observability.env.example)
+- [render-alertmanager-config.sh](../../observability/backend/render-alertmanager-config.sh)
+- [prometheus/prometheus.yml](../../observability/backend/prometheus/prometheus.yml)
+- [prometheus/rules/](../../observability/backend/prometheus/rules)
+- [blackbox/blackbox.yml](../../observability/backend/blackbox/blackbox.yml)
+- [grafana/provisioning/](../../observability/backend/grafana/provisioning)
+- [grafana/dashboards/](../../observability/backend/grafana/dashboards)
+- [postgres/create-monitoring-role.sh](../../observability/backend/postgres/create-monitoring-role.sh)
+- [postgres/create-monitoring-role.sql](../../observability/backend/postgres/create-monitoring-role.sql)
 
 ## First-Time Setup
 

@@ -4,14 +4,14 @@ This directory owns the backend host application stack: `nginx`, the FastAPI bac
 
 ## Files
 
-- [compose.yml](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/compose.yml)
-- [compose.env.example](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/compose.env.example)
-- [backend.env.example](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/backend.env.example)
-- [db.env.example](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/db.env.example)
-- [deploy.sh](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/deploy.sh)
-- [nginx/default.conf](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/nginx/default.conf)
-- [postgres/create-app-role.sh](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/postgres/create-app-role.sh)
-- [postgres/create-app-role.sql](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/postgres/create-app-role.sql)
+- [compose.yml](./compose.yml)
+- [compose.env.example](./compose.env.example)
+- [backend.env.example](./backend.env.example)
+- [db.env.example](./db.env.example)
+- [deploy.sh](./deploy.sh)
+- [nginx/default.conf](./nginx/default.conf)
+- [postgres/create-app-role.sh](./postgres/create-app-role.sh)
+- [postgres/create-app-role.sql](./postgres/create-app-role.sql)
 
 ## First-Time Setup
 
