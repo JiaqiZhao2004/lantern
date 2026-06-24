@@ -1,6 +1,8 @@
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   User as FirebaseUser,
   // multiFactor,
@@ -12,6 +14,8 @@ import {
 } from "firebase/auth";
 import { auth } from "@/features/auth/api/firebase/firebaseApp";
 import { AppError } from "@/shared/api/appError";
+
+const googleProvider = new GoogleAuthProvider();
 
 // Auth state listener wrapper (just a tiny pass-through)
 export function subscribeToAuthChanges(
@@ -44,6 +48,34 @@ function fbErrorToAppError(e: any): AppError {
     return new AppError(
       "auth/too-many-requests",
       "Too many requests. Please try again later."
+    );
+  }
+
+  if (code === "auth/account-exists-with-different-credential") {
+    return new AppError(
+      "auth/invalid-credential",
+      "An account already exists for this email. Sign in with your existing method."
+    );
+  }
+
+  if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+    return new AppError(
+      "unknown",
+      "Google sign-in was cancelled. You can try again when you are ready."
+    );
+  }
+
+  if (code === "auth/popup-blocked") {
+    return new AppError(
+      "unknown",
+      "Your browser blocked the Google sign-in popup. Allow popups for this site and try again."
+    );
+  }
+
+  if (code === "auth/network-request-failed") {
+    return new AppError(
+      "network/offline",
+      "Unable to reach Google sign-in. Check your connection and try again."
     );
   }
 
@@ -85,6 +117,14 @@ export async function registerWithEmail(email: string, password: string) {
 export async function loginWithEmail(email: string, password: string) {
   try {
     await signInWithEmailAndPassword(auth, email, password);
+  } catch (e: any) {
+    throw fbErrorToAppError(e);
+  }
+}
+
+export async function loginWithGoogle() {
+  try {
+    await signInWithPopup(auth, googleProvider);
   } catch (e: any) {
     throw fbErrorToAppError(e);
   }

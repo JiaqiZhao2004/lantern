@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import formStyles from "@/features/auth/components/AuthForm.module.css";
+import { SocialAuthOptions } from "@/features/auth/components/SocialAuthOptions";
 import {
   registerWithEmail,
   sendVerificationEmail,
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProviderSubmitting, setIsProviderSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refresh } = useAuthSession();
 
@@ -49,7 +51,7 @@ export default function RegisterPage() {
   return (
     <AuthPageLayout
       title="Create an account"
-      description="Start with your email and password, then verify your address before entering the app."
+      description="Choose a sign-in method, then finish setup before entering the app."
       footer={
         <>
           Already have an account?{" "}
@@ -60,6 +62,12 @@ export default function RegisterPage() {
       }
     >
       {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
+
+      <SocialAuthOptions
+        disabled={isSubmitting || isProviderSubmitting}
+        onBusyChange={setIsProviderSubmitting}
+        onError={setError}
+      />
 
       <form className={formStyles.form} onSubmit={handleSubmit}>
         <TextField
@@ -89,7 +97,11 @@ export default function RegisterPage() {
           required
         />
 
-        <Button type="submit" disabled={isSubmitting} fullWidth>
+        <Button
+          type="submit"
+          disabled={isSubmitting || isProviderSubmitting}
+          fullWidth
+        >
           {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
       </form>

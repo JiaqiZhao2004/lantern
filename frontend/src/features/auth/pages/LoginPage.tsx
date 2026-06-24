@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import formStyles from "@/features/auth/components/AuthForm.module.css";
+import { SocialAuthOptions } from "@/features/auth/components/SocialAuthOptions";
 import { loginWithEmail } from "@/features/auth/api/firebase/client";
 import { isAppError } from "@/shared/api/appError";
 import { Button } from "@/shared/ui/Button/Button";
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProviderSubmitting, setIsProviderSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -35,7 +37,7 @@ export default function LoginPage() {
   return (
     <AuthPageLayout
       title="Sign in"
-      description="Use your existing Lantern account to get back to your dashboard."
+      description="Use your Lantern account to get back to your dashboard."
       footer={
         <>
           Don&apos;t have an account?{" "}
@@ -46,6 +48,12 @@ export default function LoginPage() {
       }
     >
       {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
+
+      <SocialAuthOptions
+        disabled={isSubmitting || isProviderSubmitting}
+        onBusyChange={setIsProviderSubmitting}
+        onError={setError}
+      />
 
       <form className={formStyles.form} onSubmit={handleSubmit}>
         <TextField
@@ -66,7 +74,11 @@ export default function LoginPage() {
           required
         />
 
-        <Button type="submit" disabled={isSubmitting} fullWidth>
+        <Button
+          type="submit"
+          disabled={isSubmitting || isProviderSubmitting}
+          fullWidth
+        >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
       </form>
