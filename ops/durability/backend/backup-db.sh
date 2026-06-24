@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="${DEPLOYMENT_DIR:-$ROOT_DIR/../../deployment/backend/app-stack}"
 COMPOSE_FILE="$DEPLOYMENT_DIR/compose.yml"
 COMPOSE_ENV="$DEPLOYMENT_DIR/compose.env"
@@ -72,6 +72,11 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
     exit 1
   fi
 
+  aws_command=(aws)
+  if [[ -n "${BACKUP_AWS_PROFILE:-}" ]]; then
+    aws_command+=(--profile "$BACKUP_AWS_PROFILE")
+  fi
+
   upload_backup() {
     local bucket="$1"
     local prefix="$2"
@@ -89,7 +94,7 @@ if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
     destination="s3://${bucket}/${object_key}"
 
     upload_started_at_epoch="$(date +%s)"
-    aws s3 cp \
+    "${aws_command[@]}" s3 cp \
       "$backup_path" \
       "$destination" \
       --region "$aws_region" \
