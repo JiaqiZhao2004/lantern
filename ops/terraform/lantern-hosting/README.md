@@ -48,6 +48,30 @@ Set `cloudflare_account_id` in `terraform.tfvars` to the Cloudflare account that
 
 The Cloudflare Access service token secret is stored in Terraform state and copied into CloudFront as origin custom headers. Keep the token scoped to the backend origin and rotate it if exposed.
 
+## API edge behavior
+
+The `/api/*` CloudFront behavior routes production browser API traffic from `lantern.royzhao.dev` to the tunnel-backed backend origin at `lantern-api.royzhao.dev`.
+
+It should:
+
+- preserve the full viewer request URI without rewriting `/api`
+- allow `GET`, `HEAD`, `OPTIONS`, `PUT`, `POST`, `PATCH`, and `DELETE`
+- disable caching
+- forward all query strings
+- forward the `Authorization` header
+- avoid forwarding cookies unless the backend gains a cookie-based need
+
+Do not expand production CORS for this path. The browser-facing production API is same-origin through `lantern.royzhao.dev`, so CORS should stay limited to the local development path unless a real cross-origin workflow is introduced later.
+
+Apply Cloudflare Access protection and CloudFront `/api/*` routing together. Access-first breaks the direct proof endpoint before CloudFront can use it, and CloudFront-first leaves the origin publicly reachable longer than necessary.
+
+Required validation after apply:
+
+- direct unauthenticated requests to `https://lantern-api.royzhao.dev/health/ready` are blocked by Cloudflare Access
+- CloudFront can reach the backend origin through the Access service token
+- `https://lantern.royzhao.dev/api/v1/...` reaches the backend through CloudFront
+- an authenticated production API request succeeds with a Firebase bearer token
+
 ## Apply
 
 ```bash
