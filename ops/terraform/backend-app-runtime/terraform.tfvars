@@ -1,0 +1,8 @@
+aws_region            = "us-east-2"
+app_runtime_user_name = "lantern-app-kms"
+kms_alias_name        = "alias/lantern/backend-app"
+
+tags = {
+  Environment = "production"
+  Owner       = "royzhao"
+}

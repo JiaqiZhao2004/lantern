@@ -25,11 +25,13 @@ services:
       - ./backend.env
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
+      AWS_SHARED_CREDENTIALS_FILE: /run/aws/credentials
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ${FIREBASE_ADMIN_CREDENTIALS_PATH:?set FIREBASE_ADMIN_CREDENTIALS_PATH in compose.env}:/run/secrets/firebase-adminsdk.json:ro
+      - ${AWS_SHARED_CREDENTIALS_PATH:?set AWS_SHARED_CREDENTIALS_PATH in compose.env}:/run/aws/credentials:ro
     healthcheck:
       test:
         [
@@ -53,6 +55,7 @@ services:
       - ./backend.env
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
+      AWS_SHARED_CREDENTIALS_FILE: /run/aws/credentials
       SYNC_RUNNER_HEARTBEAT_PATH: /tmp/worker-heartbeat
       SYNC_RUNNER_HEARTBEAT_MAX_AGE_SECONDS: ${SYNC_RUNNER_HEARTBEAT_MAX_AGE_SECONDS:-60}
     depends_on:
@@ -60,6 +63,7 @@ services:
         condition: service_healthy
     volumes:
       - ${FIREBASE_ADMIN_CREDENTIALS_PATH:?set FIREBASE_ADMIN_CREDENTIALS_PATH in compose.env}:/run/secrets/firebase-adminsdk.json:ro
+      - ${AWS_SHARED_CREDENTIALS_PATH:?set AWS_SHARED_CREDENTIALS_PATH in compose.env}:/run/aws/credentials:ro
     healthcheck:
       test:
         [

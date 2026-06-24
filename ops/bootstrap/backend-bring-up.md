@@ -18,13 +18,14 @@ This is the thin driver for bringing a Lantern backend host to a working state f
    - Docker Compose plugin
    - AWS CLI
 2. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
-3. Create the shared Docker network used by the app stack and observability stack:
+3. Apply the backend app runtime Terraform stack in [ops/terraform/backend-app-runtime/README.md](../terraform/backend-app-runtime/README.md).
+4. Create the shared Docker network used by the app stack and observability stack:
    - `docker network create lantern-backend`
-4. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
-5. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](../deployment/backend/app-stack/README.md).
-6. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md).
-7. Enable the backup timers described in [ops/durability/backend/README.md](../durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
-8. Bring up backend observability from [ops/observability/backend/README.md](../observability/backend/README.md).
+5. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
+6. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](../deployment/backend/app-stack/README.md).
+7. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md).
+8. Enable the backup timers described in [ops/durability/backend/README.md](../durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
+9. Bring up backend observability from [ops/observability/backend/README.md](../observability/backend/README.md).
 
 ## Notes
 

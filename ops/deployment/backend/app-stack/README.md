@@ -63,7 +63,16 @@ than owned by either Compose project.
 
 4. Place the Firebase admin credential file on the server at the path referenced by `FIREBASE_ADMIN_CREDENTIALS_PATH`.
 
-5. Start Postgres and create the backend app role:
+5. Place the backend app AWS credentials file on the server at the path referenced by
+`AWS_SHARED_CREDENTIALS_PATH`. The `backend` and `worker` containers mount this file
+read-only at `/run/aws/credentials`, and `AWS_PROFILE` in `backend.env` selects the
+profile inside it.
+
+The KMS key and `lantern-app-kms` identity are managed by
+[ops/terraform/backend-app-runtime/README.md](../../../terraform/backend-app-runtime/README.md).
+Use that stack's runtime instructions to write and restrict this file.
+
+6. Start Postgres and create the backend app role:
 
 ```bash
 ./postgres/create-app-role.sh

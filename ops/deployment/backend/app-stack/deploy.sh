@@ -23,6 +23,19 @@ set +a
 
 BACKEND_SHARED_NETWORK="${BACKEND_SHARED_NETWORK:-lantern-backend}"
 
+for required_host_file_var in FIREBASE_ADMIN_CREDENTIALS_PATH AWS_SHARED_CREDENTIALS_PATH; do
+  required_host_file="${!required_host_file_var:-}"
+  if [[ -z "$required_host_file" ]]; then
+    echo "Set $required_host_file_var in compose.env." >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$required_host_file" ]]; then
+    echo "Missing required host file from $required_host_file_var: $required_host_file" >&2
+    exit 1
+  fi
+done
+
 if [[ ! -x "$BACKUP_SCRIPT" ]]; then
   echo "Missing executable backup script: $BACKUP_SCRIPT" >&2
   exit 1
