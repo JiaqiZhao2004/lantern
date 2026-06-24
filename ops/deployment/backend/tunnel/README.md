@@ -6,8 +6,8 @@ The tunnel has a different lifecycle from the app stack. It should only change w
 
 ## Files
 
-- [config.yml.example](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/tunnel/config.yml.example)
-- [render-config.sh](/Users/i-jzhao/Documents/family-finance/ops/deployment/backend/tunnel/render-config.sh)
+- [config.yml.example](./config.yml.example)
+- [render-config.sh](./render-config.sh)
 
 ## Traffic Flow
 

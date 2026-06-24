@@ -2,12 +2,12 @@
 
 This directory owns deployment artifacts for the Lantern backend host. It is split by lifecycle:
 
-- [app-stack/](</Users/i-jzhao/Documents/family-finance/ops/deployment/backend/app-stack/README.md>) owns the Compose runtime for `nginx + backend + worker + postgres`, runtime env templates, and the deploy script.
-- [tunnel/](</Users/i-jzhao/Documents/family-finance/ops/deployment/backend/tunnel/README.md>) owns locally managed Cloudflare Tunnel enrollment, config rendering, and tunnel validation for `lantern-api.royzhao.dev`.
+- [app-stack/](./app-stack/README.md) owns the Compose runtime for `nginx + backend + worker + postgres`, runtime env templates, and the deploy script.
+- [tunnel/](./tunnel/README.md) owns locally managed Cloudflare Tunnel enrollment, config rendering, and tunnel validation for `lantern-api.royzhao.dev`.
 
 The app stack changes during application deploys and migrations. The tunnel is host ingress plumbing and should only change when the origin hostname, tunnel identity, or local origin port changes.
 
-The cross-layer bring-up order lives in [backend-bring-up.md](/Users/i-jzhao/Documents/family-finance/ops/bootstrap/backend-bring-up.md). Backend durability lives separately under `ops/durability/backend/`. Same-origin CloudFront `/api/*` routing and Cloudflare Access backend-origin protection are owned by `ops/terraform/lantern-hosting/`.
+The cross-layer bring-up order lives in [backend-bring-up.md](../../bootstrap/backend-bring-up.md). Backend durability lives separately under `ops/durability/backend/`. Same-origin CloudFront `/api/*` routing and Cloudflare Access backend-origin protection are owned by `ops/terraform/lantern-hosting/`.
 
 ## First-Pass Scope
 
