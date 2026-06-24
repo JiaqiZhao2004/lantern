@@ -27,7 +27,16 @@ cp db.env.example db.env
 
 The real runtime files stay on the host and are intentionally gitignored. If `BACKEND_IMAGE` points at a private GHCR image, set both `GITHUB_USERNAME` and `GHCR_TOKEN` in `compose.env`; `GHCR_TOKEN` should be a GitHub personal access token with `read:packages`.
 
-3. Place the Firebase admin credential file on the server at the path referenced by `FIREBASE_ADMIN_CREDENTIALS_PATH`.
+3. Create the shared backend Docker network if it does not already exist:
+
+```bash
+docker network create "${BACKEND_SHARED_NETWORK:-lantern-backend}"
+```
+
+This network is shared with the observability stack and is intentionally host-owned rather
+than owned by either Compose project.
+
+4. Place the Firebase admin credential file on the server at the path referenced by `FIREBASE_ADMIN_CREDENTIALS_PATH`.
 
 ## Runtime Boundary
 
@@ -37,6 +46,10 @@ The Compose stack runs:
 - `backend`, the FastAPI web process
 - `worker`, the transaction sync worker
 - `db`, the local Postgres database
+
+All app stack services join the external Docker network named by
+`BACKEND_SHARED_NETWORK`, defaulting to `lantern-backend`, so observability can scrape the
+runtime by stable service names.
 
 `nginx/default.conf` owns the local HTTP boundary between Cloudflare Tunnel and the backend service. It exposes `/health/live` and `/health/ready`, proxies `/api/` traffic to the backend container, and provides the loopback validation target that the tunnel depends on.
 

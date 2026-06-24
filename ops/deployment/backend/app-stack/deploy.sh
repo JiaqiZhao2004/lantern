@@ -21,8 +21,16 @@ set -a
 source "$COMPOSE_ENV"
 set +a
 
+BACKEND_SHARED_NETWORK="${BACKEND_SHARED_NETWORK:-lantern-backend}"
+
 if [[ ! -x "$BACKUP_SCRIPT" ]]; then
   echo "Missing executable backup script: $BACKUP_SCRIPT" >&2
+  exit 1
+fi
+
+if ! docker network inspect "$BACKEND_SHARED_NETWORK" >/dev/null 2>&1; then
+  echo "Missing Docker network: $BACKEND_SHARED_NETWORK" >&2
+  echo "Create it before deploy: docker network create $BACKEND_SHARED_NETWORK" >&2
   exit 1
 fi
 
