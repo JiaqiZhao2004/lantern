@@ -14,9 +14,10 @@
 
 ## Configure cloud upload
 
-Copy `backup.env.example` to `backup.env` and fill in the S3 settings from the `ops/terraform/db-durability/` outputs.
-
-The backup script uses the host AWS credential chain, not container credentials. Install the AWS CLI on the server and provide the backup-upload key through environment variables, `~/.aws/credentials`, or another standard AWS CLI mechanism.
+Copy `backup.env.example` to `backup.env` and fill in the S3 settings and
+`BACKUP_AWS_PROFILE` from [ops/terraform/db-durability/README.md](../../terraform/db-durability/README.md).
+`backup-db.sh` uses this host AWS CLI profile for S3 uploads, separate from the app
+runtime `AWS_PROFILE`.
 
 `BACKUP_LOCAL_RETENTION_DAYS` controls host-side cleanup of old local backup artifacts. The default is 7 days.
 

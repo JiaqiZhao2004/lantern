@@ -5,9 +5,9 @@ This stack provisions the AWS durability boundary for Lantern's first production
 - a private S3 bucket for logical Postgres backups
 - server-side encryption and blocked public access
 - lifecycle rules for short-retention and weekly-retention backup prefixes
-- a narrow IAM user that can upload backups into those prefixes
+- a narrow IAM user that can upload backups to and download backups from those prefixes
 
-The current runtime model uploads compressed `pg_dump` artifacts from the Ubuntu host. Terraform creates the bucket and upload identity; host-side scheduling remains a separate operational step.
+The current runtime model uploads compressed `pg_dump` artifacts from the Ubuntu host. Terraform creates the bucket and backup transfer identity; host-side scheduling remains a separate operational step.
 
 ## Retention model
 
@@ -28,7 +28,7 @@ Terraform state is stored in the existing shared S3 bucket:
 
 ## Prerequisites
 
-Use your usual AWS credentials locally, for example through `AWS_PROFILE`, `aws sso login`, or environment variables.
+Use your usual AWS credentials locally, for example through `AWS_PROFILE`, `aws sso login --profile <profile> --no-browser --use-device-code`, or environment variables.
 
 ## Apply
 
@@ -41,18 +41,22 @@ terraform apply
 
 ## Runtime values
 
-After apply, wire these values into `ops/durability/backend/backup.env` on the server:
+After apply, configure `ops/durability/backend/backup.env` on the server with:
 
 - `BACKUP_AWS_REGION`
+- `BACKUP_AWS_PROFILE=lantern-backup-upload`
 - `BACKUP_S3_BUCKET`
 - `BACKUP_S3_PREFIX=postgres/six-hourly`
 - `BACKUP_S3_WEEKLY_PREFIX=postgres/weekly`
 
-Create or export the AWS credential from these outputs:
+Store the backup-upload AWS credential in the server user's AWS CLI config. Keep the secret outside the repo:
 
 ```bash
-terraform output -raw backup_upload_access_key_id
-terraform output -raw backup_upload_secret_access_key
+backup_profile="lantern-backup-upload"
+
+aws configure set aws_access_key_id "$(terraform output -raw backup_upload_access_key_id)" --profile "$backup_profile"
+aws configure set aws_secret_access_key "$(terraform output -raw backup_upload_secret_access_key)" --profile "$backup_profile"
+aws configure set region "us-east-2" --profile "$backup_profile"
 ```
 
-Keep the secret outside the repo and install it on the host with the rest of the runtime credentials.
+On the server, set `BACKUP_AWS_PROFILE=lantern-backup-upload` in `ops/durability/backend/backup.env`. The real credential values live in `~/.aws/credentials`; do not paste them into `backup.env`.

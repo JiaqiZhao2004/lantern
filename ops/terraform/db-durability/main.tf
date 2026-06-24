@@ -75,6 +75,20 @@ data "aws_iam_policy_document" "backup_upload" {
       "${aws_s3_bucket.backups.arn}/${local.normalized_weekly_prefix}/*",
     ]
   }
+
+  statement {
+    sid    = "ReadBackupObjectsForRestore"
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    resources = [
+      "${aws_s3_bucket.backups.arn}/${local.normalized_six_hourly_prefix}/*",
+      "${aws_s3_bucket.backups.arn}/${local.normalized_weekly_prefix}/*",
+    ]
+  }
 }
 
 resource "aws_s3_bucket" "backups" {
