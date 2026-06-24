@@ -29,6 +29,29 @@ cp db.env.example db.env
 
 The real runtime files stay on the host and are intentionally gitignored. If `BACKEND_IMAGE` points at a private GHCR image, set both `GITHUB_USERNAME` and `GHCR_TOKEN` in `compose.env`; `GHCR_TOKEN` should be a GitHub personal access token with `read:packages`.
 
+After the production same-origin `/api/*` route is live, set Plaid webhook
+registration in `backend.env` to the public app API route:
+
+```env
+PLAID_WEBHOOK_URL=https://lantern.royzhao.dev/api/v1/plaid/webhooks
+```
+
+Do not use the protected backend origin hostname for this value; Plaid cannot send
+the Cloudflare Access service-token headers that CloudFront uses for origin access.
+
+Plaid Item webhook URLs are reconciled during deploy after migrations and before
+runtime rollout. To inspect or repair them manually, run:
+
+```bash
+docker compose --env-file compose.env -f compose.yml run --rm backend \
+  python -m src.plaid_webhook_reconciler --dry-run
+
+docker compose --env-file compose.env -f compose.yml run --rm backend \
+  python -m src.plaid_webhook_reconciler --apply
+```
+
+Deploy fails if active Plaid Items cannot be reconciled to `PLAID_WEBHOOK_URL`.
+
 3. Create the shared backend Docker network if it does not already exist:
 
 ```bash
@@ -98,8 +121,9 @@ The deploy script:
 3. brings up the database if needed
 4. creates a pre-deploy backup
 5. runs Alembic migrations
-6. updates runtime services
-7. verifies readiness through `nginx`
+6. reconciles active Plaid Item webhook URLs to `PLAID_WEBHOOK_URL`
+7. updates runtime services
+8. verifies readiness through `nginx`
 
 ## Operational Notes
 

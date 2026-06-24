@@ -27,14 +27,18 @@ uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ### setup ngrok webhook server for local dev
 
 ```bash
-ngrok http 8001
+ngrok http 8000
 ```
 
 set `PLAID_WEBHOOK_URL` to your public webhook endpoint, e.g.
 `https://<your-domain>/api/v1/plaid/webhooks`
 
+The main backend app includes the webhook route. In Docker Compose, the
+`backend-worker` service must also be running so webhook-created sync jobs are
+processed.
+
 ```bash
-uvicorn src.dev_webhook_server:app --reload --host 0.0.0.0 --port 8001
+uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## docker

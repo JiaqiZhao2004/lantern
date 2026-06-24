@@ -42,6 +42,14 @@ class InstitutionConnectionRepository:
             .all()
         )
 
+    def list_active(self, db: Session):
+        return (
+            db.query(InstitutionConnection)
+            .filter(InstitutionConnection.status == InstitutionConnectionStatus.ACTIVE)
+            .order_by(InstitutionConnection.created_at)
+            .all()
+        )
+
     def get_by_plaid_item_id(self, db: Session, plaid_item_id: str):
         return (
             db.query(InstitutionConnection)

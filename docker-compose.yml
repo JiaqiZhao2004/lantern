@@ -32,6 +32,21 @@ services:
       - ./backend:/app
       - /Users/i-jzhao/.secrets/family-finance-d31cd-firebase-adminsdk-fbsvc-b1de073ddb.json:/run/secrets/firebase-adminsdk.json:ro
 
+  backend-worker:
+    build: ./backend
+    command: ["python", "-m", "src.transactions_sync_runner"]
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/postgres
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /Users/i-jzhao/.secrets/family-finance-d31cd-firebase-adminsdk-fbsvc-b1de073ddb.json:/run/secrets/firebase-adminsdk.json:ro
+
   frontend:
     build: ./frontend
     ports:
