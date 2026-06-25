@@ -2,6 +2,7 @@ import json
 
 import httpx
 import pytest
+from prometheus_client import generate_latest
 
 from src.infrastructure.llm.client import (
     LLMMessage,
@@ -79,6 +80,79 @@ def test_openai_client_posts_structured_output_request_and_parses_json():
         "named_query_generation"
     )
     assert result["name"] == "Spending by category"
+
+
+def test_openai_client_records_success_duration_metric(monkeypatch):
+    times = iter([10.0, 12.5])
+    monkeypatch.setattr(
+        "src.infrastructure.llm.client.perf_counter",
+        lambda: next(times),
+    )
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": json.dumps({"ok": True})}}]},
+        )
+    )
+    client = OpenAILLMClient(
+        api_key="test-key",
+        model="metric-success-model",
+        base_url="https://example.test/v1",
+        client_factory=lambda: httpx.Client(transport=transport),
+    )
+
+    client.generate_structured(
+        messages=[LLMMessage(role="user", content="hello")],
+        schema_name="metric_success_schema",
+        json_schema={"type": "object"},
+    )
+
+    output = generate_latest().decode()
+    assert (
+        'lantern_llm_call_duration_seconds_count{model="metric-success-model",'
+        'provider="openai",schema_name="metric_success_schema",status="success"} 1.0'
+    ) in output
+    assert (
+        'lantern_llm_call_duration_seconds_sum{model="metric-success-model",'
+        'provider="openai",schema_name="metric_success_schema",status="success"} 2.5'
+    ) in output
+
+
+def test_openai_client_records_error_duration_metric(monkeypatch):
+    times = iter([20.0, 23.0])
+    monkeypatch.setattr(
+        "src.infrastructure.llm.client.perf_counter",
+        lambda: next(times),
+    )
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            401,
+            json={"error": {"message": "Incorrect API key provided"}},
+        )
+    )
+    client = OpenAILLMClient(
+        api_key="bad-key",
+        model="metric-error-model",
+        base_url="https://example.test/v1",
+        client_factory=lambda: httpx.Client(transport=transport),
+    )
+
+    with pytest.raises(LLMProviderError, match="Incorrect API key provided"):
+        client.generate_structured(
+            messages=[LLMMessage(role="user", content="hello")],
+            schema_name="metric_error_schema",
+            json_schema={"type": "object"},
+        )
+
+    output = generate_latest().decode()
+    assert (
+        'lantern_llm_call_duration_seconds_count{model="metric-error-model",'
+        'provider="openai",schema_name="metric_error_schema",status="error"} 1.0'
+    ) in output
+    assert (
+        'lantern_llm_call_duration_seconds_sum{model="metric-error-model",'
+        'provider="openai",schema_name="metric_error_schema",status="error"} 3.0'
+    ) in output
 
 
 def test_openai_client_surfaces_provider_error_message():

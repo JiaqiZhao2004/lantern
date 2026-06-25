@@ -2,9 +2,19 @@ from dataclasses import dataclass
 from functools import lru_cache
 import json
 import os
+from time import perf_counter
 from typing import Any, Protocol
 
 import httpx
+from prometheus_client import Histogram
+
+
+LLM_CALL_DURATION_SECONDS = Histogram(
+    "lantern_llm_call_duration_seconds",
+    "LLM provider call duration in seconds.",
+    ["provider", "model", "schema_name", "status"],
+    buckets=(0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 15.0, 30.0, 60.0),
+)
 
 
 @dataclass(frozen=True)
@@ -62,6 +72,8 @@ class OpenAILLMClient:
         schema_name: str,
         json_schema: dict[str, Any],
     ) -> dict[str, Any]:
+        start = perf_counter()
+        status = "error"
         payload = {
             "model": self.model,
             "messages": [
@@ -87,22 +99,34 @@ class OpenAILLMClient:
                     },
                     json=payload,
                 )
+
+            if response.status_code >= 400:
+                raise LLMProviderError(_format_openai_error(response))
+
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise LLMProviderError("OpenAI returned invalid JSON") from exc
+
+            content = _extract_message_content(body)
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise LLMProviderError(
+                    "OpenAI returned non-JSON structured output"
+                ) from exc
         except httpx.HTTPError as exc:
             raise LLMProviderError("OpenAI request failed") from exc
-
-        if response.status_code >= 400:
-            raise LLMProviderError(_format_openai_error(response))
-
-        try:
-            body = response.json()
-        except ValueError as exc:
-            raise LLMProviderError("OpenAI returned invalid JSON") from exc
-
-        content = _extract_message_content(body)
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise LLMProviderError("OpenAI returned non-JSON structured output") from exc
+        else:
+            status = "success"
+            return result
+        finally:
+            LLM_CALL_DURATION_SECONDS.labels(
+                provider="openai",
+                model=self.model,
+                schema_name=schema_name,
+                status=status,
+            ).observe(perf_counter() - start)
 
     def _default_client_factory(self) -> httpx.Client:
         return httpx.Client(timeout=self.timeout_seconds)
