@@ -36,11 +36,16 @@ terraform apply
 
 ## Runtime values
 
-After apply, configure `ops/deployment/backend/app-stack/backend.env` on the server with:
+After apply, copy the checked-in backend environment example on the server and review
+the prefilled AWS runtime settings:
 
-- `AWS_REGION`
-- `AWS_PROFILE=lantern-app-kms`
-- `KMS_KEY_ID=alias/lantern/backend-app`
+```bash
+cd ops/deployment/backend/app-stack
+cp backend.env.example backend.env
+```
+
+The example already contains the expected region, `lantern-app-kms` profile, and KMS
+alias. Keep AWS credential secret values out of this file.
 
 Install the backend app AWS credential into the host file referenced by
 `AWS_SHARED_CREDENTIALS_PATH` in `ops/deployment/backend/app-stack/compose.env`:
