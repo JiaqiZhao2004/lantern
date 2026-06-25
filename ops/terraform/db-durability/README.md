@@ -41,13 +41,18 @@ terraform apply
 
 ## Runtime values
 
-After apply, configure `ops/durability/backend/backup.env` on the server with:
+After apply, copy the checked-in backup environment example on the server and review
+the prefilled S3 settings:
 
-- `BACKUP_AWS_REGION`
-- `BACKUP_AWS_PROFILE=lantern-backup-upload`
-- `BACKUP_S3_BUCKET`
-- `BACKUP_S3_PREFIX=postgres/six-hourly`
-- `BACKUP_S3_WEEKLY_PREFIX=postgres/weekly`
+```bash
+cd ops/durability/backend
+cp backup.env.example backup.env
+vim backup.env
+```
+
+The example already contains the expected region, `lantern-backup-upload` profile,
+backup bucket, and short/weekly retention prefixes. Keep credential secret values out
+of this file.
 
 Store the backup-upload AWS credential in the server user's AWS CLI config. Keep the secret outside the repo:
 
@@ -59,4 +64,5 @@ aws configure set aws_secret_access_key "$(terraform output -raw backup_upload_s
 aws configure set region "us-east-2" --profile "$backup_profile"
 ```
 
-On the server, set `BACKUP_AWS_PROFILE=lantern-backup-upload` in `ops/durability/backend/backup.env`. The real credential values live in `~/.aws/credentials`; do not paste them into `backup.env`.
+The real credential values live in `~/.aws/credentials`; do not paste them into
+`backup.env`.

@@ -16,16 +16,17 @@ This is the thin driver for bringing a Lantern backend host to a working state f
    - `cloudflared`
    - Docker Engine
    - Docker Compose plugin
-   - AWS CLI
-2. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
-3. Apply the backend app runtime Terraform stack in [ops/terraform/backend-app-runtime/README.md](../terraform/backend-app-runtime/README.md).
-4. Create the shared Docker network used by the app stack and observability stack:
+   - AWS CLI and an operator AWS login for Terraform
+2. Confirm the operator shell has an active AWS login before running any Terraform stack.
+3. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
+4. Apply the backend app runtime Terraform stack in [ops/terraform/backend-app-runtime/README.md](../terraform/backend-app-runtime/README.md).
+5. Create the shared Docker network used by the app stack and observability stack:
    - `docker network create lantern-backend`
-5. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
-6. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](../deployment/backend/app-stack/README.md).
-7. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md).
-8. Enable the backup timers described in [ops/durability/backend/README.md](../durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
-9. Bring up backend observability from [ops/observability/backend/README.md](../observability/backend/README.md).
+6. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
+7. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](../deployment/backend/app-stack/README.md).
+8. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md).
+9. Enable the backup timers described in [ops/durability/backend/README.md](../durability/backend/README.md) only after the backend runtime is healthy enough for backups to succeed.
+10. Bring up backend observability from [ops/observability/backend/README.md](../observability/backend/README.md).
 
 ## Notes
 
@@ -152,7 +153,8 @@ cloudflared --version
 
 ### AWS CLI
 
-Install AWS CLI v2 if S3 backup upload is enabled:
+Install AWS CLI v2 for Terraform operator authentication and S3 backup credential
+setup:
 
 ```bash
 tmp_dir="$(mktemp -d)"
@@ -170,6 +172,25 @@ sudo ./aws/install
 
 aws --version
 ```
+
+### AWS Operator Login
+
+Before running any Terraform stack, authenticate the operator shell with an AWS
+profile that can access the shared Terraform state bucket and manage the backend AWS resources:
+
+```bash
+operator_profile="<operator-profile>"
+
+aws sso login --profile "$operator_profile" --no-browser --use-device-code
+export AWS_PROFILE="$operator_profile"
+
+aws sts get-caller-identity
+```
+
+Keep `AWS_PROFILE` set in the shell used for `terraform init`, `terraform plan`,
+and `terraform apply`. If the host uses non-SSO credentials, skip `aws sso login`
+and verify the active identity with `aws sts get-caller-identity` before applying
+Terraform.
 
 After the DB durability Terraform stack creates `backup_upload_access_key_id` and
 `backup_upload_secret_access_key`, store them outside the repo in a dedicated AWS CLI
