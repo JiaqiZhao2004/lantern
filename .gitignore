@@ -44,3 +44,6 @@ ops/durability/backend/backup.env
 ops/observability/backend/observability.env
 ops/observability/backend/generated/
 ops/observability/backend/textfile_collector/
+
+# Runtime secrets
+secrets/
