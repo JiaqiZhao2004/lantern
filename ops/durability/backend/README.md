@@ -14,7 +14,7 @@
 
 ## Configure cloud upload
 
-Copy `backup.env.example` to `backup.env` and fill in the S3 settings and
+Copy `backup.env.example` to `backup.env` and review the prefilled S3 settings and
 `BACKUP_AWS_PROFILE` from [ops/terraform/db-durability/README.md](../../terraform/db-durability/README.md).
 `backup-db.sh` uses this host AWS CLI profile for S3 uploads, separate from the app
 runtime `AWS_PROFILE`.
