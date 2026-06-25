@@ -18,3 +18,64 @@ groups:
         annotations:
           summary: "Lantern backend liveness is down"
           description: "The local nginx /health/live probe has failed for at least 5 minutes."
+
+      - alert: LanternBackend5xxResponses
+        expr: sum(increase(lantern_http_requests_total{status_code=~"5.."}[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern backend is returning 5xx responses"
+          description: "At least one backend API request returned a 5xx response over the last 5 minutes."
+
+      - alert: LanternBackendRepeated5xxResponses
+        expr: sum(increase(lantern_http_requests_total{status_code=~"5.."}[10m])) >= 5
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern backend is repeatedly returning 5xx responses"
+          description: "At least 5 backend API requests returned 5xx responses over the last 10 minutes."
+
+      - alert: LanternSyncRunnerHeartbeatStale
+        expr: (time() - lantern_sync_runner_last_heartbeat_timestamp_seconds > 120) or absent(lantern_sync_runner_last_heartbeat_timestamp_seconds)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern sync runner heartbeat is stale"
+          description: "The transaction sync runner heartbeat has been missing or older than 2 minutes."
+
+      - alert: LanternSyncJobMetricsCollectionFailing
+        expr: lantern_sync_jobs_metrics_collection_success == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern SyncJob metrics collection is failing"
+          description: "The backend /metrics endpoint cannot collect aggregate SyncJob metrics."
+
+      - alert: LanternSyncJobQueueStale
+        expr: lantern_sync_jobs_oldest_queued_age_seconds > 3600
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern SyncJob queue is stale"
+          description: "The oldest queued SyncJob has been queued for more than 1 hour."
+
+      - alert: LanternSyncJobRunningStale
+        expr: lantern_sync_jobs_oldest_running_age_seconds > 7200
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern SyncJob appears stuck running"
+          description: "The oldest running SyncJob has been running for more than 2 hours."
+
+      - alert: LanternRecentDeadLetterSyncJob
+        expr: lantern_sync_jobs_last_dead_letter_timestamp_seconds > 0 and time() - lantern_sync_jobs_last_dead_letter_timestamp_seconds < 86400
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern has recent dead-letter SyncJob activity"
+          description: "A SyncJob entered dead-letter state within the last 24 hours."

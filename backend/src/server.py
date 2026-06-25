@@ -15,10 +15,12 @@ from src.api.routes.plaid import router as plaid_router
 from src.api.routes.plaid_webhooks import router as webhooks_router
 from src.api.routes.users import router as users_router
 from src.infrastructure.db.database import SessionLocal
+from src.infrastructure.metrics import install_http_metrics, metrics_response
 from src.modules import AppError
 
 
 app = FastAPI()
+install_http_metrics(app)
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +47,11 @@ async def health_ready():
         )
 
     return {"status": "ok"}
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    return metrics_response(app)
 
 
 @app.exception_handler(AppError)

@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.transactions_sync_runner import process, run_forever
+from src.transactions_sync_runner import process, run_forever, write_heartbeat
 
 
 class FakeDb:
@@ -141,3 +141,28 @@ def test_run_forever_sleeps_when_no_work_is_due(monkeypatch):
 
     assert calls == [services]
     assert sleeps == [2.5]
+
+
+def test_write_heartbeat_writes_prometheus_text_atomically(monkeypatch, tmp_path):
+    heartbeat_path = tmp_path / "worker-heartbeat.prom"
+    monkeypatch.setenv("SYNC_RUNNER_HEARTBEAT_PATH", str(heartbeat_path))
+
+    write_heartbeat(now=1782412345.25)
+
+    assert heartbeat_path.read_text(encoding="utf-8") == (
+        "# HELP lantern_sync_runner_last_heartbeat_timestamp_seconds "
+        "Unix timestamp for the latest sync runner heartbeat.\n"
+        "# TYPE lantern_sync_runner_last_heartbeat_timestamp_seconds gauge\n"
+        "lantern_sync_runner_last_heartbeat_timestamp_seconds 1782412345.250000\n"
+    )
+    assert not (tmp_path / ".worker-heartbeat.prom.tmp").exists()
+
+
+def test_write_heartbeat_keeps_touch_file_mode(monkeypatch, tmp_path):
+    heartbeat_path = tmp_path / "worker-heartbeat"
+    monkeypatch.setenv("SYNC_RUNNER_HEARTBEAT_PATH", str(heartbeat_path))
+
+    write_heartbeat(now=1782412345.25)
+
+    assert heartbeat_path.exists()
+    assert heartbeat_path.read_text(encoding="utf-8") == ""

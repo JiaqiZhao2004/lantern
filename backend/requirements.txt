@@ -46,6 +46,7 @@ nulltype==2.3.1
 packaging==26.0
 plaid-python==38.0.0
 pluggy==1.6.0
+prometheus-client==0.23.1
 proto-plus==1.27.0
 protobuf==6.33.4
 psycopg==3.3.2

@@ -22,13 +22,32 @@ from src.modules.sync_jobs.repository import SyncJobsRepository
 logger = logging.getLogger(__name__)
 
 
-def write_heartbeat():
+def _write_text_atomically(path: Path, content: str) -> None:
+    temp_path = path.with_name(f".{path.name}.tmp")
+    temp_path.write_text(content, encoding="utf-8")
+    temp_path.replace(path)
+
+
+def write_heartbeat(now: float | None = None):
     heartbeat_path = os.getenv("SYNC_RUNNER_HEARTBEAT_PATH")
     if not heartbeat_path:
         return
 
+    timestamp = time.time() if now is None else now
     path = Path(heartbeat_path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix == ".prom":
+        _write_text_atomically(
+            path=path,
+            content=(
+                "# HELP lantern_sync_runner_last_heartbeat_timestamp_seconds "
+                "Unix timestamp for the latest sync runner heartbeat.\n"
+                "# TYPE lantern_sync_runner_last_heartbeat_timestamp_seconds gauge\n"
+                f"lantern_sync_runner_last_heartbeat_timestamp_seconds {timestamp:.6f}\n"
+            ),
+        )
+        return
+
     path.touch()
 
 
