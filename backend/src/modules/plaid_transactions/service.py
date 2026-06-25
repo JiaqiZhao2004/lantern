@@ -1,5 +1,6 @@
 import time
 import json
+import logging
 from typing import Dict, Any
 from .mapper import plaid_transaction_to_row
 from .repository import TransactionRepository
@@ -10,6 +11,9 @@ from ...infrastructure import Session, PlaidClient, KMSService
 from ...exceptions import InternalError
 import plaid
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
+
+
+logger = logging.getLogger(__name__)
 
 
 def transactions_sync(plaid_client: PlaidClient, cursor: str, access_token: str):
@@ -44,7 +48,8 @@ def transactions_sync(plaid_client: PlaidClient, cursor: str, access_token: str)
             "next_cursor": cursor,
         }
     except plaid.ApiException as e:
-        raise InternalError()
+        logger.exception("Failed to sync Plaid transactions")
+        raise InternalError() from e
 
 
 class TransactionService:

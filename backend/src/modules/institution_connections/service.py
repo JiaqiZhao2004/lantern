@@ -1,5 +1,6 @@
 from uuid import UUID
 from datetime import date, datetime, timedelta
+import logging
 
 from .repository import InstitutionConnectionRepository
 from ..household_membership.repository import MembershipRepository
@@ -26,6 +27,9 @@ from plaid.model.item_public_token_exchange_request import (
 )
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
+
+
+logger = logging.getLogger(__name__)
 
 
 class InstitutionConnectionService:
@@ -64,14 +68,16 @@ class InstitutionConnectionService:
             resp = self.plaid_client.link_token_create(req)
             return resp.to_dict()
         except plaid.ApiException as e:
-            raise InternalError()
+            logger.exception("Failed to create Plaid link token")
+            raise InternalError() from e
 
     def exchange_public_token(self, plaid_client: PlaidClient, link_public_token: str):
         try:
             req = ItemPublicTokenExchangeRequest(public_token=link_public_token)
             resp = plaid_client.item_public_token_exchange(req)
         except plaid.ApiException as e:
-            raise InternalError()
+            logger.exception("Failed to exchange Plaid public token")
+            raise InternalError() from e
 
         plaid_access_token: str = resp["access_token"]
         plaid_item_id: str = resp["item_id"]
@@ -96,6 +102,7 @@ class InstitutionConnectionService:
                 )
                 institution_name = inst_resp.get("institution", {}).get("name")
         except Exception:
+            logger.warning("Failed to fetch Plaid institution info", exc_info=True)
             pass  # Institution info is optional
 
         return institution_id, institution_name
