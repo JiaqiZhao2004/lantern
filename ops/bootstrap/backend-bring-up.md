@@ -67,6 +67,21 @@ sudo apt-get install -y terraform
 terraform version
 ```
 
+Create a Terraform CLI config file with a shared provider plugin cache. This keeps
+downloaded provider binaries in one operator-owned cache instead of duplicating them
+under every stack's `.terraform/` directory:
+
+```bash
+mkdir -p "$HOME/.terraform.d/plugin-cache"
+
+tee "$HOME/.terraformrc" >/dev/null <<'EOF'
+plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"
+EOF
+```
+
+If `~/.terraformrc` already exists, merge the `plugin_cache_dir` setting into the
+existing file instead of replacing it.
+
 ### Tailscale
 
 Install Tailscale for private operator access:
@@ -74,6 +89,7 @@ Install Tailscale for private operator access:
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up
+sudo systemctl enable --now tailscaled
 ```
 
 After login, confirm the host has a Tailscale address:
