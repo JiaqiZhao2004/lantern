@@ -55,7 +55,7 @@ Deploy fails if active Plaid Items cannot be reconciled to `PLAID_WEBHOOK_URL`.
 3. Create the shared backend Docker network if it does not already exist:
 
 ```bash
-docker network create "${BACKEND_SHARED_NETWORK:-lantern-backend}"
+docker network inspect lantern-backend >/dev/null 2>&1 || docker network create lantern-backend
 ```
 
 This network is shared with the observability stack and is intentionally host-owned rather
