@@ -56,10 +56,10 @@ Run these steps from `ops/observability/backend/` on the backend host.
 docker network create lantern-backend
 ```
 
-2. Create the real observability env file:
+2. Create the real observability env file if it does not already exist:
 
 ```bash
-cp observability.env.example observability.env
+test -f observability.env || cp observability.env.example observability.env
 ```
 
 Fill in `observability.env`, including:

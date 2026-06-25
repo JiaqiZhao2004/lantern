@@ -41,12 +41,12 @@ terraform apply
 
 ## Runtime values
 
-After apply, copy the checked-in backup environment example on the server and review
-the prefilled S3 settings:
+After apply, create the backend backup environment file on the server if it does
+not already exist, then review the prefilled S3 settings:
 
 ```bash
 cd ops/durability/backend
-cp backup.env.example backup.env
+test -f backup.env || cp backup.env.example backup.env
 vim backup.env
 ```
 

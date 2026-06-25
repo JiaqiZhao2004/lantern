@@ -17,12 +17,12 @@ This directory owns the backend host application stack: `nginx`, the FastAPI bac
 
 Run these steps from `ops/deployment/backend/app-stack/` on the backend host.
 
-1. Create host-local runtime env files:
+1. Create host-local runtime env files if they do not already exist:
 
 ```bash
-cp compose.env.example compose.env
-cp backend.env.example backend.env
-cp db.env.example db.env
+test -f compose.env || cp compose.env.example compose.env
+test -f backend.env || cp backend.env.example backend.env
+test -f db.env || cp db.env.example db.env
 ```
 
 2. Fill in `compose.env`, `backend.env`, and `db.env`.
