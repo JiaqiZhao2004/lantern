@@ -17,7 +17,8 @@ backend/postgres-data/
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 
 # Terraform
 .terraform/
