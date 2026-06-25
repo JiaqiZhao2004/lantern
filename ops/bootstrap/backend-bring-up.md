@@ -16,6 +16,7 @@ This is the thin driver for bringing a Lantern backend host to a working state f
    - `cloudflared`
    - Docker Engine
    - Docker Compose plugin
+   - Docker registry login for private GHCR image pulls
    - AWS CLI and an operator AWS login for Terraform
 2. Confirm the operator shell has an active AWS login before running any Terraform stack.
 3. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
@@ -130,11 +131,52 @@ sudo usermod -aG docker "$USER"
 newgrp docker
 docker version
 docker compose version
-
-newgrp docker
 ```
 
-If `newgrp docker` does not refresh the shell cleanly, log out and SSH back in.
+`newgrp docker` only refreshes the current shell. For durable access in future SSH
+sessions, log out and SSH back in after `sudo usermod -aG docker "$USER"`.
+
+If Docker commands still fail with permission denied, confirm the current shell has
+the `docker` group and that the Docker socket is group-writable by `docker`:
+
+```bash
+id -nG
+getent group docker
+ls -l /var/run/docker.sock
+```
+
+If `docker` is missing from `id -nG`, the current login session has not picked up
+the group change. Exit all SSH sessions for that user, reconnect, and rerun
+`docker version`. A one-off `sudo docker ...` command can unblock a single host
+setup step, but the operator shell should be able to run Docker without `sudo`
+before starting Compose services.
+
+If `id <user>` includes `docker` but `id -nG` in a VS Code Remote SSH terminal does
+not, the VS Code server process is still using an old login session. Run `newgrp
+docker` to unblock the current terminal, or kill/reconnect the remote VS Code
+server so new terminals inherit the updated groups.
+
+If `BACKEND_IMAGE` points at a private GHCR image, authenticate Docker to GHCR
+once as the operator user after Docker group access works. `GHCR_TOKEN` should
+be a GitHub personal access token with `read:packages`.
+
+```bash
+GITHUB_USERNAME="<github-username>"
+read -r -s -p "GHCR token with read:packages: " GHCR_TOKEN
+echo
+
+if [[ -n "${GITHUB_USERNAME:-}" || -n "${GHCR_TOKEN:-}" ]]; then
+  if [[ -z "${GITHUB_USERNAME:-}" || -z "${GHCR_TOKEN:-}" ]]; then
+    echo "Set both GITHUB_USERNAME and GHCR_TOKEN to authenticate to GHCR." >&2
+    exit 1
+  fi
+
+  echo "Authenticating Docker to ghcr.io..."
+  printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+fi
+
+unset GHCR_TOKEN
+```
 
 ### Cloudflare Tunnel Client
 
