@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 
-from src.transactions_sync_runner import process
+import pytest
+
+from src.transactions_sync_runner import process, run_forever
 
 
 class FakeDb:
@@ -89,3 +91,53 @@ def test_process_marks_failure_when_transaction_sync_raises():
     assert did_process is True
     assert sync_service.successes == []
     assert sync_service.failures == [(job, connection, error)]
+
+
+def test_run_forever_does_not_sleep_after_processing_work(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_process_once(services):
+        calls.append(services)
+        if len(calls) == 1:
+            return True
+        raise KeyboardInterrupt
+
+    def fake_sleep(seconds):
+        sleeps.append(seconds)
+        raise AssertionError("run_forever slept after processing work")
+
+    monkeypatch.setattr("src.transactions_sync_runner.process_once", fake_process_once)
+    monkeypatch.setattr("src.transactions_sync_runner.time.sleep", fake_sleep)
+    monkeypatch.setattr("src.transactions_sync_runner.write_heartbeat", lambda: None)
+
+    services = SimpleNamespace()
+    with pytest.raises(KeyboardInterrupt):
+        run_forever(services=services, sleep_seconds=2.5)
+
+    assert calls == [services, services]
+    assert sleeps == []
+
+
+def test_run_forever_sleeps_when_no_work_is_due(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_process_once(services):
+        calls.append(services)
+        return False
+
+    def fake_sleep(seconds):
+        sleeps.append(seconds)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("src.transactions_sync_runner.process_once", fake_process_once)
+    monkeypatch.setattr("src.transactions_sync_runner.time.sleep", fake_sleep)
+    monkeypatch.setattr("src.transactions_sync_runner.write_heartbeat", lambda: None)
+
+    services = SimpleNamespace()
+    with pytest.raises(KeyboardInterrupt):
+        run_forever(services=services, sleep_seconds=2.5)
+
+    assert calls == [services]
+    assert sleeps == [2.5]
