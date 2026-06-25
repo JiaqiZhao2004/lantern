@@ -21,7 +21,7 @@ This is the thin driver for bringing a Lantern backend host to a working state f
 3. Apply the DB durability Terraform stack in [ops/terraform/db-durability/README.md](../terraform/db-durability/README.md).
 4. Apply the backend app runtime Terraform stack in [ops/terraform/backend-app-runtime/README.md](../terraform/backend-app-runtime/README.md).
 5. Create the shared Docker network used by the app stack and observability stack:
-   - `docker network create lantern-backend`
+   - `docker network inspect lantern-backend >/dev/null 2>&1 || docker network create lantern-backend`
 6. Enroll and configure the Cloudflare Tunnel in [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md), but defer public-host validation until after the first app deploy.
 7. Prepare and deploy the app stack from [ops/deployment/backend/app-stack/README.md](../deployment/backend/app-stack/README.md).
 8. Activate the `cloudflared` service and complete tunnel validation using [ops/deployment/backend/tunnel/README.md](../deployment/backend/tunnel/README.md).
@@ -130,6 +130,8 @@ sudo usermod -aG docker "$USER"
 newgrp docker
 docker version
 docker compose version
+
+newgrp docker
 ```
 
 If `newgrp docker` does not refresh the shell cleanly, log out and SSH back in.

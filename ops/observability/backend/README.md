@@ -53,7 +53,7 @@ Run these steps from `ops/observability/backend/` on the backend host.
 1. Create the shared backend Docker network if it does not already exist:
 
 ```bash
-docker network create lantern-backend
+docker network inspect lantern-backend >/dev/null 2>&1 || docker network create lantern-backend
 ```
 
 2. Create the real observability env file if it does not already exist:
@@ -154,7 +154,7 @@ The shared network should be host-owned, not owned by either Compose project:
 
 - default name: `lantern-backend`
 - env knob: `BACKEND_SHARED_NETWORK`
-- host setup command: `docker network create lantern-backend`
+- host setup command: `docker network inspect lantern-backend >/dev/null 2>&1 || docker network create lantern-backend`
 - app stack services attached: `nginx`, `backend`, `worker`, and `db`
 - observability services attached: Prometheus, `blackbox_exporter`, and `postgres_exporter`
 
