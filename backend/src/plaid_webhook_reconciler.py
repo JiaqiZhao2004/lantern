@@ -13,6 +13,7 @@ from src.modules.institution_connections.plaid_webhook_reconciler import (
     PlaidWebhookReconciler,
 )
 from src.modules.institution_connections.repository import InstitutionConnectionRepository
+from src.modules.model_registry import load_all_models
 
 
 def parse_args(argv: list[str] | None = None):
@@ -34,6 +35,8 @@ def parse_args(argv: list[str] | None = None):
 
 
 def build_reconciler(apply: bool) -> PlaidWebhookReconciler:
+    load_all_models()
+
     return PlaidWebhookReconciler(
         connection_repo=InstitutionConnectionRepository(),
         kms=get_kms_service() if apply else None,

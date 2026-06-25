@@ -13,6 +13,7 @@ from src.infrastructure import get_kms_service, get_plaid_client
 from src.infrastructure.db.database import SessionLocal
 from src.modules.accounts.repository import AccountRepository
 from src.modules.institution_connections.repository import InstitutionConnectionRepository
+from src.modules.model_registry import load_all_models
 from src.modules.plaid_transactions.repository import TransactionRepository
 from src.modules.plaid_transactions.service import TransactionService
 from src.modules.sync_jobs.execution_service import SyncJobsExecutionService
@@ -40,6 +41,8 @@ class RunnerServices:
 
 
 def build_runner_services() -> RunnerServices:
+    load_all_models()
+
     connection_repo = InstitutionConnectionRepository()
     sync_jobs_repo = SyncJobsRepository()
 
