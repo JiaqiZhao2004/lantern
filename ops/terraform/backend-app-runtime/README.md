@@ -51,6 +51,8 @@ Install the backend app AWS credential into the host file referenced by
 `AWS_SHARED_CREDENTIALS_PATH` in `ops/deployment/backend/app-stack/compose.env`:
 
 ```bash
+cp compose.env.example compose.env
+
 app_profile="lantern-app-kms"
 credentials_path="/srv/lantern/secrets/aws-credentials"
 
