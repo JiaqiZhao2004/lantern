@@ -61,14 +61,14 @@ class Transaction(Base):
 
     account_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("plaid_accounts.id", ondelete="CASCADE"),
+        ForeignKey("accounts.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
     item_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("plaid_items.id", ondelete="CASCADE"),
+        ForeignKey("institution_connections.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

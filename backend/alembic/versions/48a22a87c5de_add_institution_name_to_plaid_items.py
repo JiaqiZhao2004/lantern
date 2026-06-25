@@ -1,7 +1,7 @@
 """add institution_name to plaid_items
 
 Revision ID: 48a22a87c5de
-Revises: 
+Revises: 0f1e2d3c4b5a
 Create Date: 2026-02-27 23:23:00.364706
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '48a22a87c5de'
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = '0f1e2d3c4b5a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
