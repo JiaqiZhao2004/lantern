@@ -27,7 +27,9 @@ test -f db.env || cp db.env.example db.env
 
 2. Fill in `compose.env`, `backend.env`, and `db.env`.
 
-The real runtime files stay on the host and are intentionally gitignored. If `BACKEND_IMAGE` points at a private GHCR image, set both `GITHUB_USERNAME` and `GHCR_TOKEN` in `compose.env`; `GHCR_TOKEN` should be a GitHub personal access token with `read:packages`.
+The real runtime files stay on the host and are intentionally gitignored. GHCR
+authentication for private `BACKEND_IMAGE` pulls is a host-level bootstrap step
+covered by [ops/bootstrap/backend-bring-up.md](../../../bootstrap/backend-bring-up.md).
 
 After the production same-origin `/api/*` route is live, set Plaid webhook
 registration in `backend.env` to the public app API route:
@@ -125,14 +127,13 @@ From `ops/deployment/backend/app-stack/` on the server:
 
 The deploy script:
 
-1. authenticates Docker to GHCR when `GITHUB_USERNAME` and `GHCR_TOKEN` are set
-2. pulls runtime images
-3. brings up the database if needed
-4. creates a pre-deploy backup
-5. runs Alembic migrations
-6. reconciles active Plaid Item webhook URLs to `PLAID_WEBHOOK_URL`
-7. updates runtime services
-8. verifies readiness through `nginx`
+1. pulls runtime images
+2. brings up the database if needed
+3. creates a pre-deploy backup
+4. runs Alembic migrations
+5. reconciles active Plaid Item webhook URLs to `PLAID_WEBHOOK_URL`
+6. updates runtime services
+7. verifies readiness through `nginx`
 
 ## Operational Notes
 
