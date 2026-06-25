@@ -39,7 +39,14 @@ if not database_url:
 parsed = urlparse(database_url)
 
 if parsed.username != "lantern_app":
-    raise SystemExit("DATABASE_URL must use the lantern_app role before creating it")
+    actual_user = parsed.username or "<missing>"
+    raise SystemExit(
+        "DATABASE_URL in backend.env must use the lantern_app runtime role "
+        f"before this helper can create it; found user {actual_user!r}. "
+        "Keep the bootstrap postgres credentials in db.env, and set "
+        "DATABASE_URL=postgresql+psycopg://lantern_app:<app-password>@db:5432/lantern "
+        "in backend.env."
+    )
 
 if parsed.password is None:
     raise SystemExit("DATABASE_URL must include the lantern_app password")
