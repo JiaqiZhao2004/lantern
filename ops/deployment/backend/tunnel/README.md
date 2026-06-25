@@ -18,31 +18,54 @@ The ingress hostname must stay proxied through Cloudflare. `DNS only` is not suf
 ## First-Time Setup
 
 1. Install `cloudflared` on the Ubuntu host from Cloudflare's package instructions.
-2. On an operator machine, authenticate with Cloudflare and create the named tunnel:
+2. On an operator machine, install `cloudflared` if needed:
+
+   macOS:
+
+   ```bash
+   brew install cloudflared
+   cloudflared --version
+   ```
+
+   Windows PowerShell:
+
+   ```powershell
+   winget install --id Cloudflare.cloudflared
+   cloudflared --version
+   ```
+
+   If Windows does not find `cloudflared` immediately after install, open a new
+   PowerShell session and retry `cloudflared --version`.
+
+3. Authenticate with Cloudflare and create the named tunnel:
    - `cloudflared tunnel login`
    - `cloudflared tunnel create lantern-backend`
-3. Store the created tunnel UUID in a shell variable for the remaining steps:
+4. Store the created tunnel UUID in a shell variable for the remaining steps:
    - `export TUNNEL_ID=<tunnel-uuid>`
-4. Create the proxied DNS route for the ingress hostname:
+5. Create the proxied DNS route for the ingress hostname:
    - `cloudflared tunnel route dns lantern-backend lantern-api.royzhao.dev`
-5. Securely copy the generated tunnel credentials JSON file to the host under `/etc/cloudflared/`:
+6. Securely copy the generated tunnel credentials JSON file to the host under `/etc/cloudflared/`:
    - `sudo mkdir -p /etc/cloudflared`
    - `sudo cp "${TUNNEL_ID}.json" /etc/cloudflared/`
-6. From `ops/deployment/backend/tunnel/`, render and install the host-local config:
+7. From `ops/deployment/backend/tunnel/`, render and install the host-local config:
    - `./render-config.sh --hostname lantern-api.royzhao.dev --tunnel-id "$TUNNEL_ID" --credentials-file "/etc/cloudflared/${TUNNEL_ID}.json" --output /tmp/cloudflared-config.yml`
    - `sudo cp /tmp/cloudflared-config.yml /etc/cloudflared/config.yml`
-7. Validate the config before touching `systemd`:
+8. Validate the config before touching `systemd`:
    - `sudo cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate`
 
 After the app stack's first deploy succeeds, activate the tunnel service and complete validation.
 
 ## Activate Service
 
-Enable and start the packaged `cloudflared` service:
+Install the systemd unit if it does not already exist, then enable and start it:
 
 ```bash
-sudo systemctl enable cloudflared
-sudo systemctl start cloudflared
+if ! systemctl cat cloudflared >/dev/null 2>&1; then
+  sudo cloudflared --config /etc/cloudflared/config.yml service install
+fi
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now cloudflared
 sudo systemctl status cloudflared
 ```
 
