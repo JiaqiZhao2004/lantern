@@ -108,13 +108,16 @@ def run_forever(
         sleep_seconds = float(os.getenv("SYNC_RUNNER_SLEEP_SECONDS", "10"))
 
     while True:
+        did_process = False
         try:
-            process_once(services=services)
+            did_process = process_once(services=services)
         except Exception:
             logger.exception("Unhandled sync runner error")
         finally:
             write_heartbeat()
-        time.sleep(sleep_seconds)
+
+        if not did_process:
+            time.sleep(sleep_seconds)
 
 
 if __name__ == "__main__":
