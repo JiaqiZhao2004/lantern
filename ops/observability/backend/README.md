@@ -19,7 +19,8 @@ host, containers, Postgres database, backend service, and backup posture.
 - metrics for the host
 - metrics for backend app stack containers
 - metrics for Postgres
-- metrics or probes for backend availability
+- app-native backend HTTP metrics and backend availability probes
+- transaction sync worker heartbeat and aggregate SyncJob metrics
 - backup freshness and failure alerting
 - email delivery for the first alert channel
 
@@ -32,6 +33,7 @@ host, containers, Postgres database, backend service, and backup posture.
 - `cadvisor` for container metrics
 - `postgres_exporter` for Postgres metrics
 - `blackbox_exporter` for HTTP probes
+- backend `/metrics` for app-native HTTP and SyncJob metrics
 
 ## Files
 
@@ -96,6 +98,14 @@ path for this directory, usually:
 BACKUP_PROM_TEXTFILE_DIR=/srv/lantern/ops/observability/backend/textfile_collector
 ```
 
+Set `OBSERVABILITY_TEXTFILE_COLLECTOR_PATH` in
+`ops/deployment/backend/app-stack/compose.env` to the same absolute path so the
+worker can write its heartbeat metric:
+
+```bash
+OBSERVABILITY_TEXTFILE_COLLECTOR_PATH=/srv/lantern/ops/observability/backend/textfile_collector
+```
+
 6. Start observability:
 
 ```bash
@@ -148,7 +158,8 @@ not depend on unreproducible Grafana UI state.
 The observability stack should scrape backend app stack services over a shared named Docker
 network. The backend app stack Compose file and the observability Compose file should agree
 on one external network name so Prometheus can use stable container DNS names for backend,
-nginx, db, and exporter targets.
+nginx, db, and exporter targets. Prometheus scrapes app-native backend metrics directly
+from `backend:8000/metrics` on this private network.
 
 The shared network should be host-owned, not owned by either Compose project:
 
@@ -166,6 +177,9 @@ adding an optional observability override file. This keeps the production topolo
 the bring-up docs must create the external network before starting the app stack.
 
 Prometheus and Grafana UI ports should still bind only to loopback on the host.
+
+The backend `/metrics` route must stay private to the shared Docker network. Do not route
+it through nginx, Cloudflare Tunnel, CloudFront, or the public app origin.
 
 ## First-Cut Metrics
 
@@ -190,14 +204,23 @@ Prometheus and Grafana UI ports should still bind only to loopback on the host.
 
 - backend `/health/live` status
 - backend `/health/ready` status through local `nginx`
+- app-native backend request count, 5xx count, latency, and in-progress requests from
+  `backend:8000/metrics`
 - production same-origin API synthetic check through `lantern.royzhao.dev/api/*`, deferred
   until there is a safe non-human token strategy
+
+The app-native HTTP metrics exclude `/metrics`, `/health/live`, and `/health/ready`.
+Health remains monitored by blackbox probes so routine probe traffic does not dilute
+low-volume API error signals.
 
 ### Worker
 
 - worker container health
 - worker heartbeat freshness
 - stale queued or running SyncJobs
+- aggregate SyncJob counts by status
+- due queued SyncJobs
+- recent dead-letter SyncJob activity
 
 ### Postgres
 
@@ -240,13 +263,20 @@ primary first-pass freshness signal.
 Slice 5 uses a small severity model:
 
 - `critical`: local backend readiness down, Postgres down, six-hour backup freshness missed
-- `warning`: high disk usage, container restart loops, local readiness failing while
-  production status is unknown, weekly backup freshness missed, Prometheus scrape failures
+- `warning`: backend 5xx responses, high disk usage, container restart loops, local
+  readiness failing while production status is unknown, weekly backup freshness missed,
+  Prometheus scrape failures
 - `info`: explicit test alerts only
 
 Alerts should include short debounce windows so routine deploys and service restarts do not
 email immediately. Backend and Postgres availability alerts should wait about five minutes.
 Backup freshness alerts should fire only after the expected interval plus a grace window.
+
+Because Lantern has low initial traffic, backend 5xx critical alerting is count-based
+rather than percentage-based. The first critical HTTP alert fires when at least five 5xx
+responses occur in ten minutes. Worker alerts are age-based: stale heartbeat, old queued
+SyncJobs, old running SyncJobs, failed SyncJob metric collection, and recent dead-letter
+activity.
 
 Production-path alerting should wait until Lantern has a safe non-human credential for a
 synthetic API request. Do not store a personal Firebase token or manually copied browser
@@ -263,10 +293,24 @@ passwords, or provider tokens must not be committed.
 The runbook should include a test-alert step so email delivery is verified before relying
 on alerts operationally.
 
+## App-Native Metrics Verification
+
+After starting the app and observability stacks, verify these Prometheus queries:
+
+```promql
+up{job="backend"}
+lantern_http_requests_total
+lantern_sync_runner_last_heartbeat_timestamp_seconds
+lantern_sync_jobs_by_status
+lantern_sync_jobs_metrics_collection_success
+```
+
+Trigger a controlled backend 500 in a non-production environment and confirm
+`lantern_http_requests_total{status_code="500"}` increases. Also confirm `/metrics` is
+not reachable through nginx or any public route.
+
 ## Deferred Metrics
 
-- app-native `/metrics`
-- route-level request rate, error rate, and latency percentiles
 - app build/version info metrics
 - detailed SyncJob counters by trigger, result, and upstream failure type
 - log aggregation
