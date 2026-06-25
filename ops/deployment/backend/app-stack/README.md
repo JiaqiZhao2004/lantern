@@ -41,19 +41,6 @@ PLAID_WEBHOOK_URL=https://lantern.royzhao.dev/api/v1/plaid/webhooks
 Do not use the protected backend origin hostname for this value; Plaid cannot send
 the Cloudflare Access service-token headers that CloudFront uses for origin access.
 
-Plaid Item webhook URLs are reconciled during deploy after migrations and before
-runtime rollout. To inspect or repair them manually, run:
-
-```bash
-docker compose --env-file compose.env -f compose.yml run --rm backend \
-  python -m src.plaid_webhook_reconciler --dry-run
-
-docker compose --env-file compose.env -f compose.yml run --rm backend \
-  python -m src.plaid_webhook_reconciler --apply
-```
-
-Deploy fails if active Plaid Items cannot be reconciled to `PLAID_WEBHOOK_URL`.
-
 3. Create the shared backend Docker network if it does not already exist:
 
 ```bash
@@ -92,6 +79,10 @@ DATABASE_URL=postgresql+psycopg://lantern_app:<password>@db:5432/lantern
 
 Postgres only uses `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` the first time. It initializes an empty data directory. Changing `db.env` later does not rename an existing database or role.
 
+The deploy script also runs this role helper before migrations, so first deploys can
+start from an empty Postgres data volume. Running the helper directly is still useful
+when validating credentials before the first deploy.
+
 ## Runtime Boundary
 
 The Compose stack runs:
@@ -129,11 +120,41 @@ The deploy script:
 
 1. pulls runtime images
 2. brings up the database if needed
-3. creates a pre-deploy backup
-4. runs Alembic migrations
-5. reconciles active Plaid Item webhook URLs to `PLAID_WEBHOOK_URL`
-6. updates runtime services
-7. verifies readiness through `nginx`
+3. ensures the `lantern_app` database role exists
+4. creates a pre-deploy backup
+5. runs Alembic migrations
+6. reconciles active Plaid Item webhook URLs to `PLAID_WEBHOOK_URL`
+7. updates runtime services
+8. verifies readiness through `nginx`
+
+## Manual Plaid Webhook Reconciliation
+
+Plaid Item webhook URLs are reconciled during deploy after migrations and before
+runtime rollout. To inspect or repair them manually, first ensure the database has
+been bootstrapped and migrated, then run:
+
+```bash
+docker compose --env-file compose.env -f compose.yml run --rm backend \
+  python -m src.plaid_webhook_reconciler --dry-run
+
+docker compose --env-file compose.env -f compose.yml run --rm backend \
+  python -m src.plaid_webhook_reconciler --apply
+```
+
+Deploy fails if active Plaid Items cannot be reconciled to `PLAID_WEBHOOK_URL`.
+
+If the reconciler reports `password authentication failed for user "postgres"`,
+the backend container is reading a `DATABASE_URL` that still uses the bootstrap
+`postgres` role, or the existing Postgres volume was initialized with a different
+`POSTGRES_PASSWORD` than the current `db.env`. The app runtime should use:
+
+```env
+DATABASE_URL=postgresql+psycopg://lantern_app:<password>@db:5432/lantern
+```
+
+Keep the bootstrap `postgres` password in `db.env`, and use
+`./postgres/create-app-role.sh` to create or rotate the `lantern_app` password from
+`backend.env`.
 
 ## Operational Notes
 

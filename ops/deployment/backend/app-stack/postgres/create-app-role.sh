@@ -5,9 +5,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/compose.yml"
 COMPOSE_ENV="$ROOT_DIR/compose.env"
 BACKEND_ENV="$ROOT_DIR/backend.env"
+DB_ENV="$ROOT_DIR/db.env"
 SQL_FILE="$ROOT_DIR/postgres/create-app-role.sql"
 
-for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$SQL_FILE"; do
+for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV" "$SQL_FILE"; do
   if [[ ! -f "$required_file" ]]; then
     echo "Missing required file: $required_file" >&2
     exit 1

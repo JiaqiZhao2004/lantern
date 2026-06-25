@@ -6,6 +6,7 @@ COMPOSE_FILE="$ROOT_DIR/compose.yml"
 COMPOSE_ENV="$ROOT_DIR/compose.env"
 BACKEND_ENV="$ROOT_DIR/backend.env"
 DB_ENV="$ROOT_DIR/db.env"
+APP_ROLE_SCRIPT="$ROOT_DIR/postgres/create-app-role.sh"
 DURABILITY_DIR="${DURABILITY_DIR:-$ROOT_DIR/../../../durability/backend}"
 BACKUP_SCRIPT="$DURABILITY_DIR/backup-db.sh"
 
@@ -36,10 +37,12 @@ for required_host_file_var in FIREBASE_ADMIN_CREDENTIALS_PATH AWS_SHARED_CREDENT
   fi
 done
 
-if [[ ! -x "$BACKUP_SCRIPT" ]]; then
-  echo "Missing executable backup script: $BACKUP_SCRIPT" >&2
-  exit 1
-fi
+for required_executable in "$APP_ROLE_SCRIPT" "$BACKUP_SCRIPT"; do
+  if [[ ! -x "$required_executable" ]]; then
+    echo "Missing executable script: $required_executable" >&2
+    exit 1
+  fi
+done
 
 if ! docker network inspect "$BACKEND_SHARED_NETWORK" >/dev/null 2>&1; then
   echo "Missing Docker network: $BACKEND_SHARED_NETWORK" >&2
@@ -56,6 +59,9 @@ compose pull nginx backend worker db
 
 echo "Ensuring database is running before backup and migration..."
 compose up -d db
+
+echo "Ensuring backend app database role exists..."
+"$APP_ROLE_SCRIPT"
 
 echo "Creating pre-deploy backup..."
 "$BACKUP_SCRIPT"
