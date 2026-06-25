@@ -91,6 +91,25 @@ def test_webhook_creates_job_for_idle_connection():
     assert len(sync_repo.created) == 1
 
 
+def test_initial_link_creates_initial_link_job():
+    connection = SimpleNamespace(id=uuid4(), syncing=False)
+    connection_repo = FakeConnectionRepo(connection=connection)
+    sync_repo = FakeSyncJobsRepo()
+    service = SyncJobsRequestService(
+        connection_repo=connection_repo,
+        sync_jobs_repo=sync_repo,
+    )
+
+    job = service.create_initial_link_sync_job(
+        db=FakeDb(),
+        connection=connection,
+    )
+
+    assert job.trigger == SyncTrigger.INITIAL_LINK
+    assert connection_repo.marked_syncing is True
+    assert len(sync_repo.created) == 1
+
+
 def test_duplicate_webhook_while_queued_is_ignored():
     connection = SimpleNamespace(id=uuid4(), syncing=True, needs_resync=False)
     connection_repo = FakeConnectionRepo(connection=connection)

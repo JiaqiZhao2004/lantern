@@ -69,7 +69,7 @@ The kind of data a SyncJob fetches. Currently only `transactions`; the field exi
 _Avoid_: Sync Type, Job Type
 
 **Sync Trigger**:
-The reason a SyncJob was enqueued. One of `webhook` (Plaid notified us), `onboarding` (a new InstitutionConnection was just linked), or `manual_resync` (a Member asked for a refresh). Distinct from Sync Subject — same Subject, different Triggers, are common.
+The reason a SyncJob was enqueued. One of `webhook` (Plaid notified us), `initial_link` (a new InstitutionConnection was just linked), or `manual_resync` (a Member asked for a refresh). Distinct from Sync Subject — same Subject, different Triggers, are common.
 _Avoid_: Job Type, Cause, Source
 
 **Sync State**:
