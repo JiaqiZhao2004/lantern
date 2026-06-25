@@ -34,6 +34,22 @@ for required_var in "${required_vars[@]}"; do
 done
 
 mkdir -p "$OUTPUT_DIR"
+
+if [[ -d "$OUTPUT_FILE" ]]; then
+  echo "$OUTPUT_FILE is a directory." >&2
+  echo "This usually happens when Docker Compose starts before the generated config exists." >&2
+  echo "Remove the directory, then rerun this script:" >&2
+  echo "  sudo rmdir '$OUTPUT_FILE'" >&2
+  exit 1
+fi
+
+if [[ ! -w "$OUTPUT_DIR" ]]; then
+  echo "$OUTPUT_DIR is not writable by $(id -un)." >&2
+  echo "Fix ownership, then rerun this script:" >&2
+  echo "  sudo chown -R $(id -u):$(id -g) '$OUTPUT_DIR'" >&2
+  exit 1
+fi
+
 umask 077
 
 python3 - "$OUTPUT_FILE" <<'PY'
@@ -67,7 +83,7 @@ receivers:
         send_resolved: true
 """
 
-tmp_file = output_file.with_suffix(".tmp")
+tmp_file = output_file.parent / f".{output_file.name}.tmp"
 tmp_file.write_text(content, encoding="utf-8")
 tmp_file.replace(output_file)
 PY
