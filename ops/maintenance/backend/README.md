@@ -6,3 +6,8 @@ This directory is reserved for steady-state backend operator workflows after suc
 - `tunnel/` for Cloudflare Tunnel operations
 
 Fresh-host and replacement-host sequencing stays in `ops/bootstrap/`. Backup and restore behavior stays in `ops/durability/backend/`. Backend host deployment artifacts live under `ops/deployment/backend/`.
+
+## Runbooks
+
+- [Backend rollout](./app-stack/backend-rollout.md)
+- [Backend logging level](./app-stack/logging-level.md)
