@@ -3,6 +3,7 @@ from fastapi import (
     APIRouter,
     Depends,
     Form,
+    Path,
     Response,
     status,
 )
@@ -23,6 +24,8 @@ from ..dependencies import (
     get_plaid_client,
     KMSService,
     PlaidClient,
+    SyncJobsRepository,
+    get_sync_jobs_repository,
 )
 from ...exceptions import NotFoundError
 from ...workflows.link_institution_connection import LinkInstitutionConnectionWorkflow
@@ -98,6 +101,7 @@ def get_household_connections(
                 id=c.id,
                 institution_name=c.institution_name,
                 status=c.status,
+                can_revoke=c.user_id == user.id,
                 created_at=c.created_at,
                 updated_at=c.updated_at,
             )
@@ -155,3 +159,28 @@ def get_household_accounts(
     return GetAccountsResponseDTO(
         items=[connections_by_id[conn_id] for conn_id in connection_order]
     )
+
+
+@router.delete("/item/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_item(
+    connection_id: UUID = Path(..., description="Internal app UUID for the connection to revoke."),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    kms: KMSService = Depends(get_kms_service),
+    connection_service: InstitutionConnectionService = Depends(get_connection_service),
+    sync_jobs_repo: SyncJobsRepository = Depends(get_sync_jobs_repository),
+):
+    try:
+        connection_service.revoke_connection(
+            db=db,
+            kms=kms,
+            sync_jobs_repo=sync_jobs_repo,
+            user_id=user.id,
+            connection_id=connection_id,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

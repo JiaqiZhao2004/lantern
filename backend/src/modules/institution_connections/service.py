@@ -3,9 +3,11 @@ from datetime import date, datetime, timedelta
 import logging
 
 from .repository import InstitutionConnectionRepository
+from ..sync_jobs.repository import SyncJobsRepository
 from ..household_membership.repository import MembershipRepository
 from ...exceptions import ConflictError, NotFoundError, ValidationError, InternalError
 from ...infrastructure import Session, PlaidClient
+from ...infrastructure.aws.kms import KMSService
 from src.infrastructure.plaid.client import (
     PLAID_COUNTRY_CODES,
     PLAID_REDIRECT_URI,
@@ -25,6 +27,7 @@ from plaid.model.link_token_create_request_statements import (
 from plaid.model.item_public_token_exchange_request import (
     ItemPublicTokenExchangeRequest,
 )
+from plaid.model.item_remove_request import ItemRemoveRequest
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 
@@ -111,3 +114,41 @@ class InstitutionConnectionService:
         return self.connection_repo.list_household_connections(
             db=db, household_id=household_id
         )
+
+    def revoke_connection(
+        self,
+        db: Session,
+        kms: KMSService,
+        sync_jobs_repo: SyncJobsRepository,
+        user_id: UUID,
+        connection_id: UUID,
+    ):
+        connection = self.connection_repo.get_by_id_for_user(
+            db=db, connection_id=connection_id, user_id=user_id
+        )
+        if connection is None:
+            raise NotFoundError(detail="Institution connection not found")
+
+        plaid_access_token = kms.decrypt_secret(
+            encrypted_data_key=connection.plaid_access_token_encrypted_data_key,
+            nonce=connection.plaid_access_token_nonce,
+            ciphertext=connection.plaid_access_token_ciphertext,
+        )
+
+        try:
+            self.plaid_client.item_remove(
+                ItemRemoveRequest(access_token=plaid_access_token)
+            )
+        except plaid.ApiException as e:
+            logger.exception(
+                "Failed to revoke institution connection",
+                extra={"connection_id": str(connection.id)},
+            )
+            raise InternalError(detail="Unable to revoke institution connection") from e
+
+        sync_jobs_repo.cancel_queued_or_running_for_connection(
+            db=db,
+            institution_connection_id=connection.id,
+            last_error="User revoked institution connection",
+        )
+        self.connection_repo.delete(db=db, connection=connection)

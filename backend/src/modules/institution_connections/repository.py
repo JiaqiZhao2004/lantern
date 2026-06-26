@@ -57,6 +57,16 @@ class InstitutionConnectionRepository:
             .first()
         )
 
+    def get_by_id_for_user(self, db: Session, connection_id: UUID, user_id: UUID):
+        return (
+            db.query(InstitutionConnection)
+            .filter(
+                InstitutionConnection.id == connection_id,
+                InstitutionConnection.user_id == user_id,
+            )
+            .first()
+        )
+
     def mark_need_resync(self, db: Session, connection: InstitutionConnection):
         connection.needs_resync = True
         db.flush()
@@ -152,3 +162,7 @@ class InstitutionConnectionRepository:
         connection.transactions_cursor = cursor
         db.flush()
         return connection
+
+    def delete(self, db: Session, connection: InstitutionConnection):
+        db.delete(connection)
+        db.flush()

@@ -35,18 +35,6 @@ _GENERATION_DAILY_QUOTA = 100
 _REPAIR_ATTEMPTS = 2
 _MAX_CLARIFYING_QUESTIONS = 3
 _ALLOWED_CHART_TYPES = {"bar", "line"}
-_TRANSACTION_PREVIEW_COLUMNS = (
-    "id",
-    "occurred_at",
-    "merchant_name",
-    "amount",
-    "category_primary",
-    "category_detailed",
-    "pending",
-    "iso_currency_code",
-    "original_description",
-)
-
 _GENERATION_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -598,7 +586,7 @@ class NamedQueryService:
 
     def preview(self, db: Session, household_id: UUID, sql_query: str) -> NamedQueryDataResponse:
         self._validate_sql(sql_query)
-        return self._execute(db, household_id, sql_query)
+        return self._execute(db, household_id, sql_query, include_transaction_preview=True)
 
     # ------------------------------------------------------------------
     # CRUD
@@ -627,7 +615,7 @@ class NamedQueryService:
 
     def get_data(self, db: Session, household_id: UUID, named_query_id: UUID) -> NamedQueryDataResponse:
         nq = self._get_or_404(db, named_query_id, household_id)
-        return self._execute(db, household_id, nq.sql_query)
+        return self._execute(db, household_id, nq.sql_query, include_transaction_preview=False)
 
     def patch(
         self,
@@ -659,18 +647,27 @@ class NamedQueryService:
     # Execution — injects household_id filter, enforces limits
     # ------------------------------------------------------------------
 
-    def _execute(self, db: Session, household_id: UUID, sql_query: str) -> NamedQueryDataResponse:
+    def _execute(
+        self,
+        db: Session,
+        household_id: UUID,
+        sql_query: str,
+        *,
+        include_transaction_preview: bool,
+    ) -> NamedQueryDataResponse:
         primary_result = self._execute_read_only_query(
             db=db,
             household_id=household_id,
             sql_query=sql_query,
             row_cap=_ROW_CAP,
         )
-        transaction_preview = self._execute_transaction_preview(
-            db=db,
-            household_id=household_id,
-            sql_query=sql_query,
-        )
+        transaction_preview = None
+        if include_transaction_preview:
+            transaction_preview = self._execute_transaction_preview(
+                db=db,
+                household_id=household_id,
+                sql_query=sql_query,
+            )
         return NamedQueryDataResponse(
             columns=primary_result.columns,
             rows=primary_result.rows,
@@ -772,40 +769,33 @@ class NamedQueryService:
             return None
 
         source_name = transaction_table.alias_or_name
-        preview_stmt = exp.Select()
-        preview_stmt.set(
-            "expressions",
-            [
-                copy.deepcopy(exp.column(column_name, table=source_name))
-                for column_name in _TRANSACTION_PREVIEW_COLUMNS
-            ],
-        )
-        preview_stmt.set("distinct", exp.Distinct())
-
         from_clause = stmt.args.get("from")
         if from_clause is None:
             raise ValidationError(detail="Named Query must reference at least one table")
-        preview_stmt.set("from", copy.deepcopy(from_clause))
+        from_sql = copy.deepcopy(from_clause).sql(dialect="postgres")
 
         joins = stmt.args.get("joins")
+        joins_sql = ""
         if joins:
-            preview_stmt.set("joins", copy.deepcopy(joins))
+            joins_sql = " " + " ".join(
+                copy.deepcopy(join).sql(dialect="postgres") for join in joins
+            )
 
         where = stmt.args.get("where")
+        where_sql = ""
         if where:
-            preview_stmt.set("where", copy.deepcopy(where))
+            where_sql = f" {copy.deepcopy(where).sql(dialect='postgres')}"
 
-        preview_stmt.set(
-            "order",
-            exp.Order(
-                expressions=[
-                    exp.Ordered(this=exp.column("occurred_at", table=source_name), desc=True),
-                    exp.Ordered(this=exp.column("id", table=source_name), desc=True),
-                ],
-            ),
+        return (
+            "SELECT DISTINCT "
+            f"{source_name}.occurred_at AS date, "
+            f"COALESCE(NULLIF({source_name}.merchant_name, ''), {source_name}.original_description) AS merchant, "
+            f"{source_name}.amount AS amount, "
+            f"{source_name}.category_primary AS category, "
+            f"{source_name}.pending AS pending "
+            f"{from_sql}{joins_sql}{where_sql} "
+            f"ORDER BY {source_name}.occurred_at DESC NULLS LAST, {source_name}.id DESC NULLS LAST"
         )
-
-        return preview_stmt.sql(dialect="postgres")
 
     def _inject_household_filter(self, sql_query: str) -> str:
         try:

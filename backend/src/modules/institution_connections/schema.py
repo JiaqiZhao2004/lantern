@@ -24,6 +24,10 @@ class InstitutionConnectionSimpleDTO(BaseModel):
         description="Human-readable institution name (e.g. 'Chase'), resolved at link time.",
     )
     status: str = Field(..., description="Connection status: active | revoked | member_departed.")
+    can_revoke: bool = Field(
+        ...,
+        description="Whether the authenticated user may revoke this connection.",
+    )
     created_at: datetime = Field(..., description="When this connection was first linked.")
     updated_at: datetime = Field(..., description="When this connection was last modified.")
 

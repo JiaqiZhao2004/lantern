@@ -27,6 +27,8 @@ A Member's authority level within their Household. One of `owner` or `member`. G
 
 **InstitutionConnection**:
 A persistent connection from a Household to a financial institution (e.g. a bank), through which we sync Accounts and Transactions. Vendor-neutral — currently always backed by a Plaid Item. Owned by the User who linked it. When that User leaves the Household, their InstitutionConnections are deactivated. When they join a new Household, they re-link their banks fresh — new InstitutionConnections are created.
+
+When the owning User revokes an InstitutionConnection, Lantern severs provider access and deletes the Accounts and Transactions that came from that connection. Household Named Queries are retained and may be relinked against fresh data later.
 _Avoid_: PlaidItem, Connection, Link
 
 **Institution**:

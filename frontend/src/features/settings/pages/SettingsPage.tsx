@@ -1,5 +1,9 @@
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
-import { useAccountsQuery, useConnectionsQuery } from "@/features/connections/api/queries";
+import {
+  useAccountsQuery,
+  useConnectionsQuery,
+  useRevokeConnectionMutation,
+} from "@/features/connections/api/queries";
 import { PlaidLinkCard } from "@/features/connections/components/PlaidLinkCard";
 import AccountsPanel from "@/features/dashboard/components/AccountsPanel";
 import ConnectionsPanel from "@/features/dashboard/components/ConnectionsPanel";
@@ -14,6 +18,7 @@ export default function SettingsPage() {
   const householdQuery = useHouseholdQuery({ enabled: true });
   const connectionsQuery = useConnectionsQuery({ enabled: true });
   const accountsQuery = useAccountsQuery({ enabled: true });
+  const revokeConnectionMutation = useRevokeConnectionMutation();
 
   return (
     <AppShell
@@ -32,6 +37,14 @@ export default function SettingsPage() {
           errorMessage={
             connectionsQuery.error instanceof Error
               ? connectionsQuery.error.message
+              : revokeConnectionMutation.error instanceof Error
+                ? revokeConnectionMutation.error.message
+                : null
+          }
+          onRevoke={(connectionId) => revokeConnectionMutation.mutate(connectionId)}
+          revokingConnectionId={
+            revokeConnectionMutation.isPending
+              ? revokeConnectionMutation.variables ?? null
               : null
           }
         />

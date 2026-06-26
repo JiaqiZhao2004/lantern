@@ -8,6 +8,7 @@ import {
   createLinkToken,
   getAccounts,
   getConnections,
+  revokeConnection,
 } from "@/features/connections/api/client";
 
 export const connectionsKeys = {
@@ -63,4 +64,17 @@ export function useRefreshConnections() {
       queryClient.invalidateQueries({ queryKey: connectionsKeys.items() }),
       queryClient.invalidateQueries({ queryKey: connectionsKeys.accounts() }),
     ]);
+}
+
+export function useRevokeConnectionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: revokeConnection,
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: connectionsKeys.items() }),
+        queryClient.invalidateQueries({ queryKey: connectionsKeys.accounts() }),
+      ]),
+  });
 }

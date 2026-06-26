@@ -470,6 +470,11 @@ export interface components {
              */
             status: string;
             /**
+             * Can Revoke
+             * @description Whether the authenticated user may revoke this connection.
+             */
+            can_revoke: boolean;
+            /**
              * Created At
              * Format: date-time
              * @description When this connection was first linked.

@@ -8,6 +8,7 @@ import {
   type CreateLinkTokenResponse,
   type GetAccountsResponse,
   type GetItemsResponse,
+  revokeItemPath,
 } from "@/features/connections/api/contracts";
 import httpClient from "@/shared/api/httpClient";
 
@@ -41,4 +42,8 @@ export async function getConnections(): Promise<GetItemsResponse> {
 export async function getAccounts(): Promise<GetAccountsResponse> {
   const response = await httpClient.get<GetAccountsResponse>(GET_ACCOUNTS_PATH);
   return response.data;
+}
+
+export async function revokeConnection(connectionId: string): Promise<void> {
+  await httpClient.delete(revokeItemPath(connectionId));
 }

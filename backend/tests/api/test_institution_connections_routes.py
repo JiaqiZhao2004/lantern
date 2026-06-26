@@ -163,6 +163,35 @@ class FakeWorkflow:
         )
 
 
+class RecordingSyncJobsRepo:
+    def __init__(self):
+        self.cancelled = []
+
+    def cancel_queued_or_running_for_connection(
+        self, db, institution_connection_id, last_error=None
+    ):
+        self.cancelled.append((institution_connection_id, last_error))
+
+
+class RecordingConnectionService:
+    def __init__(self, error=None):
+        self.error = error
+        self.calls = []
+
+    def revoke_connection(self, db, kms, sync_jobs_repo, user_id, connection_id):
+        self.calls.append(
+            {
+                "db": db,
+                "kms": kms,
+                "sync_jobs_repo": sync_jobs_repo,
+                "user_id": user_id,
+                "connection_id": connection_id,
+            }
+        )
+        if self.error is not None:
+            raise self.error
+
+
 def test_add_item_returns_service_unavailable_when_kms_credentials_are_missing():
     db = FakeTransactionalDb()
     app.dependency_overrides[plaid_routes.get_db] = lambda: db
@@ -188,5 +217,62 @@ def test_add_item_returns_service_unavailable_when_kms_credentials_are_missing()
             "Configure AWS credentials before linking an institution."
         )
     }
+    assert db.commits == 0
+    assert db.rollbacks == 1
+
+
+def test_revoke_item_returns_no_content_and_commits():
+    db = FakeTransactionalDb()
+    user_id = uuid4()
+    connection_id = uuid4()
+    kms = SimpleNamespace()
+    connection_service = RecordingConnectionService()
+    sync_jobs_repo = RecordingSyncJobsRepo()
+    app.dependency_overrides[plaid_routes.get_db] = lambda: db
+    app.dependency_overrides[plaid_routes.get_current_user] = lambda: SimpleNamespace(id=user_id)
+    app.dependency_overrides[plaid_routes.get_kms_service] = lambda: kms
+    app.dependency_overrides[plaid_routes.get_connection_service] = lambda: connection_service
+    app.dependency_overrides[plaid_routes.get_sync_jobs_repository] = lambda: sync_jobs_repo
+
+    try:
+        response = TestClient(app).delete(f"/api/v1/plaid/item/{connection_id}")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 204
+    assert connection_service.calls == [
+        {
+            "db": db,
+            "kms": kms,
+            "sync_jobs_repo": sync_jobs_repo,
+            "user_id": user_id,
+            "connection_id": connection_id,
+        }
+    ]
+    assert db.commits == 1
+    assert db.rollbacks == 0
+
+
+def test_revoke_item_rolls_back_when_service_raises():
+    db = FakeTransactionalDb()
+    connection_id = uuid4()
+    error = ServiceUnavailableError(detail="Plaid unavailable")
+    app.dependency_overrides[plaid_routes.get_db] = lambda: db
+    app.dependency_overrides[plaid_routes.get_current_user] = lambda: SimpleNamespace(id=uuid4())
+    app.dependency_overrides[plaid_routes.get_kms_service] = lambda: SimpleNamespace()
+    app.dependency_overrides[plaid_routes.get_connection_service] = (
+        lambda: RecordingConnectionService(error=error)
+    )
+    app.dependency_overrides[plaid_routes.get_sync_jobs_repository] = (
+        lambda: RecordingSyncJobsRepo()
+    )
+
+    try:
+        response = TestClient(app).delete(f"/api/v1/plaid/item/{connection_id}")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Plaid unavailable"}
     assert db.commits == 0
     assert db.rollbacks == 1
