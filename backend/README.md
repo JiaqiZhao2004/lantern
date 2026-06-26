@@ -1,61 +1,46 @@
-## development
+# Lantern Backend
 
-```bash
+FastAPI backend for Lantern, including Alembic migrations, PostgreSQL integration, Plaid webhook handling, Firebase authentication, Named Query generation, and the transaction sync worker.
+
+Use the root [README.md](../README.md) for the full development runbook, including environment setup, Docker Compose bring-up, migrations, webhook tunneling, and frontend coordination.
+
+## Backend-Only Commands
+
+Set up a local virtualenv from this directory:
+
+```sh
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-fill in .env
-copy over postgres-data
-copy over google app secret
+Run the API:
 
-For AI-assisted Named Query generation, set:
-
-```bash
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4.1-mini
-```
-
-Keep the OpenAI key in the backend `.env` only. The frontend already calls the
-backend generation endpoint, so the browser never needs direct access to the key.
-
-```bash
+```sh
 uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### setup ngrok webhook server for local dev
+Run the sync worker:
 
-```bash
-ngrok http 8000
+```sh
+python -m src.transactions_sync_runner
 ```
 
-set `PLAID_WEBHOOK_URL` to your public webhook endpoint, e.g.
-`https://<your-domain>/api/v1/plaid/webhooks`
+Apply migrations:
 
-The main backend app includes the webhook route. In Docker Compose, the
-`backend-worker` service must also be running so webhook-created sync jobs are
-processed.
-
-```bash
-uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
+```sh
+alembic upgrade head
 ```
 
-## docker
+Run tests:
 
-```bash
-docker build . -t lantern-backend
-docker run --rm --env-file .env -p 8000:8000 lantern-backend
+```sh
+pytest
 ```
 
-## postgres
+## Notes
 
-```bash
-docker run --rm -d \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=postgres \
-  -v $(pwd)/postgres-data:/var/lib/postgresql \
-  -p 5432:5432 \
-  postgres:18
-```
+- Keep backend secrets in `backend/.env`.
+- Set `OPENAI_API_KEY` in `backend/.env` for AI-assisted Named Query generation.
+- Set `PLAID_WEBHOOK_URL` to `https://<public-domain>/api/v1/plaid/webhooks` when testing webhooks through a tunnel.
+- Keep the sync worker running when testing webhook-created sync jobs.
