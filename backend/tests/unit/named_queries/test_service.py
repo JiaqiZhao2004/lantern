@@ -172,6 +172,38 @@ def test_query_execution_error_omits_sqlalchemy_sql_context():
     assert message == 'Query execution failed: column "category_primar" does not exist'
 
 
+def test_transaction_preview_sql_reuses_query_filters_and_joins():
+    service = NamedQueryService(named_query_repo=None)
+
+    preview_sql = service._build_transaction_preview_sql(
+        "SELECT wt.category_primary, SUM(-wt.amount) AS total_spend "
+        "FROM widget_transactions wt "
+        "JOIN widget_accounts wa ON wa.id = wt.id "
+        "WHERE wt.amount < 0 AND wa.account_type = 'credit' "
+        "GROUP BY wt.category_primary "
+        "ORDER BY total_spend DESC"
+    )
+
+    assert preview_sql == (
+        "SELECT DISTINCT wt.id, wt.occurred_at, wt.merchant_name, wt.amount, "
+        "wt.category_primary, wt.category_detailed, wt.pending, wt.iso_currency_code, "
+        "wt.original_description FROM widget_transactions AS wt "
+        "JOIN widget_accounts AS wa ON wa.id = wt.id "
+        "WHERE wt.amount < 0 AND wa.account_type = 'credit' "
+        "ORDER BY wt.occurred_at DESC NULLS LAST, wt.id DESC NULLS LAST"
+    )
+
+
+def test_transaction_preview_sql_is_omitted_for_account_only_queries():
+    service = NamedQueryService(named_query_repo=None)
+
+    preview_sql = service._build_transaction_preview_sql(
+        "SELECT name, current_balance FROM widget_accounts ORDER BY current_balance DESC"
+    )
+
+    assert preview_sql is None
+
+
 def test_generation_returns_valid_candidate_and_consumes_quota():
     usage_repo = FakeUsageRepo()
     service = _generation_service(

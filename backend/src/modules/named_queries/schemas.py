@@ -90,7 +90,14 @@ class ColumnMeta(BaseModel):
     type: str
 
 
+class QueryResultPreview(BaseModel):
+    columns: list[ColumnMeta]
+    rows: list[dict[str, Any]]
+    truncated: bool
+
+
 class NamedQueryDataResponse(BaseModel):
     columns: list[ColumnMeta]
     rows: list[dict[str, Any]]
     truncated: bool
+    transaction_preview: QueryResultPreview | None = None

@@ -6,11 +6,11 @@ Third, there should be LLM or AI assistance in the edit mode of the named querie
 
 And fourth, the LLM should ask more questions. Currently, the LLM asks too few questions so that the final answer can be incorrect.
 
-Sixth, in the named queries section, the users should not only see the final result but should also have a preview of the transaction rows that are included in the aggregation, so that they may correct their queries.
+Fifth, in the named queries section, the users should not only see the final result but should also have a preview of the transaction rows that are included in the aggregation, so that they may correct their queries.
 
-Seven, we should allow the user to revoke access for their connections. When they do so, they are prompted with a pop-up window warning that if they do so, all their accounts and transactions related to that connection will be deleted, and they will have to relink. But their queries will not be deleted.
+Sixth, we should allow the user to revoke access for their connections. When they do so, they are prompted with a pop-up window warning that if they do so, all their accounts and transactions related to that connection will be deleted, and they will have to relink. But their queries will not be deleted.
 
-Eight, the user should be able to disable or enable their individual accounts via a toggle. This will cause the backend to, the user should be shown a pop-up that if they do so, their queries will no longer track those transactions. But the queries themselves will not be deleted.
+Seventh, the user should be able to disable or enable their individual accounts via a toggle. This will cause the backend to, the user should be shown a pop-up that if they do so, their queries will no longer track those transactions. But the queries themselves will not be deleted.
 
 
 <!-- Deferred: # Agentic creation of personal widgets

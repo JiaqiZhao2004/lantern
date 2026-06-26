@@ -1,3 +1,4 @@
+import copy
 from datetime import UTC, datetime
 from decimal import Decimal
 import re
@@ -24,14 +25,27 @@ from .schemas import (
     NamedQueryGenerateResponse,
     NamedQueryGenerationFailureResponse,
     NamedQueryGenerationMessage,
+    QueryResultPreview,
 )
 from .sql_validator import validate_named_query_sql
 
 _ROW_CAP = 500
+_TRANSACTION_PREVIEW_ROW_CAP = 25
 _GENERATION_DAILY_QUOTA = 100
 _REPAIR_ATTEMPTS = 2
 _MAX_CLARIFYING_QUESTIONS = 3
 _ALLOWED_CHART_TYPES = {"bar", "line"}
+_TRANSACTION_PREVIEW_COLUMNS = (
+    "id",
+    "occurred_at",
+    "merchant_name",
+    "amount",
+    "category_primary",
+    "category_detailed",
+    "pending",
+    "iso_currency_code",
+    "original_description",
+)
 
 _GENERATION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -646,12 +660,33 @@ class NamedQueryService:
     # ------------------------------------------------------------------
 
     def _execute(self, db: Session, household_id: UUID, sql_query: str) -> NamedQueryDataResponse:
-        # Inject household_id filter and fetch one extra row to detect truncation
-        scoped_sql = self._inject_household_filter(sql_query)
-        injected = (
-            f"SELECT * FROM ({scoped_sql}) AS _nq "
-            f"LIMIT {_ROW_CAP + 1}"
+        primary_result = self._execute_read_only_query(
+            db=db,
+            household_id=household_id,
+            sql_query=sql_query,
+            row_cap=_ROW_CAP,
         )
+        transaction_preview = self._execute_transaction_preview(
+            db=db,
+            household_id=household_id,
+            sql_query=sql_query,
+        )
+        return NamedQueryDataResponse(
+            columns=primary_result.columns,
+            rows=primary_result.rows,
+            truncated=primary_result.truncated,
+            transaction_preview=transaction_preview,
+        )
+
+    def _execute_read_only_query(
+        self,
+        db: Session,
+        household_id: UUID,
+        sql_query: str,
+        row_cap: int,
+    ) -> QueryResultPreview:
+        scoped_sql = self._inject_household_filter(sql_query)
+        injected = f"SELECT * FROM ({scoped_sql}) AS _nq LIMIT {row_cap + 1}"
 
         try:
             db.execute(sa.text("SET LOCAL TRANSACTION READ ONLY"))
@@ -663,12 +698,32 @@ class NamedQueryService:
         except Exception as e:
             raise ValidationError(detail=self._format_query_execution_error(e)) from e
 
+        return self._serialize_query_result(result=result, row_cap=row_cap)
+
+    def _execute_transaction_preview(
+        self,
+        db: Session,
+        household_id: UUID,
+        sql_query: str,
+    ) -> QueryResultPreview | None:
+        preview_sql = self._build_transaction_preview_sql(sql_query)
+        if preview_sql is None:
+            return None
+
+        return self._execute_read_only_query(
+            db=db,
+            household_id=household_id,
+            sql_query=preview_sql,
+            row_cap=_TRANSACTION_PREVIEW_ROW_CAP,
+        )
+
+    def _serialize_query_result(self, result, row_cap: int) -> QueryResultPreview:
         result_keys = list(result.keys())
         cursor = getattr(result, "cursor", None)
         cursor_description = getattr(cursor, "description", None)
         raw_rows = result.fetchall()
-        truncated = len(raw_rows) > _ROW_CAP
-        rows_to_return = raw_rows[:_ROW_CAP]
+        truncated = len(raw_rows) > row_cap
+        rows_to_return = raw_rows[:row_cap]
 
         columns = [
             ColumnMeta(
@@ -690,11 +745,67 @@ class NamedQueryService:
                     record[col] = val
             serialized_rows.append(record)
 
-        return NamedQueryDataResponse(
+        return QueryResultPreview(
             columns=columns,
             rows=serialized_rows,
             truncated=truncated,
         )
+
+    def _build_transaction_preview_sql(self, sql_query: str) -> str | None:
+        try:
+            stmt = sqlglot.parse_one(sql_query, dialect="postgres")
+        except (sqlglot.errors.ParseError, sqlglot.errors.TokenError) as e:
+            raise ValidationError(detail=f"SQL parse error: {e}")
+
+        if not isinstance(stmt, exp.Select):
+            raise ValidationError(detail="Named Query must be a SELECT statement")
+
+        transaction_table = next(
+            (
+                table
+                for table in stmt.find_all(exp.Table)
+                if table.name.lower() == "widget_transactions"
+            ),
+            None,
+        )
+        if transaction_table is None:
+            return None
+
+        source_name = transaction_table.alias_or_name
+        preview_stmt = exp.Select()
+        preview_stmt.set(
+            "expressions",
+            [
+                copy.deepcopy(exp.column(column_name, table=source_name))
+                for column_name in _TRANSACTION_PREVIEW_COLUMNS
+            ],
+        )
+        preview_stmt.set("distinct", exp.Distinct())
+
+        from_clause = stmt.args.get("from")
+        if from_clause is None:
+            raise ValidationError(detail="Named Query must reference at least one table")
+        preview_stmt.set("from", copy.deepcopy(from_clause))
+
+        joins = stmt.args.get("joins")
+        if joins:
+            preview_stmt.set("joins", copy.deepcopy(joins))
+
+        where = stmt.args.get("where")
+        if where:
+            preview_stmt.set("where", copy.deepcopy(where))
+
+        preview_stmt.set(
+            "order",
+            exp.Order(
+                expressions=[
+                    exp.Ordered(this=exp.column("occurred_at", table=source_name), desc=True),
+                    exp.Ordered(this=exp.column("id", table=source_name), desc=True),
+                ],
+            ),
+        )
+
+        return preview_stmt.sql(dialect="postgres")
 
     def _inject_household_filter(self, sql_query: str) -> str:
         try:

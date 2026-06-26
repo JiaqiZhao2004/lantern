@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import classNames from "classnames";
 import styles from "@/features/named-queries/pages/NamedQueryEditorPage.module.css";
 import { NamedQueryResultTable } from "@/features/named-queries/components/NamedQueryResultTable";
+import { NamedQueryTransactionPreview } from "@/features/named-queries/components/NamedQueryTransactionPreview";
 import {
   useCreateNamedQueryMutation,
   useGenerateNamedQueryMutation,
@@ -387,11 +388,21 @@ export default function NamedQueryEditorPage() {
             )}
 
             {previewMutation.data && (
-              <NamedQueryResultTable
-                columns={previewMutation.data.columns}
-                rows={previewMutation.data.rows as Record<string, unknown>[]}
-                truncated={previewMutation.data.truncated}
-              />
+              <div className={styles.previewContent}>
+                <NamedQueryResultTable
+                  columns={previewMutation.data.columns}
+                  rows={previewMutation.data.rows as Record<string, unknown>[]}
+                  truncated={previewMutation.data.truncated}
+                />
+
+                {previewMutation.data.transaction_preview && (
+                  <div className={styles.transactionPreview}>
+                    <NamedQueryTransactionPreview
+                      preview={previewMutation.data.transaction_preview}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </Card>
         </div>

@@ -10,6 +10,7 @@ export const NAMED_QUERY_PATH = "/named-queries/{named_query_id}" as const;
 export type NamedQueryResponse = JsonResponse<typeof LIST_NAMED_QUERIES_PATH, "get">[number];
 export type NamedQueryDataResponse = JsonResponse<typeof NAMED_QUERY_DATA_PATH, "get">;
 export type ColumnMeta = NamedQueryDataResponse["columns"][number];
+export type QueryResultPreview = NonNullable<NamedQueryDataResponse["transaction_preview"]>;
 
 export type CreateNamedQueryRequest = JsonRequest<typeof CREATE_NAMED_QUERY_PATH, "post">;
 export type CreateNamedQueryResponse = JsonCreatedResponse<typeof CREATE_NAMED_QUERY_PATH, "post">;

@@ -91,3 +91,7 @@ _Avoid_: Widget, Report, Saved Query, Personal Widget
 **Named Query Assistant Session**:
 The short-lived AI drafting conversation in the Named Query editor. It exists only in page state, may ask up to three clarifying questions one at a time, and is discarded when the Member leaves or refreshes the page.
 _Avoid_: Chat History, Saved Draft Conversation
+
+**Named Query Transaction Preview**:
+A lightweight raw-Transaction sample shown alongside a Named Query result when that query is driven by `widget_transactions`. It helps a Member verify which Transactions matched the query's filters without leaving the Named Query surface.
+_Avoid_: Drilldown, Ledger Embed

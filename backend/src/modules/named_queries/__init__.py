@@ -11,6 +11,7 @@ from .schemas import (
     NamedQueryGenerateResponse,
     NamedQueryGenerationFailureResponse,
     NamedQueryGenerationMessage,
+    QueryResultPreview,
     NamedQueryPatchRequest,
     NamedQueryResponse,
     NamedQueryDataResponse,

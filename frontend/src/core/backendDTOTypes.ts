@@ -554,6 +554,8 @@ export interface components {
             }[];
             /** Truncated */
             truncated: boolean;
+            /** Transaction Preview */
+            transaction_preview?: components["schemas"]["QueryResultPreview"] | null;
         };
         /** NamedQueryGenerateRequest */
         NamedQueryGenerateRequest: {
@@ -584,6 +586,17 @@ export interface components {
             sql_query?: string | null;
             /** Chart Type */
             chart_type?: string | null;
+        };
+        /** QueryResultPreview */
+        QueryResultPreview: {
+            /** Columns */
+            columns: components["schemas"]["ColumnMeta"][];
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+            /** Truncated */
+            truncated: boolean;
         };
         /** NamedQueryPreviewRequest */
         NamedQueryPreviewRequest: {
