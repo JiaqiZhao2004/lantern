@@ -224,6 +224,9 @@ def test_generation_prompt_asks_for_separate_stored_query_name():
     assert "top-level name field" in system_message
     assert "candidate object is only the SQL" in system_message
     assert "Grocery Spending by Month" in system_message
+    assert "Ask at most 3 more clarifying questions" in system_message
+    assert "aggregate `-amount` so totals, averages, and similar metrics come back" in system_message
+    assert "SELECT category_primary, SUM(-amount) AS total_spend" in system_message
 
 
 def test_generation_returns_clarifying_question_and_consumes_quota():
@@ -238,6 +241,69 @@ def test_generation_returns_clarifying_question_and_consumes_quota():
     assert response.type == "clarifying_question"
     assert usage_repo.usage.quota_units_used == 1
     assert usage_repo.usage.clarifying_questions == 1
+
+
+def test_generation_allows_multiple_clarifying_questions_until_limit():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [{"type": "clarifying_question", "question": "Do you want spending or income?"}],
+        usage_repo=usage_repo,
+    )
+
+    response = service.generate(
+        db=None,
+        household_id=uuid4(),
+        messages=[
+            NamedQueryGenerationMessage(role="member", content="show Amazon by month"),
+            NamedQueryGenerationMessage(
+                role="assistant",
+                content="Do you want only Amazon purchases or broader retail spending?",
+            ),
+            NamedQueryGenerationMessage(role="member", content="Only Amazon purchases."),
+        ],
+    )
+
+    assert response.type == "clarifying_question"
+    assert response.question == "Do you want spending or income?"
+    assert usage_repo.usage.quota_units_used == 1
+    assert usage_repo.usage.clarifying_questions == 1
+    system_message = service.llm_client.calls[0][0].content
+    assert "Ask at most 2 more clarifying questions" in system_message
+
+
+def test_generation_converts_question_beyond_limit_into_failure():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [{"type": "clarifying_question", "question": "Which account should I use?"}],
+        usage_repo=usage_repo,
+    )
+
+    response = service.generate(
+        db=None,
+        household_id=uuid4(),
+        messages=[
+            NamedQueryGenerationMessage(role="member", content="show subscriptions"),
+            NamedQueryGenerationMessage(role="assistant", content="Monthly or yearly?"),
+            NamedQueryGenerationMessage(role="member", content="Monthly."),
+            NamedQueryGenerationMessage(
+                role="assistant",
+                content="Only charges or charges and refunds?",
+            ),
+            NamedQueryGenerationMessage(role="member", content="Only charges."),
+            NamedQueryGenerationMessage(
+                role="assistant",
+                content="All accounts or just credit cards?",
+            ),
+            NamedQueryGenerationMessage(role="member", content="All accounts."),
+        ],
+    )
+
+    assert response.type == "generation_failure"
+    assert "reached the clarification limit" in response.message
+    assert usage_repo.usage.clarifying_questions == 0
+    assert usage_repo.usage.generation_failures == 1
+    system_message = service.llm_client.calls[0][0].content
+    assert "Ask at most 0 more clarifying questions" in system_message
 
 
 def test_generation_returns_explanation_and_consumes_quota():

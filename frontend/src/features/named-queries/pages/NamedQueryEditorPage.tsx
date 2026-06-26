@@ -23,6 +23,35 @@ import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
 import { useViewerQuery } from "@/features/viewer/api/queries";
 import { useHouseholdQuery } from "@/features/household/api/queries";
 
+type NamedQueryDraft = {
+  name: string;
+  sql: string;
+  chartType: ChartType | null;
+};
+
+function normalizeChartType(value: string | null | undefined): ChartType | null {
+  return KNOWN_CHART_TYPES.includes(value as ChartType) ? (value as ChartType) : null;
+}
+
+function formatDraftContext(draft: NamedQueryDraft): string {
+  return [
+    "Current Named Query",
+    `name: ${draft.name || "(untitled)"}`,
+    `chart_type: ${draft.chartType ?? "table"}`,
+    "sql_query:",
+    draft.sql || "(empty)",
+  ].join("\n");
+}
+
+function formatCandidateMessage(draft: NamedQueryDraft): string {
+  return [
+    `Applied name: ${draft.name}`,
+    `chart_type: ${draft.chartType ?? "table"}`,
+    "sql_query:",
+    draft.sql,
+  ].join("\n");
+}
+
 export default function NamedQueryEditorPage() {
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
@@ -41,18 +70,42 @@ export default function NamedQueryEditorPage() {
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<NamedQueryGenerationMessage[]>([]);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
+  const [lastAiAppliedDraft, setLastAiAppliedDraft] = useState<NamedQueryDraft | null>(null);
+  const [seededQueryId, setSeededQueryId] = useState<string | null>(null);
 
   useEffect(() => {
     if (existing) {
       setName(existing.name);
       setSql(existing.sql_query);
-      setChartType(
-        KNOWN_CHART_TYPES.includes(existing.chart_type as ChartType)
-          ? (existing.chart_type as ChartType)
-          : null
-      );
+      setChartType(normalizeChartType(existing.chart_type));
     }
   }, [existing]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setSeededQueryId(null);
+      return;
+    }
+
+    if (!existing || seededQueryId === existing.id) {
+      return;
+    }
+
+    setAiMessages([
+      {
+        role: "assistant",
+        content: formatDraftContext({
+          name: existing.name,
+          sql: existing.sql_query,
+          chartType: normalizeChartType(existing.chart_type),
+        }),
+      },
+    ]);
+    setAiMessage(null);
+    setAiInput("");
+    setLastAiAppliedDraft(null);
+    setSeededQueryId(existing.id);
+  }, [existing, isEditing, seededQueryId]);
 
   const createMutation = useCreateNamedQueryMutation();
   const patchMutation = usePatchNamedQueryMutation(id ?? "");
@@ -78,7 +131,7 @@ export default function NamedQueryEditorPage() {
 
   const handleGenerate = async () => {
     const content = aiInput.trim();
-    if (!content || isEditing) return;
+    if (!content) return;
 
     const nextMessages: NamedQueryGenerationMessage[] = [
       ...aiMessages,
@@ -95,33 +148,54 @@ export default function NamedQueryEditorPage() {
       return;
     }
 
+    if (response.type === "explanation") {
+      setAiMessages([...nextMessages, { role: "assistant", content: response.message }]);
+      return;
+    }
+
     if (response.type === "generation_failure") {
       setAiMessage(response.message);
       return;
     }
 
     if (response.type === "named_query_candidate") {
+      const previousDraft: NamedQueryDraft = {
+        name,
+        sql,
+        chartType,
+      };
+      const nextDraft: NamedQueryDraft = {
+        name: response.name,
+        sql: response.candidate.sql_query,
+        chartType: normalizeChartType(response.candidate.chart_type),
+      };
+
+      setLastAiAppliedDraft(previousDraft);
       setName(response.name);
-      setSql(response.candidate.sql_query);
-      setChartType(
-        KNOWN_CHART_TYPES.includes(response.candidate.chart_type as ChartType)
-          ? (response.candidate.chart_type as ChartType)
-          : null
-      );
+      setSql(nextDraft.sql);
+      setChartType(nextDraft.chartType);
       setAiMessages([
         ...nextMessages,
         {
           role: "assistant",
-          content: [
-            `Generated name: ${response.name}`,
-            `chart_type: ${response.candidate.chart_type ?? "table"}`,
-            "sql_query:",
-            response.candidate.sql_query,
-          ].join("\n"),
+          content: formatCandidateMessage(nextDraft),
         },
       ]);
-      setAiMessage("Generated a query candidate. Review it, preview it, then save.");
+      setAiMessage(
+        isEditing
+          ? "Applied AI changes to the draft. Preview, undo if needed, then save."
+          : "Generated a query candidate. Review it, preview it, then save."
+      );
     }
+  };
+
+  const handleUndoAi = () => {
+    if (!lastAiAppliedDraft) return;
+    setName(lastAiAppliedDraft.name);
+    setSql(lastAiAppliedDraft.sql);
+    setChartType(lastAiAppliedDraft.chartType);
+    setLastAiAppliedDraft(null);
+    setAiMessage("Reverted the last AI-applied change.");
   };
 
   const title = householdQuery.data?.name ?? viewerQuery.data?.name ?? "Dashboard";
@@ -135,68 +209,76 @@ export default function NamedQueryEditorPage() {
       <div className={styles.layout}>
         <Card padding="lg">
           <div className={styles.form}>
-            {!isEditing && (
-              <div className={styles.aiPanel}>
-                <div>
-                  <h2 className={styles.aiTitle}>AI assist</h2>
-                  <p className={styles.hint}>
-                    Describe the Named Query you want. The assistant can ask one
-                    clarifying question, then it will fill the form below.
-                  </p>
+            <div className={styles.aiPanel}>
+              <div>
+                <h2 className={styles.aiTitle}>AI assist</h2>
+                <p className={styles.hint}>
+                  {isEditing
+                    ? "Ask the assistant to explain or revise this Named Query. AI changes apply to the draft immediately until you save."
+                    : "Describe the Named Query you want. The assistant can ask up to three clarifying questions, one at a time, before it fills the form below."}
+                </p>
+              </div>
+
+              {aiMessages.length > 0 && (
+                <div className={styles.aiTranscript}>
+                  {aiMessages.map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className={classNames(
+                        styles.aiBubble,
+                        message.role === "member" ? styles.memberBubble : styles.assistantBubble
+                      )}
+                    >
+                      {message.content}
+                    </div>
+                  ))}
                 </div>
+              )}
 
-                {aiMessages.length > 0 && (
-                  <div className={styles.aiTranscript}>
-                    {aiMessages.map((message, index) => (
-                      <div
-                        key={`${message.role}-${index}`}
-                        className={classNames(
-                          styles.aiBubble,
-                          message.role === "member" ? styles.memberBubble : styles.assistantBubble
-                        )}
-                      >
-                        {message.content}
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {aiMessage && <InlineMessage>{aiMessage}</InlineMessage>}
+              {generateMutation.isError && (
+                <InlineMessage tone="error">
+                  {generateMutation.error instanceof Error
+                    ? generateMutation.error.message
+                    : "Generation failed."}
+                </InlineMessage>
+              )}
 
-                {aiMessage && <InlineMessage>{aiMessage}</InlineMessage>}
-                {generateMutation.isError && (
-                  <InlineMessage tone="error">
-                    {generateMutation.error instanceof Error
-                      ? generateMutation.error.message
-                      : "Generation failed."}
-                  </InlineMessage>
-                )}
-
-                <div className={styles.aiControls}>
-                  <input
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    placeholder={
-                      aiMessages.some((message) => message.role === "assistant")
-                        ? "Answer the clarifying question"
+              <div className={styles.aiControls}>
+                <input
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  placeholder={
+                    isEditing
+                      ? "e.g. Explain this query or change it to monthly grocery spending"
+                      : aiMessages.some((message) => message.role === "assistant")
+                        ? "Answer the clarifying question to continue"
                         : "e.g. Show grocery spending by month"
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleGenerate();
                     }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleGenerate();
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={handleGenerate}
-                    disabled={generateMutation.isPending || !aiInput.trim()}
-                  >
-                    {generateMutation.isPending ? "Generating…" : "Generate"}
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending || !aiInput.trim()}
+                >
+                  {generateMutation.isPending ? "Thinking…" : "Ask AI"}
+                </Button>
+              </div>
+
+              {lastAiAppliedDraft && (
+                <div className={styles.aiActions}>
+                  <Button variant="ghost" onClick={handleUndoAi}>
+                    Undo last AI change
                   </Button>
                 </div>
-              </div>
-            )}
-
+              )}
+            </div>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="nq-name">
                 Name

@@ -87,3 +87,7 @@ _Avoid_: Status (overloaded), Health
 **Named Query**:
 A SQL SELECT that belongs to a Household and can be run by any Member at any time against that Household's Transaction data. Named Queries are a Household resource — they are not owned by the Member who created them. Each Named Query has a name, a SQL body, and a chart type hint for the frontend. Running a Named Query always reflects the current state of the Household's Transactions.
 _Avoid_: Widget, Report, Saved Query, Personal Widget
+
+**Named Query Assistant Session**:
+The short-lived AI drafting conversation in the Named Query editor. It exists only in page state, may ask up to three clarifying questions one at a time, and is discarded when the Member leaves or refreshes the page.
+_Avoid_: Chat History, Saved Draft Conversation

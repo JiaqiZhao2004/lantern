@@ -30,6 +30,7 @@ from .sql_validator import validate_named_query_sql
 _ROW_CAP = 500
 _GENERATION_DAILY_QUOTA = 100
 _REPAIR_ATTEMPTS = 2
+_MAX_CLARIFYING_QUESTIONS = 3
 _ALLOWED_CHART_TYPES = {"bar", "line"}
 
 _GENERATION_SCHEMA: dict[str, Any] = {
@@ -61,7 +62,7 @@ _GENERATION_SCHEMA: dict[str, Any] = {
     "required": ["type", "question", "message", "name", "candidate"],
 }
 
-_SYSTEM_PROMPT = """
+_SYSTEM_PROMPT_TEMPLATE = """
 You are the AI assistant for Lantern's Named Query editor.
 Return only structured JSON matching the requested schema.
 
@@ -215,13 +216,19 @@ RENT_AND_UTILITIES	RENT_AND_UTILITIES_WATER	Water bills
 RENT_AND_UTILITIES	RENT_AND_UTILITIES_OTHER_UTILITIES	Other miscellaneous utility bills
 
 Amounts use positive values for inflows and negative values for outflows.
+For spending or expenditure requests, treat outflows as positive magnitudes in
+the final result. When aggregating amounts for spending, filter to `amount < 0`
+and aggregate `-amount` so totals, averages, and similar metrics come back
+positive. When counting spending transactions, count rows where `amount < 0`.
 For month-by-month requests, default to the current calendar year unless the
 Member explicitly asks for a different period.
 Allowed chart_type values are "bar", "line", or null.
-If the Member's request is ambiguous, ask one clarifying question.
+Ask at most {clarifying_budget} more clarifying questions in this session.
+Ask only one clarifying question at a time.
+If the Member's request is ambiguous, ask a clarifying question before guessing.
 If a request can reasonably map to either a specific merchant or brand filter
 or a broader category filter, and those would return meaningfully different
-datasets, ask one clarifying question before generating SQL.
+datasets, ask a clarifying question before generating SQL.
 When the Member names a specific merchant or brand, consider whether they may
 mean only that merchant or the broader category it commonly belongs to.
 If both interpretations are plausible, ask instead of guessing.
@@ -233,7 +240,7 @@ revise that candidate instead of starting from scratch.
 
 Valid SQL examples:
 - Spending by category this year:
-  SELECT category_primary, SUM(amount) AS total_spend
+  SELECT category_primary, SUM(-amount) AS total_spend
   FROM widget_transactions
   WHERE amount < 0
   GROUP BY category_primary
@@ -271,6 +278,7 @@ class NamedQueryGenerationService:
         self.usage_repo = usage_repo
         self.daily_quota = daily_quota
         self.repair_attempts = repair_attempts
+        self.max_clarifying_questions = _MAX_CLARIFYING_QUESTIONS
 
     def generate(
         self,
@@ -300,6 +308,11 @@ class NamedQueryGenerationService:
                 usage,
                 "I could not understand the generated response. Try rephrasing.",
             )
+
+        response = self._enforce_clarifying_question_limit(
+            transcript=messages,
+            response=response,
+        )
 
         if response.type == "clarifying_question":
             self.usage_repo.increment(
@@ -346,7 +359,14 @@ class NamedQueryGenerationService:
         self,
         messages: list[NamedQueryGenerationMessage],
     ) -> list[LLMMessage]:
-        llm_messages = [LLMMessage(role="system", content=_SYSTEM_PROMPT)]
+        llm_messages = [
+            LLMMessage(
+                role="system",
+                content=_SYSTEM_PROMPT_TEMPLATE.format(
+                    clarifying_budget=self._remaining_clarifying_questions(messages)
+                ),
+            )
+        ]
         for message in messages:
             role = "user" if message.role == "member" else "assistant"
             llm_messages.append(LLMMessage(role=role, content=message.content))
@@ -431,6 +451,10 @@ class NamedQueryGenerationService:
                     usage,
                     "I could not understand the generated response. Try rephrasing.",
                 )
+            repaired = self._enforce_clarifying_question_limit(
+                transcript=transcript,
+                response=repaired,
+            )
             if repaired.type == "named_query_candidate":
                 normalized_name = self._normalize_name(repaired.name)
                 current = self._normalize_candidate(repaired.candidate)
@@ -491,6 +515,32 @@ class NamedQueryGenerationService:
             )
 
         return None
+
+    def _remaining_clarifying_questions(
+        self,
+        transcript: list[NamedQueryGenerationMessage],
+    ) -> int:
+        asked_questions = sum(1 for message in transcript if message.role == "assistant")
+        return max(0, self.max_clarifying_questions - asked_questions)
+
+    def _enforce_clarifying_question_limit(
+        self,
+        transcript: list[NamedQueryGenerationMessage],
+        response: NamedQueryGenerateResponse,
+    ) -> NamedQueryGenerateResponse:
+        if response.type != "clarifying_question":
+            return response
+
+        if self._remaining_clarifying_questions(transcript) > 0:
+            return response
+
+        return NamedQueryGenerationFailureResponse(
+            message=(
+                "I still need more detail to build that query, but I have reached "
+                "the clarification limit for this draft. Please restate the full "
+                "request with the missing specifics."
+            )
+        )
 
     def _normalize_name(self, name: str) -> str:
         return name.strip() or "Untitled Named Query"

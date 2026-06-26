@@ -6,6 +6,7 @@ from .schemas import (
     NamedQueryCandidateResponse,
     NamedQueryClarifyingQuestionResponse,
     NamedQueryCreateRequest,
+    NamedQueryExplanationResponse,
     NamedQueryGenerateRequest,
     NamedQueryGenerateResponse,
     NamedQueryGenerationFailureResponse,

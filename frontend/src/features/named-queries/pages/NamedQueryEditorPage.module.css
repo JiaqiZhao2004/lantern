@@ -70,6 +70,11 @@
   align-items: center;
 }
 
+.aiActions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 @media (max-width: 520px) {
   .aiControls {
     grid-template-columns: 1fr;

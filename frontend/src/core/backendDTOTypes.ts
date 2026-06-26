@@ -537,6 +537,13 @@ export interface components {
             /** Question */
             question: string;
         };
+        /** NamedQueryExplanationResponse */
+        NamedQueryExplanationResponse: {
+            /** Type */
+            type?: "explanation";
+            /** Message */
+            message: string;
+        };
         /** NamedQueryDataResponse */
         NamedQueryDataResponse: {
             /** Columns */
@@ -559,6 +566,8 @@ export interface components {
             type?: "generation_failure";
             /** Message */
             message: string;
+            /** Reason */
+            reason?: "provider_quota_exceeded" | "provider_not_configured" | "provider_unavailable" | null;
         };
         /** NamedQueryGenerationMessage */
         NamedQueryGenerationMessage: {
@@ -979,6 +988,7 @@ export interface operations {
                 content: {
                     "application/json":
                         | components["schemas"]["NamedQueryClarifyingQuestionResponse"]
+                        | components["schemas"]["NamedQueryExplanationResponse"]
                         | components["schemas"]["NamedQueryCandidateResponse"]
                         | components["schemas"]["NamedQueryGenerationFailureResponse"];
                 };
