@@ -3,10 +3,10 @@ import { auth } from "@/features/auth/api/firebase/firebaseApp";
 import { normalizeApiError } from "@/shared/api/appError";
 
 const API_BASE_PATH = "/api/v1";
-const backendHost = import.meta.env.VITE_BACKEND_HOST?.replace(/\/$/, "") ?? "";
 
 const httpClient = axios.create({
-  baseURL: `${backendHost}${API_BASE_PATH}`,
+  // Keep browser API calls same-origin and let the dev server proxy /api to the backend.
+  baseURL: API_BASE_PATH,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

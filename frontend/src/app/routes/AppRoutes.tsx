@@ -6,6 +6,7 @@ import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import HouseholdSetupPage from "@/features/household/pages/HouseholdSetupPage";
 import SettingsPage from "@/features/settings/pages/SettingsPage";
 import NamedQueryEditorPage from "@/features/named-queries/pages/NamedQueryEditorPage";
+import PublicOverviewPage from "@/features/public-overview/pages/PublicOverviewPage";
 import {
   EmailVerificationLayout,
   HouseholdRequiredLayout,
@@ -17,6 +18,8 @@ import {
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<PublicOverviewPage />} />
+
       <Route element={<PublicOnlyLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -39,8 +42,7 @@ export function AppRoutes() {
         </Route>
       </Route>
 
-      <Route path="/" element={<Navigate replace to="/dashboard" />} />
-      <Route path="*" element={<Navigate replace to="/dashboard" />} />
+      <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   );
 }
