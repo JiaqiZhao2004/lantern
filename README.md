@@ -2,12 +2,12 @@
 
 Lantern is a household finance app for bringing clarity and control to shared financial life.
 
-| Directory | Description |
-|---|---|
-| `backend/` | FastAPI backend, Alembic migrations, PostgreSQL, sync worker |
-| `frontend/` | React + TypeScript frontend built with Vite |
-| `docs/adr/` | Architecture Decision Records |
-| `ops/` | Deployment and observability configuration |
+| Directory   | Description                                                  |
+| ----------- | ------------------------------------------------------------ |
+| `backend/`  | FastAPI backend, Alembic migrations, PostgreSQL, sync worker |
+| `frontend/` | React + TypeScript frontend built with Vite                  |
+| `docs/adr/` | Architecture Decision Records                                |
+| `ops/`      | Deployment and observability configuration                   |
 
 ## Development Runbook
 
@@ -41,7 +41,7 @@ Key values for local development:
 The root `docker-compose.yml` currently expects the Firebase Admin SDK JSON at:
 
 ```text
-~/.secrets/family-finance-d31cd-firebase-adminsdk-fbsvc-b1de073ddb.json
+~/.secrets/lantern-firebase-adminsdk.json
 ```
 
 Update the compose mount or place the file there before using the full stack.

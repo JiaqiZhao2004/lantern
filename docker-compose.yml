@@ -4,11 +4,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgres
+      POSTGRES_DB: lantern
     ports:
       - "5432:5432"
     volumes:
-      - ./backend/postgres-data:/var/lib/postgresql
+      - ./backend/postgres-data-prod:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -17,20 +17,21 @@ services:
 
   backend:
     build: ./backend
-    command: ["uvicorn", "src.server:app", "--host=0.0.0.0", "--port=8000", "--reload"]
+    command:
+      ["uvicorn", "src.server:app", "--host=0.0.0.0", "--port=8000", "--reload"]
     ports:
       - "8000:8000"
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/postgres
+      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/lantern
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - /Users/i-jzhao/.secrets/family-finance-d31cd-firebase-adminsdk-fbsvc-b1de073ddb.json:/run/secrets/firebase-adminsdk.json:ro
+      - ~/.secrets/lantern-firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
 
   backend-worker:
     build: ./backend
@@ -38,14 +39,14 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/postgres
+      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/lantern
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - /Users/i-jzhao/.secrets/family-finance-d31cd-firebase-adminsdk-fbsvc-b1de073ddb.json:/run/secrets/firebase-adminsdk.json:ro
+      - ~/.secrets/lantern-firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
 
   frontend:
     build: ./frontend
