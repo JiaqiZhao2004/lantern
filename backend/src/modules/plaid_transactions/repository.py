@@ -1,8 +1,12 @@
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import update
 from datetime import datetime
 from datetime import timezone
 from typing import Any
+
+from sqlalchemy import and_, or_, update
+from sqlalchemy.dialects.postgresql import insert
+
+from ..accounts.models import Account
+from ..institution_connections.models import InstitutionConnection
 from .models import Transaction
 from ...infrastructure import Session
 
@@ -69,3 +73,81 @@ class TransactionRepository:
 
         db.execute(stmt)
         db.flush()
+
+    def list_household_transactions(
+        self,
+        db: Session,
+        *,
+        household_id,
+        account_ids: list,
+        search: str | None,
+        start_occurred_at: datetime | None,
+        end_occurred_at_exclusive: datetime | None,
+        cursor_occurred_at: datetime | None,
+        cursor_transaction_id,
+        limit: int,
+    ):
+        base_query = (
+            db.query(
+                Transaction.id.label("id"),
+                Transaction.account_id.label("account_id"),
+                Account.name.label("account_name"),
+                InstitutionConnection.institution_name.label("institution_name"),
+                Transaction.occurred_at.label("occurred_at"),
+                Transaction.amount.label("amount"),
+                Transaction.merchant_name.label("merchant_name"),
+                Transaction.original_description.label("original_description"),
+                Transaction.pending.label("pending"),
+                Transaction.category_primary.label("category_primary"),
+                Transaction.category_detailed.label("category_detailed"),
+                Transaction.iso_currency_code.label("iso_currency_code"),
+            )
+            .join(Account, Transaction.account_id == Account.id)
+            .join(InstitutionConnection, Transaction.item_id == InstitutionConnection.id)
+            .filter(
+                Transaction.household_id == household_id,
+                Transaction.is_removed.is_(False),
+            )
+        )
+
+        if account_ids:
+            base_query = base_query.filter(Transaction.account_id.in_(account_ids))
+
+        if search:
+            pattern = f"%{search}%"
+            base_query = base_query.filter(
+                or_(
+                    Transaction.merchant_name.ilike(pattern),
+                    Transaction.original_description.ilike(pattern),
+                )
+            )
+
+        if start_occurred_at is not None:
+            base_query = base_query.filter(Transaction.occurred_at >= start_occurred_at)
+
+        if end_occurred_at_exclusive is not None:
+            base_query = base_query.filter(
+                Transaction.occurred_at < end_occurred_at_exclusive
+            )
+
+        total_count = base_query.order_by(None).count()
+
+        page_query = base_query
+        if cursor_occurred_at is not None and cursor_transaction_id is not None:
+            page_query = page_query.filter(
+                or_(
+                    Transaction.occurred_at < cursor_occurred_at,
+                    and_(
+                        Transaction.occurred_at == cursor_occurred_at,
+                        Transaction.id < cursor_transaction_id,
+                    ),
+                )
+            )
+
+        page_items = (
+            page_query.order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
+            .limit(limit + 1)
+            .all()
+        )
+
+        return total_count, page_items

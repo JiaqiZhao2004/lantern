@@ -40,6 +40,14 @@ export function AppShell({
                 Dashboard
               </NavLink>
               <NavLink
+                to="/transactions"
+                className={({ isActive }) =>
+                  isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+                }
+              >
+                Transactions
+              </NavLink>
+              <NavLink
                 to="/settings"
                 className={({ isActive }) =>
                   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink

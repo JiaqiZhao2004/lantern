@@ -46,6 +46,11 @@ class NamedQueryCandidateResponse(BaseModel):
     candidate: NamedQueryCandidate
 
 
+class NamedQueryExplanationResponse(BaseModel):
+    type: Literal["explanation"] = "explanation"
+    message: str
+
+
 class NamedQueryGenerationFailureResponse(BaseModel):
     type: Literal["generation_failure"] = "generation_failure"
     message: str
@@ -61,6 +66,7 @@ class NamedQueryGenerationFailureResponse(BaseModel):
 
 NamedQueryGenerateResponse = (
     NamedQueryClarifyingQuestionResponse
+    | NamedQueryExplanationResponse
     | NamedQueryCandidateResponse
     | NamedQueryGenerationFailureResponse
 )

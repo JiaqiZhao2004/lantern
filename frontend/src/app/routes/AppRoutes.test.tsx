@@ -114,4 +114,12 @@ describe("AppRoutes", () => {
       await screen.findByRole("heading", { name: "Sign in" })
     ).toBeInTheDocument();
   });
+
+  it("keeps transactions routes behind authentication", async () => {
+    renderRoutes("/transactions");
+
+    expect(
+      await screen.findByRole("heading", { name: "Sign in" })
+    ).toBeInTheDocument();
+  });
 });

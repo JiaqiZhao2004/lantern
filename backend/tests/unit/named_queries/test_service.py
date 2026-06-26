@@ -240,6 +240,25 @@ def test_generation_returns_clarifying_question_and_consumes_quota():
     assert usage_repo.usage.clarifying_questions == 1
 
 
+def test_generation_returns_explanation_and_consumes_quota():
+    usage_repo = FakeUsageRepo()
+    service = _generation_service(
+        [{"type": "explanation", "message": "This query groups spending by month."}],
+        usage_repo=usage_repo,
+    )
+
+    response = service.generate(
+        db=None,
+        household_id=uuid4(),
+        messages=_message("Explain this query"),
+    )
+
+    assert response.type == "explanation"
+    assert response.message == "This query groups spending by month."
+    assert usage_repo.usage.quota_units_used == 1
+    assert usage_repo.usage.clarifying_questions == 0
+
+
 def test_generation_repairs_invalid_sql_without_consuming_extra_quota():
     usage_repo = FakeUsageRepo()
     service = _generation_service(

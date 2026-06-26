@@ -20,6 +20,7 @@ from .schemas import (
     NamedQueryCandidateResponse,
     NamedQueryClarifyingQuestionResponse,
     NamedQueryDataResponse,
+    NamedQueryExplanationResponse,
     NamedQueryGenerateResponse,
     NamedQueryGenerationFailureResponse,
     NamedQueryGenerationMessage,
@@ -39,6 +40,7 @@ _GENERATION_SCHEMA: dict[str, Any] = {
             "type": "string",
             "enum": [
                 "clarifying_question",
+                "explanation",
                 "named_query_candidate",
                 "generation_failure",
             ],
@@ -60,7 +62,7 @@ _GENERATION_SCHEMA: dict[str, Any] = {
 }
 
 _SYSTEM_PROMPT = """
-You generate SQL candidates for Lantern's Named Query feature.
+You are the AI assistant for Lantern's Named Query editor.
 Return only structured JSON matching the requested schema.
 
 For named_query_candidate responses, put the stored Named Query label in the
@@ -68,6 +70,11 @@ top-level name field. Names should be short and specific, using Title Case when
 natural. Prefer names like "Grocery Spending by Month" over generic labels like
 "Query" or "Untitled Named Query". The candidate object is only the SQL
 candidate and chart hint.
+
+For explanation responses, use the top-level message field only. Explain what
+the current query does in plain language, call out notable defaults or risks,
+and do not include SQL diffs, patches, or replacement SQL unless the Member
+explicitly asks for a change.
 
 The SQL must be a single flat PostgreSQL SELECT:
 - No CTEs or WITH clauses.
@@ -218,7 +225,8 @@ datasets, ask one clarifying question before generating SQL.
 When the Member names a specific merchant or brand, consider whether they may
 mean only that merchant or the broader category it commonly belongs to.
 If both interpretations are plausible, ask instead of guessing.
-If the Member asks for anything other than creating Named Query SQL for this app,
+If the Member asks to explain an existing Named Query, return an explanation.
+If the Member asks for anything other than Named Query help for this app,
 return a generation_failure.
 If the transcript includes a prior SQL candidate and the Member asks for changes,
 revise that candidate instead of starting from scratch.
@@ -243,6 +251,10 @@ Clarifying question examples:
   rideshare spending?"
 - "Amazon spending" could mean only Amazon merchant transactions or broader
   shopping / retail spending. Ask a clarifying question before generating SQL.
+
+Explanation example:
+- If the Member asks "Explain this query", return an explanation that summarizes
+  the selected columns, filters, grouping, ordering, and any implied time window.
 """.strip()
 
 
@@ -296,6 +308,10 @@ class NamedQueryGenerationService:
                 quota_units_used=1,
                 clarifying_questions=1,
             )
+            return response
+
+        if response.type == "explanation":
+            self.usage_repo.increment(db, usage, quota_units_used=1)
             return response
 
         if response.type == "generation_failure":
@@ -421,6 +437,8 @@ class NamedQueryGenerationService:
             elif repaired.type == "clarifying_question":
                 self.usage_repo.increment(db, usage, clarifying_questions=1)
                 return repaired
+            elif repaired.type == "explanation":
+                return repaired
             else:
                 self.usage_repo.increment(db, usage, generation_failures=1)
                 return repaired
@@ -446,6 +464,12 @@ class NamedQueryGenerationService:
             return NamedQueryGenerationFailureResponse(
                 message="I could not generate a query for that request. Try rephrasing."
             )
+
+        if response_type == "explanation":
+            message = raw.get("message")
+            if isinstance(message, str) and message.strip():
+                return NamedQueryExplanationResponse(message=message.strip())
+            return None
 
         if response_type == "named_query_candidate":
             name = raw.get("name")

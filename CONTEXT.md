@@ -46,6 +46,10 @@ Transactions are owned by the User whose InstitutionConnection produced them, no
 The canonical Member-facing label for who a Transaction was with. It comes from the aggregator's `merchant_name` when available; otherwise Lantern falls back to the Transaction's `original_description`.
 _Avoid_: Display Name, Merchant Label
 
+**Transaction Ledger**:
+A Member-facing list view of Transactions for inspection and verification. It is a separate analytical surface from Named Queries: the ledger shows raw Transactions, while Named Queries show saved aggregations over them.
+_Avoid_: Transaction Table, Activity Feed
+
 **Pending Transaction**:
 A Transaction in the `pending` state — authorized by the institution but not yet cleared. Will later be replaced by a posted Transaction (and the pending row internally tombstoned via `is_removed`).
 

@@ -25,6 +25,6 @@ from .institution_connections.service import InstitutionConnectionService
 from .accounts.repository import AccountRepository
 from .accounts.service import AccountService
 from .plaid_transactions.repository import TransactionRepository
-from .plaid_transactions.service import TransactionService
+from .plaid_transactions.service import TransactionLedgerService, TransactionService
 from .named_queries.repository import NamedQueryRepository
 from .named_queries.service import NamedQueryGenerationService, NamedQueryService

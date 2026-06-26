@@ -13,6 +13,7 @@ from src.api.routes.households import router as households_router
 from src.api.routes.named_queries import router as named_queries_router
 from src.api.routes.plaid import router as plaid_router
 from src.api.routes.plaid_webhooks import router as webhooks_router
+from src.api.routes.transactions import router as transactions_router
 from src.api.routes.users import router as users_router
 from src.infrastructure.db.database import SessionLocal
 from src.infrastructure.metrics import install_http_metrics, metrics_response
@@ -91,3 +92,4 @@ app.include_router(router=webhooks_router)
 app.include_router(router=users_router)
 app.include_router(router=households_router)
 app.include_router(router=named_queries_router)
+app.include_router(router=transactions_router)

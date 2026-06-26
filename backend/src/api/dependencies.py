@@ -139,6 +139,12 @@ def get_transaction_service(
     )
 
 
+def get_transaction_ledger_service(
+    transaction_repo: TransactionRepository = Depends(get_transaction_repository),
+) -> TransactionLedgerService:
+    return TransactionLedgerService(transaction_repo=transaction_repo)
+
+
 def get_sync_jobs_repository() -> SyncJobsRepository:
     return SyncJobsRepository()
 

@@ -9,6 +9,7 @@ from src.modules.named_queries.schemas import (
     NamedQueryCandidate,
     NamedQueryCandidateResponse,
     NamedQueryClarifyingQuestionResponse,
+    NamedQueryExplanationResponse,
 )
 from src.server import app
 
@@ -112,6 +113,36 @@ def test_generate_named_query_returns_clarifying_question_response():
     assert response.json() == {
         "type": "clarifying_question",
         "question": "Which category?",
+    }
+
+
+def test_generate_named_query_returns_explanation_response():
+    app.dependency_overrides[named_query_routes.get_request_context] = (
+        _override_request_context
+    )
+    app.dependency_overrides[named_query_routes.get_membership_repository] = (
+        lambda: FakeMembershipRepo(SimpleNamespace(household_id=uuid4()))
+    )
+    app.dependency_overrides[named_query_routes.get_named_query_generation_service] = (
+        lambda: FakeGenerationService(
+            NamedQueryExplanationResponse(
+                message="This query totals monthly grocery outflows for the current year."
+            )
+        )
+    )
+
+    try:
+        response = TestClient(app).post(
+            "/api/v1/named-queries/generate",
+            json={"messages": [{"role": "member", "content": "Explain this query"}]},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "type": "explanation",
+        "message": "This query totals monthly grocery outflows for the current year.",
     }
 
 
