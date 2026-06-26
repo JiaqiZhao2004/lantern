@@ -85,6 +85,7 @@ receivers:
 
 tmp_file = output_file.parent / f".{output_file.name}.tmp"
 tmp_file.write_text(content, encoding="utf-8")
+tmp_file.chmod(0o644)
 tmp_file.replace(output_file)
 PY
 
