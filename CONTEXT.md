@@ -42,6 +42,10 @@ A single financial event on an Account that a Member can see — a purchase, dep
 
 Transactions are owned by the User whose InstitutionConnection produced them, not by the Household. `household_id` is a nullable denormalization — it is set to the User's current Household for query performance, set to NULL when the User is between Households, and reassigned when the User joins a new Household. The new Household sees the User's full Transaction history from the moment they join.
 
+**Merchant Name**:
+The canonical Member-facing label for who a Transaction was with. It comes from the aggregator's `merchant_name` when available; otherwise Lantern falls back to the Transaction's `original_description`.
+_Avoid_: Display Name, Merchant Label
+
 **Pending Transaction**:
 A Transaction in the `pending` state — authorized by the institution but not yet cleared. Will later be replaced by a posted Transaction (and the pending row internally tombstoned via `is_removed`).
 

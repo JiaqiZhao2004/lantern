@@ -208,3 +208,41 @@ def test_mapper():
     }
 
     assert row == row_corr
+
+
+def test_mapper_falls_back_to_original_description_when_merchant_name_is_missing():
+    account_id = uuid7()
+    item_id = uuid7()
+    household_id = uuid7()
+    tx = dict(sync_response["added"][0])
+    tx["merchant_name"] = None
+    tx["original_description"] = "ACH CREDIT ACME PAYROLL"
+
+    row = plaid_transaction_to_row(
+        tx,
+        account_id=account_id,
+        item_id=item_id,
+        household_id=household_id,
+    )
+
+    assert row["merchant_name"] == "ACH CREDIT ACME PAYROLL"
+    assert row["original_description"] == "ACH CREDIT ACME PAYROLL"
+
+
+def test_mapper_falls_back_to_original_description_when_merchant_name_is_blank():
+    account_id = uuid7()
+    item_id = uuid7()
+    household_id = uuid7()
+    tx = dict(sync_response["added"][0])
+    tx["merchant_name"] = "   "
+    tx["original_description"] = "POS TRANSACTION CORNER STORE"
+
+    row = plaid_transaction_to_row(
+        tx,
+        account_id=account_id,
+        item_id=item_id,
+        household_id=household_id,
+    )
+
+    assert row["merchant_name"] == "POS TRANSACTION CORNER STORE"
+    assert row["original_description"] == "POS TRANSACTION CORNER STORE"

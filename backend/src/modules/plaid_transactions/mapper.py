@@ -4,6 +4,19 @@ from uuid import UUID
 from .models import InterbankTransferInfo, PaymentChannel
 
 
+def member_visible_merchant_name(tx: dict[str, Any]) -> str | None:
+    merchant_name = tx.get("merchant_name")
+
+    if merchant_name is not None and merchant_name.strip() != "":
+        return merchant_name
+
+    original_description = tx.get("original_description")
+    if original_description is None or original_description.strip() == "":
+        return None
+
+    return original_description
+
+
 def interbank_transfer_info(tx: dict[str, Any]) -> InterbankTransferInfo | None:
     payment_meta = tx.get("payment_meta") or {}
 
@@ -44,7 +57,7 @@ def plaid_transaction_to_row(
         "authorized_date": tx["authorized_date"],
         "posted_date": tx["date"],
         "occurred_at": tx["authorized_date"] if tx["authorized_date"] else tx["date"],
-        "merchant_name": tx["merchant_name"],
+        "merchant_name": member_visible_merchant_name(tx),
         "category_primary": (
             personal_finance_category["primary"] if personal_finance_category else None
         ),
