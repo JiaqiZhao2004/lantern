@@ -185,12 +185,15 @@ def test_transaction_preview_sql_reuses_query_filters_and_joins():
     )
 
     assert preview_sql == (
-        "SELECT DISTINCT wt.id, wt.occurred_at, wt.merchant_name, wt.amount, "
-        "wt.category_primary, wt.category_detailed, wt.pending, wt.iso_currency_code, "
-        "wt.original_description FROM widget_transactions AS wt "
+        "SELECT date, merchant, amount, category, pending FROM ("
+        "SELECT DISTINCT wt.id AS transaction_id, wt.occurred_at AS date, "
+        "COALESCE(NULLIF(wt.merchant_name, ''), wt.original_description) AS merchant, "
+        "wt.amount AS amount, wt.category_primary AS category, wt.pending AS pending "
+        "FROM widget_transactions AS wt "
         "JOIN widget_accounts AS wa ON wa.id = wt.id "
-        "WHERE wt.amount < 0 AND wa.account_type = 'credit' "
-        "ORDER BY wt.occurred_at DESC NULLS LAST, wt.id DESC NULLS LAST"
+        "WHERE wt.amount < 0 AND wa.account_type = 'credit' AND wt.household_id = :_household_id"
+        ") AS _transaction_preview "
+        "ORDER BY date DESC NULLS LAST, transaction_id DESC NULLS LAST"
     )
 
 

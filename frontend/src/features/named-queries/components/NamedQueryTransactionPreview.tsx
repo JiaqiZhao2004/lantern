@@ -12,7 +12,7 @@ export function NamedQueryTransactionPreview({ preview }: Props) {
       <div className={styles.header}>
         <h4 className={styles.title}>Matching transactions</h4>
         <p className={styles.hint}>
-          Preview the raw transaction rows behind this result so you can correct the
+          Preview a simplified sample of matching transactions so you can correct the
           query if it is pulling the wrong activity.
         </p>
       </div>

@@ -95,5 +95,5 @@ The short-lived AI drafting conversation in the Named Query editor. It exists on
 _Avoid_: Chat History, Saved Draft Conversation
 
 **Named Query Transaction Preview**:
-A lightweight raw-Transaction sample shown alongside a Named Query result when that query is driven by `widget_transactions`. It helps a Member verify which Transactions matched the query's filters without leaving the Named Query surface.
+A lightweight simplified Transaction sample shown in the Named Query editor preview when a query is driven by `widget_transactions`. It helps a Member verify which Transactions matched the query's filters before saving.
 _Avoid_: Drilldown, Ledger Embed

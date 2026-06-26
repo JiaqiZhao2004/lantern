@@ -681,8 +681,14 @@ class NamedQueryService:
         household_id: UUID,
         sql_query: str,
         row_cap: int,
+        *,
+        inject_household_filter: bool = True,
     ) -> QueryResultPreview:
-        scoped_sql = self._inject_household_filter(sql_query)
+        scoped_sql = (
+            self._inject_household_filter(sql_query)
+            if inject_household_filter
+            else sql_query
+        )
         injected = f"SELECT * FROM ({scoped_sql}) AS _nq LIMIT {row_cap + 1}"
 
         try:
@@ -712,6 +718,7 @@ class NamedQueryService:
             household_id=household_id,
             sql_query=preview_sql,
             row_cap=_TRANSACTION_PREVIEW_ROW_CAP,
+            inject_household_filter=False,
         )
 
     def _serialize_query_result(self, result, row_cap: int) -> QueryResultPreview:
@@ -785,16 +792,24 @@ class NamedQueryService:
         where_sql = ""
         if where:
             where_sql = f" {copy.deepcopy(where).sql(dialect='postgres')}"
+            where_sql = (
+                f"{where_sql} AND {source_name}.household_id = :_household_id"
+            )
+        else:
+            where_sql = f" WHERE {source_name}.household_id = :_household_id"
 
         return (
+            "SELECT date, merchant, amount, category, pending FROM ("
             "SELECT DISTINCT "
+            f"{source_name}.id AS transaction_id, "
             f"{source_name}.occurred_at AS date, "
             f"COALESCE(NULLIF({source_name}.merchant_name, ''), {source_name}.original_description) AS merchant, "
             f"{source_name}.amount AS amount, "
             f"{source_name}.category_primary AS category, "
             f"{source_name}.pending AS pending "
-            f"{from_sql}{joins_sql}{where_sql} "
-            f"ORDER BY {source_name}.occurred_at DESC NULLS LAST, {source_name}.id DESC NULLS LAST"
+            f"{from_sql}{joins_sql}{where_sql}"
+            ") AS _transaction_preview "
+            "ORDER BY date DESC NULLS LAST, transaction_id DESC NULLS LAST"
         )
 
     def _inject_household_filter(self, sql_query: str) -> str:

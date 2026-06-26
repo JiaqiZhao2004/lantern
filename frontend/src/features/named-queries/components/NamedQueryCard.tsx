@@ -4,7 +4,6 @@ import classNames from "classnames";
 import styles from "@/features/named-queries/components/NamedQueryCard.module.css";
 import { NamedQueryChart } from "@/features/named-queries/components/NamedQueryChart";
 import { NamedQueryResultTable } from "@/features/named-queries/components/NamedQueryResultTable";
-import { NamedQueryTransactionPreview } from "@/features/named-queries/components/NamedQueryTransactionPreview";
 import {
   useDeleteNamedQueryMutation,
   useNamedQueryDataQuery,
@@ -110,12 +109,6 @@ export function NamedQueryCard({ query }: Props) {
                   rows={dataQuery.data.rows as Record<string, unknown>[]}
                   truncated={dataQuery.data.truncated}
                 />
-              )}
-
-              {dataQuery.data.transaction_preview && (
-                <div className={styles.transactionPreview}>
-                  <NamedQueryTransactionPreview preview={dataQuery.data.transaction_preview} />
-                </div>
               )}
             </>
           )}
