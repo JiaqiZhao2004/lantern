@@ -51,7 +51,7 @@ Update the compose mount or place the file there before using the full stack.
 From the repository root:
 
 ```sh
-docker-compose up --build
+docker compose up --build
 ```
 
 This starts:
@@ -66,7 +66,7 @@ This starts:
 After the database is running, apply migrations from the repository root:
 
 ```sh
-docker-compose run --rm backend alembic upgrade head
+docker compose run --rm backend alembic upgrade head
 ```
 
 For host-based backend development, run the same command from `backend/` after activating the virtualenv:

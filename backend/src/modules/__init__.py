@@ -4,7 +4,14 @@ from .household.repository import HouseholdRepository
 from .household.service import HouseholdService
 from .household_membership.repository import MembershipRepository
 from .household_membership.service import MembershipService
-from ..exceptions import AppError, ConflictError, NotFoundError, RateLimitError, ValidationError
+from ..exceptions import (
+    AppError,
+    ConflictError,
+    NotFoundError,
+    RateLimitError,
+    ServiceUnavailableError,
+    ValidationError,
+)
 
 from .user.schemas import *
 from .household.schemas import *

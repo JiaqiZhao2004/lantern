@@ -31,6 +31,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ~/.aws:/root/.aws:ro
       - ~/.secrets/lantern-firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
 
   backend-worker:
@@ -46,6 +47,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ~/.aws:/root/.aws:ro
       - ~/.secrets/lantern-firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
 
   frontend:
@@ -53,7 +55,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_BACKEND_HOST: http://localhost:8000
+      VITE_BACKEND_HOST: http://backend:8000
     depends_on:
       - backend
     volumes:

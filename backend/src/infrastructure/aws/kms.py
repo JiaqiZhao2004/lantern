@@ -2,8 +2,10 @@ import os
 from functools import lru_cache
 
 import boto3
-from botocore.exceptions import ProfileNotFound
+from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError, ProfileNotFound
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+from src.exceptions import ServiceUnavailableError
 
 
 class KMSService:
@@ -16,9 +18,13 @@ class KMSService:
         self.kms_key_id = os.getenv("KMS_KEY_ID")
 
         if not KMS_KEY_ID:
-            raise ValueError("KMS_KEY_ID environment variable is not set")
+            raise ServiceUnavailableError(
+                detail="KMS is unavailable: KMS_KEY_ID environment variable is not set."
+            )
         if not AWS_REGION:
-            raise ValueError("AWS_REGION environment variable is not set")
+            raise ServiceUnavailableError(
+                detail="KMS is unavailable: AWS_REGION environment variable is not set."
+            )
 
         try:
             if AWS_PROFILE:
@@ -30,9 +36,11 @@ class KMSService:
             else:
                 self._kms_client = boto3.client("kms", region_name=AWS_REGION)
         except ProfileNotFound as exc:
-            raise ValueError(
-                f"AWS profile '{AWS_PROFILE}' was not found. "
-                "Unset AWS_PROFILE or configure that profile in ~/.aws/config or ~/.aws/credentials."
+            raise ServiceUnavailableError(
+                detail=(
+                    f"KMS is unavailable: AWS profile '{AWS_PROFILE}' was not found. "
+                    "Unset AWS_PROFILE or configure that profile in ~/.aws/config or ~/.aws/credentials."
+                )
             ) from exc
 
     def encrypt_secret(
@@ -57,8 +65,20 @@ class KMSService:
         """
         kms = self._kms_client
 
-        # Step 1: generate a fresh data key from KMS
-        response = kms.generate_data_key(KeyId=self.kms_key_id, KeySpec="AES_256")
+        try:
+            # Step 1: generate a fresh data key from KMS
+            response = kms.generate_data_key(KeyId=self.kms_key_id, KeySpec="AES_256")
+        except NoCredentialsError as exc:
+            raise ServiceUnavailableError(
+                detail=(
+                    "KMS is unavailable: AWS credentials were not found. "
+                    "Configure AWS credentials before linking an institution."
+                )
+            ) from exc
+        except (ClientError, BotoCoreError) as exc:
+            raise ServiceUnavailableError(
+                detail="KMS is unavailable: failed to generate a data key."
+            ) from exc
         plaintext_data_key: bytes = response[
             "Plaintext"
         ]  # raw 32-byte key – in-memory only
@@ -90,8 +110,20 @@ class KMSService:
         """
         kms = self._kms_client
 
-        # Step 1: recover the data key from KMS
-        response = kms.decrypt(CiphertextBlob=encrypted_data_key)
+        try:
+            # Step 1: recover the data key from KMS
+            response = kms.decrypt(CiphertextBlob=encrypted_data_key)
+        except NoCredentialsError as exc:
+            raise ServiceUnavailableError(
+                detail=(
+                    "KMS is unavailable: AWS credentials were not found. "
+                    "Configure AWS credentials before decrypting institution secrets."
+                )
+            ) from exc
+        except (ClientError, BotoCoreError) as exc:
+            raise ServiceUnavailableError(
+                detail="KMS is unavailable: failed to decrypt a data key."
+            ) from exc
         plaintext_data_key: bytes = response["Plaintext"]
 
         # Step 2: AES-256-GCM decrypt (also verifies the GCM auth tag)

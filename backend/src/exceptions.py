@@ -30,3 +30,8 @@ class RateLimitError(AppError):
 class InternalError(AppError):
     status_code = 500
     detail = "Internal error"
+
+
+class ServiceUnavailableError(AppError):
+    status_code = 503
+    detail = "Service unavailable"
