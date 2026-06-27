@@ -7,6 +7,14 @@ locals {
     env_name => trimsuffix(domain_name, ".${var.cloudflare_zone_name}")
   }
 
+  github_actions_oidc_subjects = concat(
+    ["repo:${var.github_repository}:ref:refs/heads/${var.deploy_branch}"],
+    [
+      for env_name in keys(var.frontend_bucket_names) :
+      "repo:${var.github_repository}:environment:${env_name}"
+    ]
+  )
+
   common_tags = merge(
     {
       ManagedBy = "terraform"
@@ -52,7 +60,7 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/${var.deploy_branch}"]
+      values   = local.github_actions_oidc_subjects
     }
   }
 }
