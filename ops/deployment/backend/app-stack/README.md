@@ -72,11 +72,15 @@ After the public same-origin `/api/*` route is live, set the public Plaid webhoo
 registration in `env/public/backend.env` to the public app API route:
 
 ```env
-PLAID_WEBHOOK_URL=https://lantern.royzhao.dev/api/v1/plaid/webhooks
+PLAID_WEBHOOK_URL=https://lantern-public.royzhao.dev/api/v1/plaid/webhooks
 ```
 
 For the protected production environment, set `env/prod/backend.env` to the
 production/protected app API route you intend Plaid to call.
+
+```env
+PLAID_WEBHOOK_URL=https://lantern.royzhao.dev/api/v1/plaid/webhooks
+```
 
 Do not use the protected backend origin hostname for either value; Plaid cannot
 send the Cloudflare Access service-token headers that CloudFront uses for origin access.
@@ -112,7 +116,7 @@ The helper reads the `lantern_app` password from `DATABASE_URL` in the target
 environment's `backend.env`:
 
 ```env
-DATABASE_URL=postgresql+psycopg://lantern_app:<password>@db:5432/lantern
+DATABASE_URL=postgresql+psycopg://lantern_app:<password>@<COMPOSE_PROJECT_NAME>-db:5432/lantern
 ```
 
 `postgres` is the bootstrap/admin database role. The backend should connect as
@@ -197,7 +201,7 @@ the backend container is reading a `DATABASE_URL` that still uses the bootstrap
 `POSTGRES_PASSWORD` than the current `db.env`. The app runtime should use:
 
 ```env
-DATABASE_URL=postgresql+psycopg://lantern_app:<password>@db:5432/lantern
+DATABASE_URL=postgresql+psycopg://lantern_app:<password>@<COMPOSE_PROJECT_NAME>-db:5432/lantern
 ```
 
 Keep the bootstrap `postgres` password in `db.env`, and use

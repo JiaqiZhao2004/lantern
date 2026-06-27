@@ -56,7 +56,7 @@ if parsed.username != "lantern_app":
         "DATABASE_URL in backend.env must use the lantern_app runtime role "
         f"before this helper can create it; found user {actual_user!r}. "
         "Keep the bootstrap postgres credentials in db.env, and set "
-        "DATABASE_URL=postgresql+psycopg://lantern_app:<app-password>@db:5432/lantern "
+        "DATABASE_URL=postgresql+psycopg://lantern_app:<app-password>@lantern-[prod|public]-db:5432/lantern "
         "in backend.env."
     )
 
