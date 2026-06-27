@@ -3,6 +3,35 @@ import styles from "@/features/public-overview/pages/PublicOverviewPage.module.c
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
 import { Card } from "@/shared/ui/Card/Card";
 
+const REPO_BASE_URL = "https://github.com/JiaqiZhao2004/lantern-public";
+
+function repoDoc(path: string) {
+  return `${REPO_BASE_URL}/blob/main/${path}`;
+}
+
+type WalkthroughStep = {
+  number: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  slotTitle: string;
+  slotNote: string;
+  annotations?: Array<{
+    label: string;
+    text: string;
+  }>;
+};
+
+type ReceiptCard = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  links: Array<{
+    label: string;
+    href: string;
+  }>;
+};
+
 function PrimaryAction() {
   const { isLoading, user } = useAuthSession();
 
@@ -23,291 +52,366 @@ function PrimaryAction() {
   }
 
   return (
-    <a className={styles.primaryAction} href="#preview">
-      Try preview
-    </a>
+    <Link className={styles.primaryAction} to="/login">
+      Sign in to explore
+    </Link>
   );
 }
 
-const sampleTransactions = [
-  { name: "Payroll Deposit", account: "Household Checking", amount: "+$4,980" },
-  { name: "Rent Transfer", account: "Joint Bills", amount: "-$2,100" },
-  { name: "Neighborhood Grocer", account: "Household Checking", amount: "-$128" },
-  { name: "Utilities", account: "Joint Bills", amount: "-$94" },
+function ClosingAction() {
+  const { isLoading, user } = useAuthSession();
+
+  if (isLoading) {
+    return (
+      <span className={styles.loadingAction} aria-live="polite">
+        Session resolving
+      </span>
+    );
+  }
+
+  if (user) {
+    return (
+      <Link className={styles.primaryAction} to="/dashboard">
+        Return to the app
+      </Link>
+    );
+  }
+
+  return (
+    <Link className={styles.primaryAction} to="/login">
+      Sign in to verify the flow
+    </Link>
+  );
+}
+
+const quickPath = [
+  "Sign in with Google or email",
+  "Create a household",
+  "Link a Plaid Sandbox institution",
+  "Inspect shared transaction history",
+  "Open a reusable named query",
 ];
 
-const workflowSteps = [
+const capabilityChips = [
+  "Real sign-in",
+  "Households",
+  "Transactions",
+  "Named queries",
+  "Plaid Sandbox",
+];
+
+const walkthroughSteps: WalkthroughStep[] = [
   {
-    title: "Bring the household into one view",
+    number: "01",
+    eyebrow: "Entry",
+    title: "Sign in with Google or email",
     description:
-      "Lantern is designed to pull linked checking, savings, and credit accounts into a shared operating picture.",
+      "Authentication is live in the public environment, so the first step uses the same account flow as the rest of the app.",
+    slotTitle: "Sign-in screen",
+    slotNote: "Google and email auth",
   },
   {
-    title: "Explore shared financial visibility",
+    number: "02",
+    eyebrow: "Setup",
+    title: "Create a household",
     description:
-      "The demo emphasizes how a household could inspect inflow, outflow, and account activity in one workspace.",
+      "Household setup is the first product boundary, because the app is organized around who can see and analyze shared financial data.",
+    slotTitle: "Household setup screen",
+    slotNote: "Real household workflow",
   },
   {
-    title: "Prototype reusable analysis views",
+    number: "03",
+    eyebrow: "Connections",
+    title: "Link a Plaid Sandbox institution",
     description:
-      "Named Queries show the intended analysis layer: repeatable household views backed by validated SQL.",
+      "Public financial institution linking uses Plaid Sandbox, which keeps the public environment safe while preserving the real app flow.",
+    slotTitle: "Plaid Link flow",
+    slotNote: "Sandbox institution linking",
+  },
+  {
+    number: "04",
+    eyebrow: "Ledger",
+    title: "Inspect transaction history",
+    description:
+      "Once data is linked, the ledger becomes the calm observability surface: search, filter, and inspect household transaction history without leaving the app.",
+    slotTitle: "Transactions screen",
+    slotNote: "Search, filters, and sorting",
+  },
+  {
+    number: "05",
+    eyebrow: "Payoff",
+    title: "Open a reusable named query",
+    description:
+      "The payoff is reusable analysis over household data rather than one-off browsing. This is where linked accounts turn into saved views you can revisit.",
+    slotTitle: "Named query result",
+    slotNote: "Chart or table output",
+    annotations: [
+      {
+        label: "Why it matters",
+        text: "Saved queries turn linked household transactions into reusable views you can reopen as charts or tables.",
+      },
+      {
+        label: "Why it is credible",
+        text: "The queries are SQL-backed, previewable, and validated before execution, with AI-assisted drafting kept as a secondary aid.",
+      },
+    ],
   },
 ];
 
-const implementationReceipts = [
-  "Household-scoped data model and membership boundaries",
-  "Validated read-only Named Queries with LLM-assisted draft generation",
-  "Plaid-backed item linking and household account listing endpoints",
-  "FastAPI + PostgreSQL backend with typed React frontend",
-  "Public preview isolated from the private production workspace",
-];
-
-const savedViews = [
-  "Monthly free cash",
-  "Fixed vs flexible outflow",
-  "Spending changes by category",
+const receiptCards: ReceiptCard[] = [
+  {
+    eyebrow: "Boundaries",
+    title: "Inspect household scope",
+    description:
+      "The core product boundary is who belongs to a household and how shared financial visibility is constrained.",
+    links: [
+      {
+        label: "Inspect membership scope",
+        href: repoDoc("docs/adr/0002-one-household-per-user.md"),
+      },
+      {
+        label: "Inspect transaction ownership",
+        href: repoDoc(
+          "docs/adr/0006-transaction-ownership-and-household-reassignment.md"
+        ),
+      },
+    ],
+  },
+  {
+    eyebrow: "Queries",
+    title: "Inspect named query design",
+    description:
+      "The differentiator is reusable analysis over linked household data, with explicit constraints on how queries are authored and executed.",
+    links: [
+      {
+        label: "Inspect named query design",
+        href: repoDoc("docs/adr/0008-named-query-feature-design.md"),
+      },
+      {
+        label: "Inspect SQL restrictions",
+        href: repoDoc("docs/adr/0007-named-query-sql-restricted-to-flat-select.md"),
+      },
+      {
+        label: "Inspect AI-assisted drafting",
+        href: repoDoc(
+          "docs/adr/0012-app-provided-llm-for-named-query-sql-candidates.md"
+        ),
+      },
+    ],
+  },
+  {
+    eyebrow: "Runtime",
+    title: "Inspect deployable backend work",
+    description:
+      "This is not just a local prototype. The repo includes the operational path for a deployed backend runtime and durability work.",
+    links: [
+      {
+        label: "Inspect runtime and durability",
+        href: repoDoc(
+          "docs/adr/0015-self-hosted-backend-runtime-and-durability.md"
+        ),
+      },
+      {
+        label: "Inspect deployment stack",
+        href: repoDoc("ops/deployment/backend/app-stack/README.md"),
+      },
+    ],
+  },
+  {
+    eyebrow: "Observability",
+    title: "Inspect observability",
+    description:
+      "The ops surface includes monitoring and supporting material rather than stopping at a single deploy script.",
+    links: [
+      {
+        label: "Inspect observability",
+        href: repoDoc("ops/observability/backend/README.md"),
+      },
+      {
+        label: "Inspect app-native metrics",
+        href: repoDoc("docs/adr/0019-app-native-observability-metrics.md"),
+      },
+    ],
+  },
+  {
+    eyebrow: "Disclosure",
+    title: "Inspect the public architecture boundary",
+    description:
+      "The public environment is intentionally scoped, and the repo documents what is shown publicly versus what remains private.",
+    links: [
+      {
+        label: "Inspect disclosure boundary",
+        href: repoDoc("docs/adr/0020-public-architecture-disclosure-boundary.md"),
+      },
+      {
+        label: "Inspect the repository",
+        href: REPO_BASE_URL,
+      },
+    ],
+  },
 ];
 
 export default function PublicOverviewPage() {
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
-        <div className={styles.heroContent}>
+        <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>Lantern</p>
-          <h1 className={styles.title}>A prototype for a shared finance workspace</h1>
+          <h1 className={styles.title}>See household finances clearly</h1>
           <p className={styles.summary}>
-            Lantern is a product-minded prototype for shared household finance:
-            linked accounts, household visibility, and Named Queries for
-            analysis. This public preview is a staged sandbox experience backed
-            by sample data and Plaid Sandbox institutions.
+            Track household finances with linked accounts, shared transaction
+            history, and reusable queries.
           </p>
-          <div className={styles.heroActions}>
-            <div className={styles.actionRow}>
-              <PrimaryAction />
-              <a
-                className={styles.secondaryAction}
-                href="https://github.com/JiaqiZhao2004/lantern-public"
-                target="_blank"
-                rel="noreferrer"
-              >
-                See how it&apos;s built
-              </a>
-            </div>
-            <p className={styles.heroNote}>
-              The public surface is intentionally sandboxed and selectively
-              implemented. The goal is to show product direction and the
-              strongest engineering foundations without overstating feature
-              completeness.
-            </p>
-            <div className={styles.featureList} aria-label="Lantern capabilities">
-              <span>Shared household visibility</span>
-              <span>Cash-flow planning</span>
-              <span>Named Queries</span>
-            </div>
+          <p className={styles.environmentNote}>
+            Lantern supports real sign-in, household setup, and app workflows;
+            the public environment uses Plaid Sandbox for financial institution
+            linking.
+          </p>
+
+          <div className={styles.actionRow}>
+            <PrimaryAction />
+            <a className={styles.secondaryAction} href="#walkthrough">
+              See walkthrough
+            </a>
+          </div>
+
+          <p className={styles.pathNote}>
+            Built solo as a full-stack systems project. Start with the
+            walkthrough, then sign in if you want to exercise the full flow
+            yourself.
+          </p>
+
+          <div className={styles.featureList} aria-label="Lantern capabilities">
+            {capabilityChips.map((chip) => (
+              <span key={chip}>{chip}</span>
+            ))}
           </div>
         </div>
 
-        <div className={styles.workspaceStage} id="preview">
-          <div className={styles.stageGlow} aria-hidden="true" />
-          <div className={styles.workspaceChrome}>
-            <span className={styles.chromeDot} />
-            <span className={styles.chromeDot} />
-            <span className={styles.chromeDot} />
-            <p className={styles.workspaceUrl}>lantern / guest preview</p>
-          </div>
+        <Card padding="lg" className={styles.heroPanel}>
+          <p className={styles.panelEyebrow}>Recommended path</p>
+          <h2 className={styles.panelTitle}>What you can test now</h2>
+          <p className={styles.panelSummary}>
+            Sign in, create a household, link Plaid Sandbox institutions,
+            inspect transactions, and open named queries. Authentication and
+            household workflows are live; public bank linking uses sandbox
+            institutions.
+          </p>
 
-          <div className={styles.workspaceFrame}>
-            <div className={styles.workspaceHeader}>
-              <div>
-                <p className={styles.mockLabel}>Demo workspace</p>
-                <h2 className={styles.mockTitle}>Illustrative household planning view</h2>
-              </div>
-              <div className={styles.headerMeta}>
-                <span className={styles.statusBadge}>Plaid Sandbox linked</span>
-                <span className={styles.inlineMeta}>Sample household data</span>
-              </div>
-            </div>
-
-            <div className={styles.mockMetrics}>
-              <Card padding="md" className={styles.metricCard}>
-                <p className={styles.metricLabel}>Accounts linked</p>
-                <strong className={styles.metricValue}>4</strong>
-              </Card>
-              <Card padding="md" className={styles.metricCard}>
-                <p className={styles.metricLabel}>Monthly free cash</p>
-                <strong className={styles.metricValue}>$2,184</strong>
-              </Card>
-              <Card padding="md" className={styles.metricCard}>
-                <p className={styles.metricLabel}>Saved Named Queries</p>
-                <strong className={styles.metricValue}>6</strong>
-              </Card>
-            </div>
-
-            <div className={styles.workspaceGrid}>
-              <Card padding="lg" className={styles.insightCard}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <p className={styles.sectionLabel}>Featured view</p>
-                    <h3>Prototype monthly cash summary</h3>
-                  </div>
-                  <span className={styles.inlineBadge}>Named Query</span>
-                </div>
-                <div className={styles.insightValueRow}>
-                  <strong className={styles.insightValue}>$2,184</strong>
-                  <span className={styles.insightDelta}>+12% vs last month</span>
-                </div>
-                <p className={styles.insightSummary}>
-                  This staged example shows the kind of household-level summary
-                  Lantern is designed to support through reusable queries.
-                </p>
-                <div className={styles.chartBars} aria-hidden="true">
-                  <span style={{ height: "46%" }} />
-                  <span style={{ height: "58%" }} />
-                  <span style={{ height: "66%" }} />
-                  <span style={{ height: "80%" }} />
-                  <span style={{ height: "74%" }} />
-                  <span style={{ height: "88%" }} />
-                </div>
-                <div className={styles.queryBox}>
-                  <div className={styles.queryHeader}>
-                    <span className={styles.queryBadge}>Named Query</span>
-                    <span className={styles.queryState}>Validated read-only SQL</span>
-                  </div>
-                  <code className={styles.querySnippet}>
-                    SELECT month, income - fixed_spend - flexible_spend AS
-                    free_cash FROM household_cash_flow
-                  </code>
-                </div>
-              </Card>
-
-              <div className={styles.sideColumn}>
-                <Card padding="md" className={styles.mockCard}>
-                  <div className={styles.cardHeader}>
-                    <div>
-                      <p className={styles.sectionLabel}>Saved views</p>
-                      <h3>Planning workspace</h3>
-                    </div>
-                    <span className={styles.inlineBadge}>6 active</span>
-                  </div>
-                  <ul className={styles.savedViewList}>
-                    {savedViews.map((view) => (
-                      <li key={view}>
-                        <span>{view}</span>
-                        <span className={styles.savedViewMeta}>Ready</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-
-                <Card padding="md" className={styles.mockCard}>
-                  <div className={styles.cardHeader}>
-                    <div>
-                      <p className={styles.sectionLabel}>Recent activity</p>
-                      <h3>Synced transactions</h3>
-                    </div>
-                    <span className={styles.inlineBadge}>Latest import</span>
-                  </div>
-                  <ul className={styles.transactionList}>
-                    {sampleTransactions.map((transaction) => (
-                      <li key={`${transaction.name}-${transaction.account}`}>
-                        <div>
-                          <strong>{transaction.name}</strong>
-                          <p>{transaction.account}</p>
-                        </div>
-                        <span>{transaction.amount}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
+          <ol className={styles.pathList}>
+            {quickPath.map((item, index) => (
+              <li key={item}>
+                <span className={styles.pathIndex}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ol>
+        </Card>
       </section>
 
-      <section className={styles.band}>
-        <div className={styles.bandHeader}>
-          <p className={styles.bandEyebrow}>Workflow</p>
-          <h2>What the prototype is aiming at</h2>
+      <section className={styles.walkthrough} id="walkthrough">
+        <div className={styles.sectionHeader}>
+          <p className={styles.sectionEyebrow}>Public walkthrough</p>
+          <h2>Follow the app from entry to payoff</h2>
           <p>
-            The product direction is still planning and visibility, but this
-            page should reflect the current state honestly: a strong interface
-            concept backed by a partial implementation.
+            This sequence mirrors the real app flow. The layout is ready for
+            production screenshots; these slots mark the app states to capture.
           </p>
         </div>
-        <div className={styles.workflowGrid}>
-          {workflowSteps.map((step, index) => (
-            <Card key={step.title} className={styles.workflowCard}>
-              <span className={styles.stepNumber}>
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <h3>{step.title}</h3>
-              <p>{step.description}</p>
+
+        <div className={styles.stepList}>
+          {walkthroughSteps.map((step) => (
+            <Card key={step.number} padding="lg" className={styles.stepCard}>
+              <div className={styles.stepCopy}>
+                <div className={styles.stepHeading}>
+                  <span className={styles.stepNumber}>{step.number}</span>
+                  <div>
+                    <p className={styles.stepEyebrow}>{step.eyebrow}</p>
+                    <h3>{step.title}</h3>
+                  </div>
+                </div>
+
+                <p className={styles.stepDescription}>{step.description}</p>
+
+                {step.annotations ? (
+                  <div className={styles.annotationList}>
+                    {step.annotations.map((annotation) => (
+                      <div key={annotation.label} className={styles.annotation}>
+                        <strong>{annotation.label}</strong>
+                        <p>{annotation.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <figure className={styles.visualSlot}>
+                <div className={styles.visualChrome}>
+                  <span className={styles.chromeDot} />
+                  <span className={styles.chromeDot} />
+                  <span className={styles.chromeDot} />
+                  <p>Capture state</p>
+                </div>
+                <div className={styles.visualSurface}>
+                  <p className={styles.slotLabel}>Screenshot slot</p>
+                  <strong className={styles.slotTitle}>{step.slotTitle}</strong>
+                  <span className={styles.slotNote}>{step.slotNote}</span>
+                </div>
+              </figure>
             </Card>
           ))}
         </div>
       </section>
 
-      <section className={styles.band}>
-        <div className={styles.bandHeader}>
-          <p className={styles.bandEyebrow}>Implementation</p>
-          <h2>Implemented foundation, not full product depth</h2>
+      <section className={styles.receipts}>
+        <div className={styles.sectionHeader}>
+          <p className={styles.sectionEyebrow}>Engineering receipts</p>
+          <h2>Inspect the implementation directly</h2>
           <p>
-            The public preview is intentionally sandboxed, and the backend is
-            still incomplete. What exists today is the foundation: scoped data
-            access, query validation, Plaid integration paths, and deployment
-            isolation.
+            These are entry points into the actual product, API, and ops
+            material. The goal here is verification, not marketing copy.
           </p>
         </div>
 
-        <div className={styles.evidenceGrid}>
-          <Card className={styles.evidenceCard}>
-            <div className={styles.cardHeader}>
-              <div>
-                <p className={styles.sectionLabel}>Public preview</p>
-                <h3>How the sandbox is constrained</h3>
+        <div className={styles.receiptGrid}>
+          {receiptCards.map((card) => (
+            <Card key={card.title} padding="lg" className={styles.receiptCard}>
+              <p className={styles.receiptEyebrow}>{card.eyebrow}</p>
+              <h3>{card.title}</h3>
+              <p className={styles.receiptDescription}>{card.description}</p>
+              <div className={styles.receiptLinks}>
+                {card.links.map((link) => (
+                  <a
+                    key={link.label}
+                    className={styles.receiptLink}
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {link.label}
+                  </a>
+                ))}
               </div>
-              <span className={styles.inlineBadge}>Safe for review</span>
-            </div>
-            <ul className={styles.stackList}>
-              {implementationReceipts.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card className={styles.evidenceCard}>
-            <div className={styles.cardHeader}>
-              <div>
-                <p className={styles.sectionLabel}>What to inspect</p>
-                <h3>Where the real implementation lives</h3>
-              </div>
-              <span className={styles.inlineBadge}>Repo guide</span>
-            </div>
-            <div className={styles.receiptList}>
-              <div className={styles.receiptItem}>
-                <strong>Frontend product surface</strong>
-                <p>Typed React routes, auth flows, and dashboard-oriented UI composition.</p>
-              </div>
-              <div className={styles.receiptItem}>
-                <strong>Backend boundaries</strong>
-                <p>FastAPI modules, household scoping, and API contracts for viewer state.</p>
-              </div>
-              <div className={styles.receiptItem}>
-                <strong>Named Query pipeline</strong>
-                <p>LLM-assisted query drafting, validation, and read-only execution guardrails.</p>
-              </div>
-            </div>
-            <a
-              className={styles.repoLink}
-              href="https://github.com/JiaqiZhao2004/lantern-public"
-              target="_blank"
-              rel="noreferrer"
-            >
-              See how it&apos;s built
-            </a>
-          </Card>
+            </Card>
+          ))}
         </div>
+      </section>
+
+      <section className={styles.closing}>
+        <Card padding="lg" className={styles.closingCard}>
+          <p className={styles.sectionEyebrow}>Try it yourself</p>
+          <h2>Use the public app when you are ready to verify the flow.</h2>
+          <p>
+            Real sign-in, household setup, and app workflows are available in
+            the public environment. Financial institution linking stays on Plaid
+            Sandbox.
+          </p>
+          <div className={styles.closingActions}>
+            <ClosingAction />
+          </div>
+        </Card>
       </section>
     </main>
   );

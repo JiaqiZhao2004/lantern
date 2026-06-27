@@ -61,15 +61,20 @@ describe("AppRoutes", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "A prototype for a shared finance workspace",
+        name: "See household finances clearly",
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Try preview" })
-    ).toHaveAttribute("href", "#preview");
+      screen.getByRole("link", { name: "Sign in to explore" })
+    ).toHaveAttribute("href", "/login");
     expect(
-      screen.getAllByRole("link", { name: "See how it's built" })[0]
-    ).toHaveAttribute("href", "https://github.com/JiaqiZhao2004/lantern-public");
+      screen.getByRole("link", { name: "See walkthrough" })
+    ).toHaveAttribute("href", "#walkthrough");
+    expect(
+      screen.getByText(
+        "Lantern supports real sign-in, household setup, and app workflows; the public environment uses Plaid Sandbox for financial institution linking."
+      )
+    ).toBeInTheDocument();
     expect(mockedUseViewerQuery).not.toHaveBeenCalled();
     expect(mockedUseMembershipQuery).not.toHaveBeenCalled();
   });
@@ -103,7 +108,7 @@ describe("AppRoutes", () => {
 
     expect(screen.getByText("Checking access")).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Try preview" })
+      screen.queryByRole("link", { name: "Sign in to explore" })
     ).not.toBeInTheDocument();
   });
 
