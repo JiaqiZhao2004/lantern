@@ -1040,8 +1040,18 @@
             "type": "prometheus",
             "uid": "Prometheus"
           },
-          "expr": "(time() - lantern_backup_last_success_timestamp_seconds{tier=\"six-hourly\",stage=\"local\"}) / 3600",
+          "expr": "(time() - lantern_backup_last_success_timestamp_seconds{environment=\"prod\",tier=\"six-hourly\",stage=\"local\"}) / 3600",
+          "legendFormat": "Production",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "expr": "(time() - lantern_backup_last_success_timestamp_seconds{environment=\"public\",tier=\"six-hourly\",stage=\"local\"}) / 3600",
+          "legendFormat": "Public",
+          "refId": "B"
         }
       ],
       "title": "Shared Six-Hour Backup Age",
