@@ -5,6 +5,7 @@ export type AppErrorCode =
   | "auth/invalid-credential"
   | "auth/multi-factor-auth-required"
   | "auth/too-many-requests"
+  | "api/forbidden"
   | "api/not-found"
   | "api/request-failed"
   | "api/unauthorized"
@@ -51,6 +52,15 @@ export function normalizeApiError(error: unknown): AppError {
         error,
         status
       );
+    }
+
+    if (status === 403) {
+      const detail = error.response?.data?.detail;
+      const message =
+        typeof detail === "string"
+          ? detail
+          : "You do not have access to this deployment.";
+      return new AppError("api/forbidden", message, error, status);
     }
 
     if (status === 404) {

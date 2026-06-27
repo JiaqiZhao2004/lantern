@@ -2,7 +2,9 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import formStyles from "@/features/auth/components/AuthForm.module.css";
+import { RestrictedAccessPanel } from "@/features/auth/components/RestrictedAccessPanel";
 import { SocialAuthOptions } from "@/features/auth/components/SocialAuthOptions";
+import { isRestrictedAuthMode } from "@/features/auth/config/access";
 import {
   registerWithEmail,
   sendVerificationEmail,
@@ -21,6 +23,25 @@ export default function RegisterPage() {
   const [isProviderSubmitting, setIsProviderSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refresh } = useAuthSession();
+
+  if (isRestrictedAuthMode) {
+    return (
+      <AuthPageLayout
+        title="Request access"
+        description="Self-service registration is disabled on this production Lantern deployment."
+        footer={
+          <>
+            Already approved?{" "}
+            <Link className={formStyles.footerLink} to="/login">
+              Sign in
+            </Link>
+          </>
+        }
+      >
+        <RestrictedAccessPanel />
+      </AuthPageLayout>
+    );
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

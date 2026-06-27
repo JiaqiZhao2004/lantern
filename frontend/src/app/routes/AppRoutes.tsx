@@ -8,6 +8,7 @@ import SettingsPage from "@/features/settings/pages/SettingsPage";
 import NamedQueryEditorPage from "@/features/named-queries/pages/NamedQueryEditorPage";
 import TransactionsPage from "@/features/transactions/pages/TransactionsPage";
 import PublicOverviewPage from "@/features/public-overview/pages/PublicOverviewPage";
+import { isRestrictedAuthMode } from "@/features/auth/config/access";
 import {
   EmailVerificationLayout,
   HouseholdRequiredLayout,
@@ -23,7 +24,9 @@ export function AppRoutes() {
 
       <Route element={<PublicOnlyLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {!isRestrictedAuthMode ? (
+          <Route path="/register" element={<RegisterPage />} />
+        ) : null}
       </Route>
 
       <Route element={<EmailVerificationLayout />}>

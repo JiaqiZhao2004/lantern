@@ -12,6 +12,7 @@ import {
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
 import { useMembershipQuery } from "@/features/household/api/queries";
 import { useViewerQuery } from "@/features/viewer/api/queries";
+import { AppError } from "@/shared/api/appError";
 
 vi.mock("@/features/auth/session/AuthSessionProvider", () => ({
   useAuthSession: vi.fn(),
@@ -138,6 +139,39 @@ describe("Route layouts", () => {
       element: <VerifiedSessionLayout />,
     });
     expect(await screen.findByText("login page")).toBeInTheDocument();
+  });
+
+  it("shows the restricted access page when viewer bootstrap is forbidden", async () => {
+    mockedUseAuthSession.mockReturnValue({
+      isLoading: false,
+      logout: vi.fn(),
+      refresh: vi.fn(),
+      user: { emailVerified: true, email: "viewer@example.com" },
+    } as never);
+    mockedUseViewerQuery.mockReturnValue(
+      buildQueryState({
+        error: new AppError(
+          "api/forbidden",
+          "Access to this Lantern deployment is limited to approved email addresses. Contact Roy Zhao for access.",
+          undefined,
+          403
+        ),
+        isError: true,
+      }) as any
+    );
+
+    renderWithRoutes({
+      initialEntry: "/dashboard",
+      outletPath: "/dashboard",
+      outletLabel: "dashboard page",
+      element: <VerifiedSessionLayout />,
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "This Lantern site is invite-only",
+      })
+    ).toBeInTheDocument();
   });
 
   it("redirects verified members away from the setup route", async () => {

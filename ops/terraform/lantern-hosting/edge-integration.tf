@@ -1,6 +1,8 @@
 locals {
-  backend_origin_domain_name = "lantern-api.${var.cloudflare_zone_name}"
-  backend_origin_id          = "lantern-backend-origin"
+  backend_origin_ids = {
+    for env_name in keys(var.backend_origin_domain_names) :
+    env_name => "lantern-${env_name}-backend-origin"
+  }
 }
 
 data "aws_cloudfront_cache_policy" "api_caching_disabled" {
@@ -47,10 +49,12 @@ resource "cloudflare_zero_trust_access_policy" "backend_origin" {
 }
 
 resource "cloudflare_zero_trust_access_application" "backend_origin" {
+  for_each = var.backend_origin_domain_names
+
   account_id                = var.cloudflare_account_id
-  name                      = "Lantern Backend Origin"
+  name                      = "Lantern ${title(each.key)} Backend Origin"
   type                      = "self_hosted"
-  domain                    = local.backend_origin_domain_name
+  domain                    = each.value
   service_auth_401_redirect = true
   session_duration          = "24h"
 

@@ -1,7 +1,9 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
+import { RestrictedAccessPage } from "@/features/auth/components/RestrictedAccessPage";
 import { useMembershipQuery } from "@/features/household/api/queries";
 import { useViewerQuery } from "@/features/viewer/api/queries";
+import { isAppError } from "@/shared/api/appError";
 import { Button } from "@/shared/ui/Button/Button";
 import { FullPageState } from "@/shared/ui/FullPageState/FullPageState";
 
@@ -25,8 +27,18 @@ function QueryErrorState({
   );
 }
 
+function RestrictedAccessState({
+  description,
+  onLogout,
+}: {
+  description: string;
+  onLogout: () => Promise<void>;
+}) {
+  return <RestrictedAccessPage detail={description} onLogout={onLogout} />;
+}
+
 export function PublicOnlyLayout() {
-  const { isLoading, user } = useAuthSession();
+  const { isLoading, logout, user } = useAuthSession();
   const shouldBootstrap = Boolean(user?.emailVerified);
   const viewerQuery = useViewerQuery({ enabled: shouldBootstrap });
   const membershipQuery = useMembershipQuery({
@@ -50,6 +62,15 @@ export function PublicOnlyLayout() {
   }
 
   if (viewerQuery.isError) {
+    if (isAppError(viewerQuery.error) && viewerQuery.error.code === "api/forbidden") {
+      return (
+        <RestrictedAccessState
+          description={viewerQuery.error.message}
+          onLogout={logout}
+        />
+      );
+    }
+
     return (
       <QueryErrorState
         description="We could not load your profile. Please try again."
@@ -98,7 +119,7 @@ export function EmailVerificationLayout() {
 }
 
 export function VerifiedSessionLayout() {
-  const { isLoading, user } = useAuthSession();
+  const { isLoading, logout, user } = useAuthSession();
   const viewerQuery = useViewerQuery({ enabled: Boolean(user?.emailVerified) });
 
   if (isLoading) {
@@ -118,6 +139,15 @@ export function VerifiedSessionLayout() {
   }
 
   if (viewerQuery.isError) {
+    if (isAppError(viewerQuery.error) && viewerQuery.error.code === "api/forbidden") {
+      return (
+        <RestrictedAccessState
+          description={viewerQuery.error.message}
+          onLogout={logout}
+        />
+      );
+    }
+
     return (
       <QueryErrorState
         description="We could not load your account details."

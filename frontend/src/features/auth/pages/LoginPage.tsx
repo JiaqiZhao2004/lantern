@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import formStyles from "@/features/auth/components/AuthForm.module.css";
+import { RestrictedAccessPanel } from "@/features/auth/components/RestrictedAccessPanel";
+import { isRestrictedAuthMode } from "@/features/auth/config/access";
 import { SocialAuthOptions } from "@/features/auth/components/SocialAuthOptions";
 import { loginWithEmail } from "@/features/auth/api/firebase/client";
 import { isAppError } from "@/shared/api/appError";
@@ -37,17 +39,29 @@ export default function LoginPage() {
   return (
     <AuthPageLayout
       title="Sign in"
-      description="Use your Lantern account to get back to your dashboard."
+      description={
+        isRestrictedAuthMode
+          ? "This production Lantern deployment is limited to approved email addresses."
+          : "Use your Lantern account to get back to your dashboard."
+      }
       footer={
-        <>
-          Don&apos;t have an account?{" "}
-          <Link className={formStyles.footerLink} to="/register">
-            Register
-          </Link>
-        </>
+        isRestrictedAuthMode ? (
+          "Need access? Contact the site owner to be added to the allowlist."
+        ) : (
+          <>
+            Don&apos;t have an account?{" "}
+            <Link className={formStyles.footerLink} to="/register">
+              Register
+            </Link>
+          </>
+        )
       }
     >
       {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
+
+      {isRestrictedAuthMode ? (
+        <RestrictedAccessPanel showSignInHint />
+      ) : null}
 
       <SocialAuthOptions
         disabled={isSubmitting || isProviderSubmitting}

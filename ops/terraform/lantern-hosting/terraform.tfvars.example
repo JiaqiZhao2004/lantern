@@ -1,8 +1,18 @@
 aws_region            = "us-east-2"
 cloudflare_account_id = "replace-me"
 cloudflare_zone_name  = "replace-me"
-frontend_domain_name  = "replace-me"
-frontend_bucket_name  = "lantern-frontend"
+frontend_domain_names = {
+  production = "lantern.royzhao.dev"
+  public = "lantern-public.royzhao.dev"
+}
+backend_origin_domain_names = {
+  production = "lantern-api.royzhao.dev"
+  public = "lantern-public-api.royzhao.dev"
+}
+frontend_bucket_names = {
+  production = "lantern-frontend-production"
+  public = "lantern-frontend-public"
+}
 github_repository     = "replace-me"
 deploy_branch         = "replace-me"
 

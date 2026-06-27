@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { accessContact, isRestrictedAuthMode } from "@/features/auth/config/access";
 import styles from "@/features/public-overview/pages/PublicOverviewPage.module.css";
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
 import { Card } from "@/shared/ui/Card/Card";
@@ -53,7 +54,7 @@ function PrimaryAction() {
 
   return (
     <Link className={styles.primaryAction} to="/login">
-      Sign in to explore
+      {isRestrictedAuthMode ? "Request access or sign in" : "Sign in to explore"}
     </Link>
   );
 }
@@ -79,7 +80,7 @@ function ClosingAction() {
 
   return (
     <Link className={styles.primaryAction} to="/login">
-      Sign in to verify the flow
+      {isRestrictedAuthMode ? "Request access or sign in" : "Sign in to verify the flow"}
     </Link>
   );
 }
@@ -263,9 +264,9 @@ export default function PublicOverviewPage() {
             history, and reusable queries.
           </p>
           <p className={styles.environmentNote}>
-            Lantern supports real sign-in, household setup, and app workflows;
-            the public environment uses Plaid Sandbox for financial institution
-            linking.
+            {isRestrictedAuthMode
+              ? `This Lantern deployment is invite-only. Approved emails can sign in; everyone else should contact ${accessContact}.`
+              : "Lantern supports real sign-in, household setup, and app workflows; the public environment uses Plaid Sandbox for financial institution linking."}
           </p>
 
           <div className={styles.actionRow}>
@@ -276,9 +277,9 @@ export default function PublicOverviewPage() {
           </div>
 
           <p className={styles.pathNote}>
-            Built solo as a full-stack systems project. Start with the
-            walkthrough, then sign in if you want to exercise the full flow
-            yourself.
+            {isRestrictedAuthMode
+              ? "Built solo as a full-stack systems project. Start with the walkthrough, then request access if you need the private production flow."
+              : "Built solo as a full-stack systems project. Start with the walkthrough, then sign in if you want to exercise the full flow yourself."}
           </p>
 
           <div className={styles.featureList} aria-label="Lantern capabilities">
@@ -404,9 +405,9 @@ export default function PublicOverviewPage() {
           <p className={styles.sectionEyebrow}>Try it yourself</p>
           <h2>Use the public app when you are ready to verify the flow.</h2>
           <p>
-            Real sign-in, household setup, and app workflows are available in
-            the public environment. Financial institution linking stays on Plaid
-            Sandbox.
+            {isRestrictedAuthMode
+              ? `This deployment is limited to approved users. If you need access, contact ${accessContact}.`
+              : "Real sign-in, household setup, and app workflows are available in the public environment. Financial institution linking stays on Plaid Sandbox."}
           </p>
           <div className={styles.closingActions}>
             <ClosingAction />

@@ -2,10 +2,10 @@ locals {
   stack_name = "lantern-hosting"
   origin_id  = "lantern-frontend-s3"
 
-  frontend_record_name = trimsuffix(
-    var.frontend_domain_name,
-    ".${var.cloudflare_zone_name}"
-  )
+  frontend_record_names = {
+    for env_name, domain_name in var.frontend_domain_names :
+    env_name => trimsuffix(domain_name, ".${var.cloudflare_zone_name}")
+  }
 
   common_tags = merge(
     {
@@ -67,7 +67,10 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "s3:ListBucket",
     ]
 
-    resources = [aws_s3_bucket.frontend.arn]
+    resources = [
+      for bucket in aws_s3_bucket.frontend :
+      bucket.arn
+    ]
   }
 
   statement {
@@ -80,7 +83,10 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "s3:PutObject",
     ]
 
-    resources = ["${aws_s3_bucket.frontend.arn}/*"]
+    resources = [
+      for bucket in aws_s3_bucket.frontend :
+      "${bucket.arn}/*"
+    ]
   }
 
   statement {
@@ -94,12 +100,15 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     ]
 
     resources = [
-      "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend.id}",
+      for distribution in aws_cloudfront_distribution.frontend :
+      "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${distribution.id}"
     ]
   }
 }
 
 data "aws_iam_policy_document" "frontend_bucket" {
+  for_each = var.frontend_bucket_names
+
   statement {
     sid    = "AllowCloudFrontReadOnly"
     effect = "Allow"
@@ -111,12 +120,12 @@ data "aws_iam_policy_document" "frontend_bucket" {
 
     actions = ["s3:GetObject"]
 
-    resources = ["${aws_s3_bucket.frontend.arn}/*"]
+    resources = ["${aws_s3_bucket.frontend[each.key].arn}/*"]
 
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.frontend.arn]
+      values   = [aws_cloudfront_distribution.frontend[each.key].arn]
     }
   }
 }
@@ -128,12 +137,16 @@ data "cloudflare_zone" "frontend" {
 }
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = var.frontend_bucket_name
+  for_each = var.frontend_bucket_names
+
+  bucket = each.value
   tags   = local.common_tags
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+  for_each = var.frontend_bucket_names
+
+  bucket = aws_s3_bucket.frontend[each.key].id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -143,7 +156,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+  for_each = var.frontend_bucket_names
+
+  bucket = aws_s3_bucket.frontend[each.key].id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -152,7 +167,9 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
 }
 
 resource "aws_s3_bucket_ownership_controls" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+  for_each = var.frontend_bucket_names
+
+  bucket = aws_s3_bucket.frontend[each.key].id
 
   rule {
     object_ownership = "BucketOwnerEnforced"
@@ -160,8 +177,12 @@ resource "aws_s3_bucket_ownership_controls" "frontend" {
 }
 
 resource "aws_acm_certificate" "frontend" {
-  provider          = aws.us_east_1
-  domain_name       = var.frontend_domain_name
+  provider    = aws.us_east_1
+  domain_name = var.frontend_domain_names["production"]
+  subject_alternative_names = [
+    for env_name, domain_name in var.frontend_domain_names :
+    domain_name if env_name != "production"
+  ]
   validation_method = "DNS"
   tags              = local.common_tags
 
@@ -262,23 +283,25 @@ resource "aws_cloudfront_function" "spa_rewrite" {
 }
 
 resource "aws_cloudfront_distribution" "frontend" {
+  for_each = var.frontend_domain_names
+
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "Lantern frontend distribution."
+  comment             = "Lantern ${each.key} frontend distribution."
   default_root_object = "index.html"
-  aliases             = [var.frontend_domain_name]
+  aliases             = [each.value]
   price_class         = "PriceClass_100"
   tags                = local.common_tags
 
   origin {
-    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    domain_name              = aws_s3_bucket.frontend[each.key].bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
     origin_id                = local.origin_id
   }
 
   origin {
-    domain_name = local.backend_origin_domain_name
-    origin_id   = local.backend_origin_id
+    domain_name = var.backend_origin_domain_names[each.key]
+    origin_id   = local.backend_origin_ids[each.key]
 
     custom_header {
       name  = "CF-Access-Client-Id"
@@ -327,7 +350,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD", "OPTIONS"]
     compress         = true
-    target_origin_id = local.backend_origin_id
+    target_origin_id = local.backend_origin_ids[each.key]
 
     viewer_protocol_policy     = "redirect-to-https"
     cache_policy_id            = data.aws_cloudfront_cache_policy.api_caching_disabled.id
@@ -349,17 +372,21 @@ resource "aws_cloudfront_distribution" "frontend" {
 }
 
 resource "aws_s3_bucket_policy" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-  policy = data.aws_iam_policy_document.frontend_bucket.json
+  for_each = var.frontend_bucket_names
+
+  bucket = aws_s3_bucket.frontend[each.key].id
+  policy = data.aws_iam_policy_document.frontend_bucket[each.key].json
 
   depends_on = [aws_s3_bucket_public_access_block.frontend]
 }
 
 resource "cloudflare_dns_record" "frontend" {
+  for_each = var.frontend_domain_names
+
   zone_id = data.cloudflare_zone.frontend.id
-  name    = local.frontend_record_name
+  name    = local.frontend_record_names[each.key]
   type    = "CNAME"
-  content = aws_cloudfront_distribution.frontend.domain_name
+  content = aws_cloudfront_distribution.frontend[each.key].domain_name
   ttl     = 1
   proxied = false
 }

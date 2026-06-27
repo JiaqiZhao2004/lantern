@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from src.modules.user import schemas
+from src.infrastructure.auth_access import ensure_identity_authorized
 from ..dependencies import (
     get_user_service,
     get_firebase_identity,
@@ -17,6 +18,8 @@ def get_or_create_me(
     firebase_identity: dict = Depends(get_firebase_identity),
     user_service: UserService = Depends(get_user_service),
 ):
+    ensure_identity_authorized(firebase_identity)
+
     try:
         user = user_service.get_or_create_me(db=db, firebase_identity=firebase_identity)
         db.commit()

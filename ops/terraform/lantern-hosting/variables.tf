@@ -18,14 +18,43 @@ variable "cloudflare_account_id" {
   }
 }
 
-variable "frontend_domain_name" {
-  description = "Public Lantern frontend hostname."
-  type        = string
+variable "frontend_domain_names" {
+  description = "Public Lantern frontend hostnames keyed by environment name."
+  type        = map(string)
+
+  validation {
+    condition = alltrue([
+      contains(keys(var.frontend_domain_names), "production"),
+      contains(keys(var.frontend_domain_names), "public"),
+    ])
+    error_message = "frontend_domain_names must include at least the production and public hostnames."
+  }
 }
 
-variable "frontend_bucket_name" {
-  description = "Private S3 bucket that stores the built frontend assets."
-  type        = string
+variable "backend_origin_domain_names" {
+  description = "Tunnel-backed backend origin hostnames keyed by environment name."
+  type        = map(string)
+
+  validation {
+    condition = alltrue([
+      contains(keys(var.backend_origin_domain_names), "production"),
+      contains(keys(var.backend_origin_domain_names), "public"),
+    ])
+    error_message = "backend_origin_domain_names must include at least the production and public origin hostnames."
+  }
+}
+
+variable "frontend_bucket_names" {
+  description = "Private S3 bucket names keyed by frontend environment."
+  type        = map(string)
+
+  validation {
+    condition = alltrue([
+      contains(keys(var.frontend_bucket_names), "production"),
+      contains(keys(var.frontend_bucket_names), "public"),
+    ])
+    error_message = "frontend_bucket_names must include at least the production and public bucket names."
+  }
 }
 
 variable "github_repository" {

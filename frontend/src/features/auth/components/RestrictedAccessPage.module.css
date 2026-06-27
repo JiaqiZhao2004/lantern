@@ -1,0 +1,15 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top left, rgba(229, 198, 154, 0.32), transparent 26rem),
+    radial-gradient(circle at top right, rgba(159, 184, 165, 0.24), transparent 24rem),
+    linear-gradient(180deg, #f6f0e6 0%, #f7f7f4 45%, #f2f5f8 100%);
+}
+
+.content {
+  width: min(42rem, 100%);
+}

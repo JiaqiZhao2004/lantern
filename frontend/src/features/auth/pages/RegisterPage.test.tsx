@@ -16,6 +16,11 @@ vi.mock("@/features/auth/api/firebase/client", () => ({
   sendVerificationEmail: vi.fn(),
 }));
 
+vi.mock("@/features/auth/config/access", () => ({
+  accessContact: "Roy Zhao",
+  isRestrictedAuthMode: false,
+}));
+
 vi.mock("@/features/auth/session/AuthSessionProvider", () => ({
   useAuthSession: vi.fn(),
 }));
@@ -102,5 +107,14 @@ describe("RegisterPage", () => {
       );
     });
     expect(mockedSendVerificationEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a sign-in link in open mode", () => {
+    renderRegisterPage();
+
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/login"
+    );
   });
 });

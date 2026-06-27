@@ -11,6 +11,7 @@ from src.infrastructure import (
     KMSService,
     PlaidClient,
 )
+from src.infrastructure.auth_access import ensure_identity_authorized
 from src.modules.sync_jobs.repository import SyncJobsRepository
 from src.modules.sync_jobs.request_service import SyncJobsRequestService
 from src.modules.sync_jobs.execution_service import SyncJobsExecutionService
@@ -73,6 +74,8 @@ def get_current_user(
     firebase_identity: dict = Depends(get_firebase_identity),
     user_repo: UserRepository = Depends(get_user_repository),
 ):
+    ensure_identity_authorized(firebase_identity)
+
     firebase_uid = firebase_identity.get("uid")
 
     if not firebase_uid:

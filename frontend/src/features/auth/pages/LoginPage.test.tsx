@@ -13,6 +13,11 @@ vi.mock("@/features/auth/api/firebase/client", () => ({
   loginWithGoogle: vi.fn(),
 }));
 
+vi.mock("@/features/auth/config/access", () => ({
+  accessContact: "Roy Zhao",
+  isRestrictedAuthMode: false,
+}));
+
 const mockedLoginWithEmail = vi.mocked(loginWithEmail);
 const mockedLoginWithGoogle = vi.mocked(loginWithGoogle);
 
@@ -79,5 +84,14 @@ describe("LoginPage", () => {
         "correct-password"
       );
     });
+  });
+
+  it("shows a register link in open mode", () => {
+    renderLoginPage();
+
+    expect(screen.getByRole("link", { name: "Register" })).toHaveAttribute(
+      "href",
+      "/register"
+    );
   });
 });

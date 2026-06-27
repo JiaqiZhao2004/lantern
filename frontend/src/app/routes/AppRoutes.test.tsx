@@ -6,8 +6,17 @@ import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
 import { useMembershipQuery } from "@/features/household/api/queries";
 import { useViewerQuery } from "@/features/viewer/api/queries";
 
+let isRestrictedAuthMode = false;
+
 vi.mock("@/features/auth/session/AuthSessionProvider", () => ({
   useAuthSession: vi.fn(),
+}));
+
+vi.mock("@/features/auth/config/access", () => ({
+  accessContact: "Roy Zhao",
+  get isRestrictedAuthMode() {
+    return isRestrictedAuthMode;
+  },
 }));
 
 vi.mock("@/features/viewer/api/queries", () => ({
@@ -32,6 +41,7 @@ function renderRoutes(initialEntry: string) {
 
 describe("AppRoutes", () => {
   beforeEach(() => {
+    isRestrictedAuthMode = false;
     mockedUseAuthSession.mockReturnValue({
       isLoading: false,
       logout: vi.fn(),
@@ -125,6 +135,18 @@ describe("AppRoutes", () => {
 
     expect(
       await screen.findByRole("heading", { name: "Sign in" })
+    ).toBeInTheDocument();
+  });
+
+  it("removes the register route in restricted mode", async () => {
+    isRestrictedAuthMode = true;
+
+    renderRoutes("/register");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "See household finances clearly",
+      })
     ).toBeInTheDocument();
   });
 });
