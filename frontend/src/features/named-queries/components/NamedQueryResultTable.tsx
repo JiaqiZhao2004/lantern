@@ -7,9 +7,35 @@ type Props = {
   truncated: boolean;
 };
 
+function isSingleValueResult(
+  columns: ColumnMeta[],
+  rows: Record<string, unknown>[]
+) {
+  return columns.length === 1 && rows.length === 1;
+}
+
 export function NamedQueryResultTable({ columns, rows, truncated }: Props) {
   if (rows.length === 0) {
     return <p className={styles.empty}>No results.</p>;
+  }
+
+  if (isSingleValueResult(columns, rows)) {
+    const label = columns[0].name;
+    const value = rows[0][label];
+
+    return (
+      <div>
+        <div className={styles.singleValue}>
+          <p className={styles.singleValueNumber}>{String(value ?? "")}</p>
+          <p className={styles.singleValueLabel}>{label}</p>
+        </div>
+        {truncated && (
+          <p className={styles.truncated}>
+            Showing the first 500 rows — refine your query to see more.
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
