@@ -3,7 +3,7 @@ import styles from "@/features/public-overview/pages/PublicOverviewPage.module.c
 import { useAuthSession } from "@/features/auth/session/AuthSessionProvider";
 import { Card } from "@/shared/ui/Card/Card";
 
-const REPO_BASE_URL = "https://github.com/JiaqiZhao2004/lantern-public";
+const REPO_BASE_URL = "https://github.com/JiaqiZhao2004/lantern";
 
 function repoDoc(path: string) {
   return `${REPO_BASE_URL}/blob/main/${path}`;
