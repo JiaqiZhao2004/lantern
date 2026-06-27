@@ -93,7 +93,7 @@ services:
     env_file:
       - ${APP_STACK_ENV_DIR:-.}/db.env
     volumes:
-      - ${POSTGRES_VOLUME_NAME:-lantern-postgres-data}:/var/lib/postgresql
+      - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
@@ -107,7 +107,8 @@ services:
     restart: unless-stopped
 
 volumes:
-  ${POSTGRES_VOLUME_NAME:-lantern-postgres-data}:
+  postgres-data:
+    name: ${POSTGRES_VOLUME_NAME:-lantern-postgres-data}
 
 networks:
   backend-shared:
