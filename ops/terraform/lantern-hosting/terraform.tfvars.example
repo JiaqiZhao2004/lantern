@@ -1,0 +1,9 @@
+aws_region            = "us-east-2"
+cloudflare_account_id = "replace-me"
+cloudflare_zone_name  = "replace-me"
+frontend_domain_name  = "replace-me"
+frontend_bucket_name  = "lantern-frontend"
+github_repository     = "replace-me"
+deploy_branch         = "replace-me"
+
+tags = {}

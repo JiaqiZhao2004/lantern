@@ -25,6 +25,7 @@ backend/postgres-data*/
 *.tfstate
 *.tfstate.*
 *.tfplan
+terraform.tfvars
 crash.log
 override.tf
 override.tf.json
