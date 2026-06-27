@@ -2,10 +2,14 @@ tunnel: __TUNNEL_ID__
 credentials-file: __CREDENTIALS_FILE__
 
 ingress:
-  - hostname: __BACKEND_PUBLIC_HOSTNAME__
-    # Keep this aligned with NGINX_BIND_PORT in the target
-    # ../app-stack/env/<environment>/compose.env and
-    # with the loopback validation commands in README.md if you change the
-    # local origin port.
-    service: __LOCAL_ORIGIN__
+  - hostname: __PRODUCTION_HOSTNAME__
+    # Keep this aligned with NGINX_BIND_PORT in
+    # ../app-stack/env/prod/compose.env and with the validation commands in
+    # README.md if you change the local origin port.
+    service: __PRODUCTION_LOCAL_ORIGIN__
+  - hostname: __PUBLIC_HOSTNAME__
+    # Keep this aligned with NGINX_BIND_PORT in
+    # ../app-stack/env/public/compose.env and with the validation commands in
+    # README.md if you change the local origin port.
+    service: __PUBLIC_LOCAL_ORIGIN__
   - service: http_status:404
