@@ -3,6 +3,7 @@ from .mapper import plaid_accounts_to_rows
 from .repository import AccountRepository
 from ..institution_connections.models import InstitutionConnection
 from ...infrastructure import Session, KMSService, PlaidClient
+from ...exceptions import NotFoundError
 from plaid.model.accounts_get_request import AccountsGetRequest
 
 
@@ -38,4 +39,26 @@ class AccountService:
     def list_household_accounts(self, db: Session, household_id: UUID):
         return self.account_repo.list_household_accounts(
             db=db, household_id=household_id
+        )
+
+    def set_query_tracking_enabled(
+        self,
+        db: Session,
+        *,
+        household_id: UUID,
+        account_id: UUID,
+        is_query_tracking_enabled: bool,
+    ):
+        account = self.account_repo.get_household_account(
+            db=db,
+            household_id=household_id,
+            account_id=account_id,
+        )
+        if account is None:
+            raise NotFoundError(detail="Account not found")
+
+        return self.account_repo.set_query_tracking_enabled(
+            db=db,
+            account=account,
+            is_query_tracking_enabled=is_query_tracking_enabled,
         )

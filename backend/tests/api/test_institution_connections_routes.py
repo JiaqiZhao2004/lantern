@@ -192,6 +192,46 @@ class RecordingConnectionService:
             raise self.error
 
 
+class RecordingMembershipService:
+    def __init__(self, household_id):
+        self.household_id = household_id
+
+    def get_my_membership(self, db, user_id):
+        return SimpleNamespace(household_id=self.household_id)
+
+
+class RecordingAccountService:
+    def __init__(self, error=None):
+        self.error = error
+        self.calls = []
+
+    def set_query_tracking_enabled(
+        self, db, household_id, account_id, is_query_tracking_enabled
+    ):
+        self.calls.append(
+            {
+                "db": db,
+                "household_id": household_id,
+                "account_id": account_id,
+                "is_query_tracking_enabled": is_query_tracking_enabled,
+            }
+        )
+        if self.error is not None:
+            raise self.error
+        return SimpleNamespace(
+            id=account_id,
+            mask="4321",
+            name="Checking",
+            official_name="Everyday Checking",
+            account_type="depository",
+            account_subtype="checking",
+            is_active=True,
+            is_hidden=False,
+            is_query_tracking_enabled=is_query_tracking_enabled,
+            display_order=0,
+        )
+
+
 def test_add_item_returns_service_unavailable_when_kms_credentials_are_missing():
     db = FakeTransactionalDb()
     app.dependency_overrides[plaid_routes.get_db] = lambda: db
@@ -274,5 +314,74 @@ def test_revoke_item_rolls_back_when_service_raises():
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Plaid unavailable"}
+    assert db.commits == 0
+    assert db.rollbacks == 1
+
+
+def test_update_account_tracking_returns_account_and_commits():
+    db = FakeTransactionalDb()
+    user_id = uuid4()
+    household_id = uuid4()
+    account_id = uuid4()
+    membership_service = RecordingMembershipService(household_id=household_id)
+    account_service = RecordingAccountService()
+    app.dependency_overrides[plaid_routes.get_db] = lambda: db
+    app.dependency_overrides[plaid_routes.get_current_user] = (
+        lambda: SimpleNamespace(id=user_id)
+    )
+    app.dependency_overrides[plaid_routes.get_membership_service] = (
+        lambda: membership_service
+    )
+    app.dependency_overrides[plaid_routes.get_account_service] = (
+        lambda: account_service
+    )
+
+    try:
+        response = TestClient(app).patch(
+            f"/api/v1/plaid/accounts/{account_id}",
+            json={"is_query_tracking_enabled": False},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(account_id)
+    assert response.json()["is_query_tracking_enabled"] is False
+    assert account_service.calls == [
+        {
+            "db": db,
+            "household_id": household_id,
+            "account_id": account_id,
+            "is_query_tracking_enabled": False,
+        }
+    ]
+    assert db.commits == 1
+    assert db.rollbacks == 0
+
+
+def test_update_account_tracking_rolls_back_when_service_raises():
+    db = FakeTransactionalDb()
+    account_id = uuid4()
+    app.dependency_overrides[plaid_routes.get_db] = lambda: db
+    app.dependency_overrides[plaid_routes.get_current_user] = (
+        lambda: SimpleNamespace(id=uuid4())
+    )
+    app.dependency_overrides[plaid_routes.get_membership_service] = (
+        lambda: RecordingMembershipService(household_id=uuid4())
+    )
+    app.dependency_overrides[plaid_routes.get_account_service] = (
+        lambda: RecordingAccountService(error=ServiceUnavailableError(detail="db unavailable"))
+    )
+
+    try:
+        response = TestClient(app).patch(
+            f"/api/v1/plaid/accounts/{account_id}",
+            json={"is_query_tracking_enabled": True},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "db unavailable"}
     assert db.commits == 0
     assert db.rollbacks == 1

@@ -39,6 +39,7 @@ class AccountRepository:
         owner_names: dict | None | object = _UNSET,
         is_active: bool | object = _UNSET,
         is_hidden: bool | object = _UNSET,
+        is_query_tracking_enabled: bool | object = _UNSET,
         display_order: int | None | object = _UNSET,
         last_balance_update_at: datetime | None | object = _UNSET,
     ) -> Account:
@@ -60,6 +61,7 @@ class AccountRepository:
             owner_names=owner_names,
             is_active=is_active,
             is_hidden=is_hidden,
+            is_query_tracking_enabled=is_query_tracking_enabled,
             display_order=display_order,
             last_balance_update_at=last_balance_update_at,
         )
@@ -134,6 +136,34 @@ class AccountRepository:
             .order_by(InstitutionConnection.created_at, Account.created_at)
             .all()
         )
+
+    def get_household_account(
+        self,
+        db: Session,
+        *,
+        household_id: UUID,
+        account_id: UUID,
+    ) -> Account | None:
+        return (
+            db.query(Account)
+            .join(Account.institution_connection)
+            .filter(
+                Account.id == account_id,
+                InstitutionConnection.household_id == household_id,
+            )
+            .first()
+        )
+
+    def set_query_tracking_enabled(
+        self,
+        db: Session,
+        *,
+        account: Account,
+        is_query_tracking_enabled: bool,
+    ) -> Account:
+        account.is_query_tracking_enabled = is_query_tracking_enabled
+        db.flush()
+        return account
 
     def mark_inactive_by_plaid_id(
         self,

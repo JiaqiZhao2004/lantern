@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     Form,
     Path,
@@ -39,6 +40,7 @@ from ...modules.accounts.schema import (
     GetAccountsResponseDTO,
     ConnectionWithAccountsDTO,
     AccountSimpleDTO,
+    UpdateAccountTrackingRequestDTO,
 )
 
 # ---------- Routes ----------
@@ -159,6 +161,34 @@ def get_household_accounts(
     return GetAccountsResponseDTO(
         items=[connections_by_id[conn_id] for conn_id in connection_order]
     )
+
+
+@router.patch("/accounts/{account_id}", response_model=AccountSimpleDTO)
+def update_account_tracking(
+    account_id: UUID = Path(..., description="Internal app UUID for the account to update."),
+    request: UpdateAccountTrackingRequestDTO = Body(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    membership_service: MembershipService = Depends(get_membership_service),
+    account_service: AccountService = Depends(get_account_service),
+):
+    membership = membership_service.get_my_membership(db=db, user_id=user.id)
+    if not membership:
+        raise NotFoundError()
+
+    try:
+        account = account_service.set_query_tracking_enabled(
+            db=db,
+            household_id=membership.household_id,
+            account_id=account_id,
+            is_query_tracking_enabled=request.is_query_tracking_enabled,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return AccountSimpleDTO.model_validate(account)
 
 
 @router.delete("/item/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)

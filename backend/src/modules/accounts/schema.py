@@ -15,6 +15,10 @@ class AccountSimpleDTO(BaseModel):
     account_subtype: str | None = Field(None, description="Subtype: checking, savings, credit card, etc.")
     is_active: bool = Field(..., description="Whether the account is active.")
     is_hidden: bool = Field(..., description="Whether the account has been hidden by the user.")
+    is_query_tracking_enabled: bool = Field(
+        ...,
+        description="Whether the account is tracked by Named Queries.",
+    )
     display_order: int | None = Field(None, description="User-defined display ordering.")
 
     model_config = {"from_attributes": True}
@@ -36,3 +40,10 @@ class GetAccountsResponseDTO(BaseModel):
     """All InstitutionConnections with their Accounts for the authenticated user."""
 
     items: list[ConnectionWithAccountsDTO]
+
+
+class UpdateAccountTrackingRequestDTO(BaseModel):
+    is_query_tracking_enabled: bool = Field(
+        ...,
+        description="Whether Named Queries should include this account's transactions.",
+    )

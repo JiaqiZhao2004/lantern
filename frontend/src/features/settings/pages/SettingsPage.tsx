@@ -3,6 +3,7 @@ import {
   useAccountsQuery,
   useConnectionsQuery,
   useRevokeConnectionMutation,
+  useUpdateAccountTrackingMutation,
 } from "@/features/connections/api/queries";
 import { PlaidLinkCard } from "@/features/connections/components/PlaidLinkCard";
 import AccountsPanel from "@/features/dashboard/components/AccountsPanel";
@@ -19,6 +20,7 @@ export default function SettingsPage() {
   const connectionsQuery = useConnectionsQuery({ enabled: true });
   const accountsQuery = useAccountsQuery({ enabled: true });
   const revokeConnectionMutation = useRevokeConnectionMutation();
+  const updateAccountTrackingMutation = useUpdateAccountTrackingMutation();
 
   return (
     <AppShell
@@ -57,6 +59,19 @@ export default function SettingsPage() {
           errorMessage={
             accountsQuery.error instanceof Error
               ? accountsQuery.error.message
+              : updateAccountTrackingMutation.error instanceof Error
+                ? updateAccountTrackingMutation.error.message
+              : null
+          }
+          onToggleTracking={(accountId, nextValue) =>
+            updateAccountTrackingMutation.mutate({
+              accountId,
+              is_query_tracking_enabled: nextValue,
+            })
+          }
+          togglingAccountId={
+            updateAccountTrackingMutation.isPending
+              ? updateAccountTrackingMutation.variables?.accountId ?? null
               : null
           }
         />

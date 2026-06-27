@@ -73,6 +73,9 @@ class Account(Base):
     is_hidden: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
+    is_query_tracking_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="true"
+    )
     display_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(

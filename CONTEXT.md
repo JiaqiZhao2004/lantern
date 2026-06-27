@@ -39,6 +39,10 @@ _Avoid_: Bank, Provider
 A single bank or credit account at an Institution (checking, savings, credit card, etc.) that contributes Transactions to a Household. First-class to Members — they see Accounts in the UI, can hide and reorder them. One InstitutionConnection has many Accounts.
 _Avoid_: PlaidAccount, BankAccount
 
+**Tracked Account**:
+An Account whose Transactions are included in Named Query analytics. A Tracked Account can be turned off by a Member without deleting the Account or its Transactions.
+_Avoid_: Enabled account, disabled account, hidden account
+
 **Transaction**:
 A single financial event on an Account that a Member can see — a purchase, deposit, transfer, fee, refund. The logical entity, not the row. A pending charge that later posts is one Transaction whose state changes from `pending` to `posted`, even though it occupies two database rows during that lifecycle. Members never see removed Transactions.
 

@@ -9,6 +9,7 @@ import {
   getAccounts,
   getConnections,
   revokeConnection,
+  updateAccountTracking,
 } from "@/features/connections/api/client";
 
 export const connectionsKeys = {
@@ -71,6 +72,25 @@ export function useRevokeConnectionMutation() {
 
   return useMutation({
     mutationFn: revokeConnection,
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: connectionsKeys.items() }),
+        queryClient.invalidateQueries({ queryKey: connectionsKeys.accounts() }),
+      ]),
+  });
+}
+
+export function useUpdateAccountTrackingMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      accountId,
+      is_query_tracking_enabled,
+    }: {
+      accountId: string;
+      is_query_tracking_enabled: boolean;
+    }) => updateAccountTracking(accountId, { is_query_tracking_enabled }),
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: connectionsKeys.items() }),

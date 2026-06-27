@@ -8,7 +8,9 @@ import {
   type CreateLinkTokenResponse,
   type GetAccountsResponse,
   type GetItemsResponse,
+  type UpdateAccountTrackingRequest,
   revokeItemPath,
+  updateAccountPath,
 } from "@/features/connections/api/contracts";
 import httpClient from "@/shared/api/httpClient";
 
@@ -46,4 +48,11 @@ export async function getAccounts(): Promise<GetAccountsResponse> {
 
 export async function revokeConnection(connectionId: string): Promise<void> {
   await httpClient.delete(revokeItemPath(connectionId));
+}
+
+export async function updateAccountTracking(
+  accountId: string,
+  payload: UpdateAccountTrackingRequest
+): Promise<void> {
+  await httpClient.patch(updateAccountPath(accountId), payload);
 }
