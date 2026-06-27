@@ -3,12 +3,15 @@ import { NavLink } from "react-router-dom";
 import { Button } from "@/shared/ui/Button/Button";
 import styles from "@/shared/ui/AppShell/AppShell.module.css";
 
+type NavClickEvent = React.MouseEvent<HTMLAnchorElement, MouseEvent>;
+
 type AppShellProps = {
   title: string;
   subtitle?: string;
   eyebrow?: string;
   email?: string | null;
   onLogout?: () => Promise<void> | void;
+  onNavLinkClick?: (event: NavClickEvent) => void;
   children: ReactNode;
 };
 
@@ -16,6 +19,7 @@ export function AppShell({
   children,
   email,
   eyebrow = "Lantern",
+  onNavLinkClick,
   onLogout,
   subtitle,
   title,
@@ -33,6 +37,7 @@ export function AppShell({
             <nav className={styles.nav}>
               <NavLink
                 to="/dashboard"
+                onClick={onNavLinkClick}
                 className={({ isActive }) =>
                   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                 }
@@ -41,6 +46,7 @@ export function AppShell({
               </NavLink>
               <NavLink
                 to="/transactions"
+                onClick={onNavLinkClick}
                 className={({ isActive }) =>
                   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                 }
@@ -49,6 +55,7 @@ export function AppShell({
               </NavLink>
               <NavLink
                 to="/settings"
+                onClick={onNavLinkClick}
                 className={({ isActive }) =>
                   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                 }

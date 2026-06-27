@@ -27,6 +27,7 @@ def test_list_for_household_returns_exact_count_and_next_cursor():
         rows=[
             SimpleNamespace(
                 id=first_id,
+                row_num=1,
                 account_id=uuid4(),
                 account_name="Checking",
                 institution_name="Chase",
@@ -41,6 +42,7 @@ def test_list_for_household_returns_exact_count_and_next_cursor():
             ),
             SimpleNamespace(
                 id=second_id,
+                row_num=2,
                 account_id=uuid4(),
                 account_name="Savings",
                 institution_name="Ally",
@@ -68,9 +70,8 @@ def test_list_for_household_returns_exact_count_and_next_cursor():
     assert result.page.next_cursor is not None
     assert len(result.items) == 1
     assert result.items[0].category_detailed == "FOOD_AND_DRINK_COFFEE"
-    decoded_occurred_at, decoded_id = service._decode_cursor(result.page.next_cursor)
-    assert decoded_occurred_at == datetime(2026, 6, 20, tzinfo=UTC)
-    assert decoded_id == first_id
+    decoded_offset = service._decode_cursor(result.page.next_cursor)
+    assert decoded_offset == 1
 
 
 def test_list_for_household_rejects_inverted_date_ranges():

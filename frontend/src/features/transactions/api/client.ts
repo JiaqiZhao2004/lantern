@@ -19,6 +19,8 @@ export async function getTransactions(
         search: params.search || undefined,
         start_date: params.startDate || undefined,
         end_date: params.endDate || undefined,
+        order_by: params.orderBy || undefined,
+        order_direction: params.orderDirection || undefined,
         cursor: params.cursor || undefined,
         limit: params.limit,
       },

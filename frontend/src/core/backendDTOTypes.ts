@@ -603,6 +603,27 @@ export interface components {
             /** Truncated */
             truncated: boolean;
         };
+        /** TransactionPreviewFilters */
+        TransactionPreviewFilters: {
+            /** Account Ids */
+            account_ids?: string[];
+            /** Search */
+            search?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date?: string | null;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date?: string | null;
+            /** Order By */
+            order_by?: "date" | "merchant" | "amount" | "category" | "pending";
+            /** Order Direction */
+            order_direction?: "asc" | "desc";
+        };
         /** NamedQueryPreviewRequest */
         NamedQueryPreviewRequest: {
             /**
@@ -610,6 +631,8 @@ export interface components {
              * @description Flat SELECT to preview without saving
              */
             sql_query: string;
+            /** Transaction Preview Filters */
+            transaction_preview_filters?: components["schemas"]["TransactionPreviewFilters"] | null;
         };
         /** NamedQueryResponse */
         NamedQueryResponse: {

@@ -30,6 +30,8 @@ export type ListTransactionsParams = {
   search?: string;
   startDate?: string;
   endDate?: string;
+  orderBy?: "date" | "merchant" | "account" | "category" | "amount" | "pending";
+  orderDirection?: "asc" | "desc";
   cursor?: string | null;
   limit?: number;
 };

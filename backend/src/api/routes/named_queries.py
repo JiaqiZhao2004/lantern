@@ -123,7 +123,12 @@ def preview_named_query(
 ):
     household_id = _resolve_household_id(ctx, membership_repo)
     try:
-        result = service.preview(db=ctx.db, household_id=household_id, sql_query=request.sql_query)
+        result = service.preview(
+            db=ctx.db,
+            household_id=household_id,
+            sql_query=request.sql_query,
+            transaction_preview_filters=request.transaction_preview_filters,
+        )
         ctx.db.rollback()
     except Exception:
         ctx.db.rollback()

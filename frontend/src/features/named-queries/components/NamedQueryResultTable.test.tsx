@@ -34,4 +34,17 @@ describe("NamedQueryResultTable", () => {
     expect(within(table).getByText("2026-06")).toBeInTheDocument();
     expect(within(table).getByText("1234.56")).toBeInTheDocument();
   });
+
+  it("renders midnight UTC timestamps as date-only values", () => {
+    render(
+      <NamedQueryResultTable
+        columns={[{ name: "date", type: "timestamp" }]}
+        rows={[{ date: "2026-06-26T00:00:00Z" }]}
+        truncated={false}
+      />
+    );
+
+    expect(screen.getByText("2026-06-26")).toBeInTheDocument();
+    expect(screen.queryByText("2026-06-26T00:00:00Z")).not.toBeInTheDocument();
+  });
 });

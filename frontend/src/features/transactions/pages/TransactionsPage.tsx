@@ -20,6 +20,8 @@ type FilterState = {
   search: string;
   startDate: string;
   endDate: string;
+  orderBy: "date" | "merchant" | "account" | "category" | "amount" | "pending";
+  orderDirection: "asc" | "desc";
 };
 
 function filtersFromSearchParams(searchParams: URLSearchParams): FilterState {
@@ -32,6 +34,11 @@ function filtersFromSearchParams(searchParams: URLSearchParams): FilterState {
     search: searchParams.get("search") ?? "",
     startDate: searchParams.get("start_date") ?? "",
     endDate: searchParams.get("end_date") ?? "",
+    orderBy:
+      (searchParams.get("order_by") as FilterState["orderBy"] | null) ?? "date",
+    orderDirection:
+      (searchParams.get("order_direction") as FilterState["orderDirection"] | null) ??
+      "desc",
   };
 }
 
@@ -49,6 +56,12 @@ function buildSearchParams(filters: FilterState, cursor?: string | null) {
   }
   if (filters.endDate !== "") {
     next.set("end_date", filters.endDate);
+  }
+  if (filters.orderBy !== "date") {
+    next.set("order_by", filters.orderBy);
+  }
+  if (filters.orderDirection !== "desc") {
+    next.set("order_direction", filters.orderDirection);
   }
   if (cursor) {
     next.set("cursor", cursor);
@@ -101,6 +114,8 @@ export default function TransactionsPage() {
     search: appliedFilters.search.trim() || undefined,
     startDate: appliedFilters.startDate || undefined,
     endDate: appliedFilters.endDate || undefined,
+    orderBy: appliedFilters.orderBy,
+    orderDirection: appliedFilters.orderDirection,
     cursor,
     limit: DEFAULT_LIMIT,
   });
@@ -147,6 +162,8 @@ export default function TransactionsPage() {
       search: "",
       startDate: "",
       endDate: "",
+      orderBy: "date" as const,
+      orderDirection: "desc" as const,
     };
     setFilters(nextFilters);
     setCursorHistory([]);
@@ -232,6 +249,52 @@ export default function TransactionsPage() {
                   }))
                 }
               />
+            </div>
+          </div>
+
+          <div className={styles.filterGrid}>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="transactions-order-by">
+                Order by
+              </label>
+              <select
+                id="transactions-order-by"
+                className={styles.select}
+                value={filters.orderBy}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    orderBy: event.target.value as FilterState["orderBy"],
+                  }))
+                }
+              >
+                <option value="date">Date</option>
+                <option value="merchant">Merchant</option>
+                <option value="account">Account</option>
+                <option value="category">Category</option>
+                <option value="amount">Amount</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="transactions-order-direction">
+                Direction
+              </label>
+              <select
+                id="transactions-order-direction"
+                className={styles.select}
+                value={filters.orderDirection}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    orderDirection: event.target.value as FilterState["orderDirection"],
+                  }))
+                }
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
             </div>
           </div>
 
@@ -392,7 +455,7 @@ export default function TransactionsPage() {
 
               <div className={styles.pager}>
                 <p className={styles.pagerText}>
-                  Sorted by newest `occurred_at` first.
+                  Sorted by {appliedFilters.orderBy} {appliedFilters.orderDirection}.
                 </p>
                 <div className={styles.pagerActions}>
                   <Button

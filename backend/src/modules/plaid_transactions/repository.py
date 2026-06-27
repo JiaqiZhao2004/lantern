@@ -2,7 +2,7 @@ from datetime import datetime
 from datetime import timezone
 from typing import Any
 
-from sqlalchemy import and_, or_, update
+from sqlalchemy import and_, func, or_, update
 from sqlalchemy.dialects.postgresql import insert
 
 from ..accounts.models import Account
@@ -83,8 +83,9 @@ class TransactionRepository:
         search: str | None,
         start_occurred_at: datetime | None,
         end_occurred_at_exclusive: datetime | None,
-        cursor_occurred_at: datetime | None,
-        cursor_transaction_id,
+        order_by: str,
+        order_direction: str,
+        cursor_offset: int,
         limit: int,
     ):
         base_query = (
@@ -131,23 +132,33 @@ class TransactionRepository:
             )
 
         total_count = base_query.order_by(None).count()
-
-        page_query = base_query
-        if cursor_occurred_at is not None and cursor_transaction_id is not None:
-            page_query = page_query.filter(
-                or_(
-                    Transaction.occurred_at < cursor_occurred_at,
-                    and_(
-                        Transaction.occurred_at == cursor_occurred_at,
-                        Transaction.id < cursor_transaction_id,
-                    ),
-                )
-            )
+        ordered_columns = self._order_clauses(order_by, order_direction)
+        numbered_query = base_query.add_columns(
+            func.row_number().over(order_by=ordered_columns).label("row_num")
+        )
+        numbered_subquery = numbered_query.subquery()
 
         page_items = (
-            page_query.order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
+            db.query(numbered_subquery)
+            .filter(numbered_subquery.c.row_num > cursor_offset)
+            .order_by(numbered_subquery.c.row_num.asc())
             .limit(limit + 1)
             .all()
         )
 
         return total_count, page_items
+
+    def _order_clauses(self, order_by: str, order_direction: str):
+        order_column = {
+            "date": Transaction.occurred_at,
+            "merchant": Transaction.merchant_name,
+            "account": Account.name,
+            "category": Transaction.category_primary,
+            "amount": Transaction.amount,
+            "pending": Transaction.pending,
+        }[order_by]
+        directional_order = (
+            order_column.asc() if order_direction == "asc" else order_column.desc()
+        )
+        tie_breaker = Transaction.id.asc() if order_direction == "asc" else Transaction.id.desc()
+        return [directional_order.nullslast(), tie_breaker.nullslast()]

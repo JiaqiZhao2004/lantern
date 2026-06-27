@@ -4,6 +4,7 @@ import classNames from "classnames";
 import styles from "@/features/named-queries/pages/NamedQueryEditorPage.module.css";
 import { NamedQueryResultTable } from "@/features/named-queries/components/NamedQueryResultTable";
 import { NamedQueryTransactionPreview } from "@/features/named-queries/components/NamedQueryTransactionPreview";
+import { useAccountsQuery } from "@/features/connections/api/queries";
 import {
   useCreateNamedQueryMutation,
   useGenerateNamedQueryMutation,
@@ -30,6 +31,26 @@ type NamedQueryDraft = {
   chartType: ChartType | null;
 };
 
+type TransactionPreviewFilterState = {
+  accountIds: string[];
+  search: string;
+  startDate: string;
+  endDate: string;
+  orderBy: "date" | "merchant" | "amount" | "category" | "pending";
+  orderDirection: "asc" | "desc";
+};
+
+type LinkNavigationEvent = React.MouseEvent<HTMLAnchorElement, MouseEvent>;
+
+const EMPTY_TRANSACTION_PREVIEW_FILTERS: TransactionPreviewFilterState = {
+  accountIds: [],
+  search: "",
+  startDate: "",
+  endDate: "",
+  orderBy: "date",
+  orderDirection: "desc",
+};
+
 function normalizeChartType(value: string | null | undefined): ChartType | null {
   return KNOWN_CHART_TYPES.includes(value as ChartType) ? (value as ChartType) : null;
 }
@@ -53,6 +74,14 @@ function formatCandidateMessage(draft: NamedQueryDraft): string {
   ].join("\n");
 }
 
+function draftsMatch(left: NamedQueryDraft, right: NamedQueryDraft): boolean {
+  return (
+    left.name === right.name &&
+    left.sql === right.sql &&
+    left.chartType === right.chartType
+  );
+}
+
 export default function NamedQueryEditorPage() {
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
@@ -61,6 +90,7 @@ export default function NamedQueryEditorPage() {
   const { logout, user } = useAuthSession();
   const viewerQuery = useViewerQuery({ enabled: true });
   const householdQuery = useHouseholdQuery({ enabled: true });
+  const accountsQuery = useAccountsQuery({ enabled: true });
 
   const listQuery = useNamedQueriesQuery();
   const existing = id ? listQuery.data?.find((q) => q.id === id) : undefined;
@@ -73,6 +103,9 @@ export default function NamedQueryEditorPage() {
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [lastAiAppliedDraft, setLastAiAppliedDraft] = useState<NamedQueryDraft | null>(null);
   const [seededQueryId, setSeededQueryId] = useState<string | null>(null);
+  const [transactionPreviewFilters, setTransactionPreviewFilters] = useState<TransactionPreviewFilterState>(
+    EMPTY_TRANSACTION_PREVIEW_FILTERS
+  );
 
   useEffect(() => {
     if (existing) {
@@ -115,9 +148,137 @@ export default function NamedQueryEditorPage() {
 
   const isSaving = createMutation.isPending || patchMutation.isPending;
   const saveError = createMutation.error ?? patchMutation.error;
+  const baselineDraft: NamedQueryDraft = existing
+    ? {
+        name: existing.name,
+        sql: existing.sql_query,
+        chartType: normalizeChartType(existing.chart_type),
+      }
+    : {
+        name: "",
+        sql: "",
+        chartType: null,
+      };
+  const hasUnsavedChanges = !draftsMatch(
+    {
+      name,
+      sql,
+      chartType,
+    },
+    baselineDraft
+  );
+  const shouldWarnBeforeLeaving = hasUnsavedChanges && !isSaving;
 
-  const handlePreview = () => {
-    if (sql.trim()) previewMutation.mutate({ sql_query: sql });
+  const accountOptions =
+    accountsQuery.data?.items.flatMap((connection) =>
+      (connection.accounts ?? []).map((account) => ({
+        id: account.id,
+        label: `${account.name}${connection.institution_name ? ` · ${connection.institution_name}` : ""}`,
+      }))
+    ) ?? [];
+
+  const buildTransactionPreviewPayload = (
+    filters: TransactionPreviewFilterState
+  ) => {
+    const search = filters.search.trim();
+    const hasFilters =
+      filters.accountIds.length > 0 ||
+      search !== "" ||
+      filters.startDate !== "" ||
+      filters.endDate !== "" ||
+      filters.orderBy !== "date" ||
+      filters.orderDirection !== "desc";
+
+    if (!hasFilters) {
+      return undefined;
+    }
+
+    return {
+      account_ids: filters.accountIds,
+      search: search || undefined,
+      start_date: filters.startDate || undefined,
+      end_date: filters.endDate || undefined,
+      order_by: filters.orderBy,
+      order_direction: filters.orderDirection,
+    };
+  };
+
+  useEffect(() => {
+    if (!shouldWarnBeforeLeaving) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [shouldWarnBeforeLeaving]);
+
+  const confirmDiscardChanges = () =>
+    window.confirm("You have unsaved named query changes. Leave this page and lose them?");
+
+  const handleGuardedNavigation = () => {
+    if (!shouldWarnBeforeLeaving) {
+      return true;
+    }
+
+    return confirmDiscardChanges();
+  };
+
+  const handleGuardedNavLinkClick = (event: LinkNavigationEvent) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    if (!handleGuardedNavigation()) {
+      event.preventDefault();
+    }
+  };
+
+  const handleCancel = () => {
+    if (!handleGuardedNavigation()) {
+      return;
+    }
+
+    navigate("/dashboard");
+  };
+
+  const handlePreview = (
+    filters: TransactionPreviewFilterState = transactionPreviewFilters
+  ) => {
+    if (!sql.trim()) return;
+
+    previewMutation.mutate({
+      sql_query: sql,
+      transaction_preview_filters: buildTransactionPreviewPayload(filters),
+    });
+  };
+
+  const handleApplyTransactionPreviewFilters = (
+    filters: TransactionPreviewFilterState
+  ) => {
+    setTransactionPreviewFilters(filters);
+    handlePreview(filters);
+  };
+
+  const handleResetTransactionPreviewFilters = () => {
+    setTransactionPreviewFilters(EMPTY_TRANSACTION_PREVIEW_FILTERS);
+    handlePreview(EMPTY_TRANSACTION_PREVIEW_FILTERS);
   };
 
   const handleSave = async () => {
@@ -205,6 +366,7 @@ export default function NamedQueryEditorPage() {
     <AppShell
       title={isEditing ? "Edit Named Query" : "New Named Query"}
       email={user?.email ?? viewerQuery.data?.email}
+      onNavLinkClick={handleGuardedNavLinkClick}
       onLogout={logout}
     >
       <div className={styles.layout}>
@@ -353,10 +515,14 @@ export default function NamedQueryEditorPage() {
               >
                 {isSaving ? "Saving…" : "Save"}
               </Button>
-              <Button variant="secondary" onClick={handlePreview} disabled={!sql.trim()}>
+              <Button
+                variant="secondary"
+                onClick={() => handlePreview()}
+                disabled={!sql.trim()}
+              >
                 Preview
               </Button>
-              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+              <Button variant="ghost" onClick={handleCancel}>
                 Cancel
               </Button>
             </div>
@@ -399,6 +565,11 @@ export default function NamedQueryEditorPage() {
                   <div className={styles.transactionPreview}>
                     <NamedQueryTransactionPreview
                       preview={previewMutation.data.transaction_preview}
+                      accountOptions={accountOptions}
+                      appliedFilters={transactionPreviewFilters}
+                      isUpdating={previewMutation.isPending}
+                      onApplyFilters={handleApplyTransactionPreviewFilters}
+                      onResetFilters={handleResetTransactionPreviewFilters}
                     />
                   </div>
                 )}

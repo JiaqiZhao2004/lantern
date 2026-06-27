@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -17,8 +17,18 @@ class NamedQueryPatchRequest(BaseModel):
     chart_type: str | None = None
 
 
+class TransactionPreviewFilters(BaseModel):
+    account_ids: list[uuid.UUID] = Field(default_factory=list)
+    search: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    order_by: Literal["date", "merchant", "amount", "category", "pending"] = "date"
+    order_direction: Literal["asc", "desc"] = "desc"
+
+
 class NamedQueryPreviewRequest(BaseModel):
     sql_query: str = Field(..., description="Flat SELECT to preview without saving")
+    transaction_preview_filters: TransactionPreviewFilters | None = None
 
 
 class NamedQueryGenerationMessage(BaseModel):

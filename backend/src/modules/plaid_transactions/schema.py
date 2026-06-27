@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -40,5 +41,7 @@ class TransactionLedgerFiltersDTO(BaseModel):
     search: str | None = None
     start_date: date | None = None
     end_date: date | None = None
+    order_by: Literal["date", "merchant", "account", "category", "amount", "pending"] = "date"
+    order_direction: Literal["asc", "desc"] = "desc"
     cursor: str | None = None
     limit: int = Field(default=50, ge=1, le=100)

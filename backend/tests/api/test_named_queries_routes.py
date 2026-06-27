@@ -9,6 +9,7 @@ from src.modules.named_queries.schemas import (
     NamedQueryCandidate,
     NamedQueryCandidateResponse,
     NamedQueryClarifyingQuestionResponse,
+    NamedQueryDataResponse,
     NamedQueryExplanationResponse,
 )
 from src.server import app
@@ -46,6 +47,18 @@ class FailingGenerationService:
 
     def generate(self, db, household_id, messages):
         raise self.error
+
+
+class FakeNamedQueryService:
+    def __init__(self, response):
+        self.response = response
+        self.preview_calls = []
+
+    def preview(self, db, household_id, sql_query, transaction_preview_filters=None):
+        self.preview_calls.append(
+            (household_id, sql_query, transaction_preview_filters)
+        )
+        return self.response
 
 
 def _override_request_context():
@@ -209,3 +222,50 @@ def test_generate_named_query_returns_quota_failure_message_for_openai_billing_e
         ),
         "reason": "provider_quota_exceeded",
     }
+
+
+def test_preview_named_query_passes_transaction_preview_filters():
+    household_id = uuid4()
+    service = FakeNamedQueryService(
+        NamedQueryDataResponse(
+            columns=[],
+            rows=[],
+            truncated=False,
+            transaction_preview=None,
+        )
+    )
+    app.dependency_overrides[named_query_routes.get_request_context] = (
+        _override_request_context
+    )
+    app.dependency_overrides[named_query_routes.get_membership_repository] = (
+        lambda: FakeMembershipRepo(SimpleNamespace(household_id=household_id))
+    )
+    app.dependency_overrides[named_query_routes.get_named_query_service] = (
+        lambda: service
+    )
+
+    try:
+        response = TestClient(app).post(
+            "/api/v1/named-queries/preview",
+            json={
+                "sql_query": "SELECT amount FROM widget_transactions",
+                "transaction_preview_filters": {
+                    "account_ids": [str(uuid4())],
+                    "search": "coffee",
+                    "start_date": "2026-01-01",
+                    "end_date": "2026-01-31",
+                    "order_by": "amount",
+                    "order_direction": "asc",
+                },
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert service.preview_calls[0][0] == household_id
+    assert service.preview_calls[0][1] == "SELECT amount FROM widget_transactions"
+    assert service.preview_calls[0][2].search == "coffee"
+    assert len(service.preview_calls[0][2].account_ids) == 1
+    assert service.preview_calls[0][2].order_by == "amount"
+    assert service.preview_calls[0][2].order_direction == "asc"

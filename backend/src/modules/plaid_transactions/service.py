@@ -145,7 +145,7 @@ class TransactionLedgerService:
         if filters.start_date and filters.end_date and filters.start_date > filters.end_date:
             raise ValidationError(detail="start_date must be on or before end_date")
 
-        cursor_occurred_at, cursor_transaction_id = self._decode_cursor(filters.cursor)
+        cursor_offset = self._decode_cursor(filters.cursor)
 
         total_count, rows = self.transaction_repo.list_household_transactions(
             db=db,
@@ -154,8 +154,9 @@ class TransactionLedgerService:
             search=search,
             start_occurred_at=self._start_of_day(filters.start_date),
             end_occurred_at_exclusive=self._end_of_day_exclusive(filters.end_date),
-            cursor_occurred_at=cursor_occurred_at,
-            cursor_transaction_id=cursor_transaction_id,
+            order_by=filters.order_by,
+            order_direction=filters.order_direction,
+            cursor_offset=cursor_offset,
             limit=filters.limit,
         )
 
@@ -165,10 +166,7 @@ class TransactionLedgerService:
 
         if has_next_page and visible_rows:
             last_row = visible_rows[-1]
-            next_cursor = self._encode_cursor(
-                occurred_at=last_row.occurred_at,
-                transaction_id=last_row.id,
-            )
+            next_cursor = self._encode_cursor(offset=int(last_row.row_num))
 
         return TransactionLedgerResponseDTO(
             items=[
@@ -196,32 +194,26 @@ class TransactionLedgerService:
             ),
         )
 
-    def _encode_cursor(self, *, occurred_at: datetime, transaction_id: UUID) -> str:
-        payload = {
-            "occurred_at": occurred_at.astimezone(UTC).isoformat(),
-            "id": str(transaction_id),
-        }
+    def _encode_cursor(self, *, offset: int) -> str:
+        payload = {"offset": offset}
         encoded = base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
         return encoded.rstrip("=")
 
-    def _decode_cursor(self, cursor: str | None) -> tuple[datetime | None, UUID | None]:
+    def _decode_cursor(self, cursor: str | None) -> int:
         if cursor is None:
-            return None, None
+            return 0
 
         try:
             padding = "=" * (-len(cursor) % 4)
             payload = json.loads(
                 base64.urlsafe_b64decode(f"{cursor}{padding}".encode("utf-8")).decode("utf-8")
             )
-            occurred_at = datetime.fromisoformat(payload["occurred_at"])
-            transaction_id = UUID(payload["id"])
         except (KeyError, ValueError, TypeError, json.JSONDecodeError):
             raise ValidationError(detail="Invalid cursor")
-
-        if occurred_at.tzinfo is None:
-            occurred_at = occurred_at.replace(tzinfo=UTC)
-
-        return occurred_at, transaction_id
+        offset = payload.get("offset")
+        if not isinstance(offset, int) or offset < 0:
+            raise ValidationError(detail="Invalid cursor")
+        return offset
 
     def _start_of_day(self, value: date | None) -> datetime | None:
         if value is None:

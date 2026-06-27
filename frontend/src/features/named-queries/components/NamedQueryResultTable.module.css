@@ -1,5 +1,8 @@
 .wrapper {
+  max-width: min(100%, 46rem);
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .singleValue {
@@ -32,9 +35,12 @@
 }
 
 .table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  max-width: 46rem;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: fixed;
 }
 
 .th {
@@ -47,6 +53,9 @@
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .td {
@@ -54,6 +63,9 @@
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-strong);
   white-space: nowrap;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .truncated {

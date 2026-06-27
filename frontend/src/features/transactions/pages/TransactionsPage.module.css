@@ -38,6 +38,17 @@
   font: inherit;
 }
 
+.select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+  border-radius: 0.75rem;
+  background: var(--surface-elevated, #fff);
+  color: var(--text-strong);
+  font: inherit;
+}
+
 .hint {
   margin: 0;
   color: var(--text-muted);

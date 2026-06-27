@@ -32,6 +32,8 @@ def list_transactions(
     search: str | None = Query(default=None),
     start_date: date | None = Query(default=None),
     end_date: date | None = Query(default=None),
+    order_by: str = Query(default="date"),
+    order_direction: str = Query(default="desc"),
     cursor: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
 ):
@@ -44,6 +46,8 @@ def list_transactions(
         search=search,
         start_date=start_date,
         end_date=end_date,
+        order_by=order_by,
+        order_direction=order_direction,
         cursor=cursor,
         limit=limit,
     )

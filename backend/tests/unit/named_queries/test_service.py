@@ -4,7 +4,10 @@ from uuid import uuid4
 
 from src.exceptions import InternalError, RateLimitError, ValidationError
 from src.infrastructure.llm import LLMProviderError
-from src.modules.named_queries.schemas import NamedQueryGenerationMessage
+from src.modules.named_queries.schemas import (
+    NamedQueryGenerationMessage,
+    TransactionPreviewFilters,
+)
 from src.modules.named_queries.service import NamedQueryGenerationService, NamedQueryService
 from src.modules.named_queries.sql_validator import validate_named_query_sql
 
@@ -185,16 +188,53 @@ def test_transaction_preview_sql_reuses_query_filters_and_joins():
     )
 
     assert preview_sql == (
-        "SELECT date, merchant, amount, category, pending FROM ("
+        "SELECT date, merchant, amount, category, detailed_category, pending FROM ("
         "SELECT DISTINCT wt.id AS transaction_id, wt.occurred_at AS date, "
         "COALESCE(NULLIF(wt.merchant_name, ''), wt.original_description) AS merchant, "
-        "wt.amount AS amount, wt.category_primary AS category, wt.pending AS pending "
+        "wt.amount AS amount, wt.category_primary AS category, "
+        "wt.category_detailed AS detailed_category, wt.pending AS pending "
         "FROM widget_transactions AS wt "
         "JOIN widget_accounts AS wa ON wa.id = wt.id "
         "WHERE wt.amount < 0 AND wa.account_type = 'credit' AND wt.household_id = :_household_id"
         ") AS _transaction_preview "
         "ORDER BY date DESC NULLS LAST, transaction_id DESC NULLS LAST"
     )
+
+
+def test_transaction_preview_sql_appends_preview_filters():
+    service = NamedQueryService(named_query_repo=None)
+
+    preview_sql = service._build_transaction_preview_sql(
+        "SELECT wt.id, wt.amount FROM widget_transactions wt WHERE wt.amount < 0",
+        TransactionPreviewFilters(
+            account_ids=[uuid4()],
+            search="coffee",
+            start_date="2026-01-01",
+            end_date="2026-01-31",
+            order_by="amount",
+            order_direction="asc",
+        ),
+    )
+
+    assert (
+        "wt.account_id = ANY(:_transaction_preview_account_ids)" in preview_sql
+    )
+    assert "ILIKE :_transaction_preview_search" in preview_sql
+    assert "wt.occurred_at >= :_transaction_preview_start_date" in preview_sql
+    assert "wt.occurred_at < :_transaction_preview_end_date_exclusive" in preview_sql
+    assert "ORDER BY amount ASC NULLS LAST, transaction_id ASC NULLS LAST" in preview_sql
+
+
+def test_transaction_preview_filters_validate_date_order():
+    service = NamedQueryService(named_query_repo=None)
+
+    with pytest.raises(ValidationError, match="start_date must be on or before end_date"):
+        service._normalize_transaction_preview_filters(
+            TransactionPreviewFilters(
+                start_date="2026-02-01",
+                end_date="2026-01-31",
+            )
+        )
 
 
 def test_transaction_preview_sql_is_omitted_for_account_only_queries():

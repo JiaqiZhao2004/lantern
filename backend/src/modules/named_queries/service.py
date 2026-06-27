@@ -1,5 +1,5 @@
 import copy
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 import re
 from typing import Any
@@ -26,15 +26,23 @@ from .schemas import (
     NamedQueryGenerationFailureResponse,
     NamedQueryGenerationMessage,
     QueryResultPreview,
+    TransactionPreviewFilters,
 )
 from .sql_validator import validate_named_query_sql
 
-_ROW_CAP = 500
+_ROW_CAP = 50
 _TRANSACTION_PREVIEW_ROW_CAP = 25
 _GENERATION_DAILY_QUOTA = 100
 _REPAIR_ATTEMPTS = 2
 _MAX_CLARIFYING_QUESTIONS = 3
 _ALLOWED_CHART_TYPES = {"bar", "line"}
+_TRANSACTION_PREVIEW_ORDER_COLUMNS = {
+    "date": "date",
+    "merchant": "merchant",
+    "amount": "amount",
+    "category": "category",
+    "pending": "pending",
+}
 _GENERATION_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -98,6 +106,7 @@ widget_transactions:
 - payment_channel text
 - iso_currency_code text
 - original_description text
+- account_id uuid
 widget_accounts:
 - id uuid
 - household_id uuid
@@ -584,9 +593,24 @@ class NamedQueryService:
     # Preview — execute without saving
     # ------------------------------------------------------------------
 
-    def preview(self, db: Session, household_id: UUID, sql_query: str) -> NamedQueryDataResponse:
+    def preview(
+        self,
+        db: Session,
+        household_id: UUID,
+        sql_query: str,
+        transaction_preview_filters: TransactionPreviewFilters | None = None,
+    ) -> NamedQueryDataResponse:
         self._validate_sql(sql_query)
-        return self._execute(db, household_id, sql_query, include_transaction_preview=True)
+        preview_filters = self._normalize_transaction_preview_filters(
+            transaction_preview_filters
+        )
+        return self._execute(
+            db,
+            household_id,
+            sql_query,
+            include_transaction_preview=True,
+            transaction_preview_filters=preview_filters,
+        )
 
     # ------------------------------------------------------------------
     # CRUD
@@ -654,6 +678,7 @@ class NamedQueryService:
         sql_query: str,
         *,
         include_transaction_preview: bool,
+        transaction_preview_filters: TransactionPreviewFilters | None = None,
     ) -> NamedQueryDataResponse:
         primary_result = self._execute_read_only_query(
             db=db,
@@ -667,6 +692,7 @@ class NamedQueryService:
                 db=db,
                 household_id=household_id,
                 sql_query=sql_query,
+                filters=transaction_preview_filters,
             )
         return NamedQueryDataResponse(
             columns=primary_result.columns,
@@ -683,6 +709,7 @@ class NamedQueryService:
         row_cap: int,
         *,
         inject_household_filter: bool = True,
+        query_params: dict[str, Any] | None = None,
     ) -> QueryResultPreview:
         scoped_sql = (
             self._inject_household_filter(sql_query)
@@ -694,9 +721,12 @@ class NamedQueryService:
         try:
             db.execute(sa.text("SET LOCAL TRANSACTION READ ONLY"))
             db.execute(sa.text("SET LOCAL statement_timeout = '2s'"))
+            params = {"_household_id": str(household_id)}
+            if query_params:
+                params.update(query_params)
             result = db.execute(
                 sa.text(injected),
-                {"_household_id": str(household_id)},
+                params,
             )
         except Exception as e:
             raise ValidationError(detail=self._format_query_execution_error(e)) from e
@@ -708,8 +738,9 @@ class NamedQueryService:
         db: Session,
         household_id: UUID,
         sql_query: str,
+        filters: TransactionPreviewFilters | None,
     ) -> QueryResultPreview | None:
-        preview_sql = self._build_transaction_preview_sql(sql_query)
+        preview_sql = self._build_transaction_preview_sql(sql_query, filters)
         if preview_sql is None:
             return None
 
@@ -719,6 +750,7 @@ class NamedQueryService:
             sql_query=preview_sql,
             row_cap=_TRANSACTION_PREVIEW_ROW_CAP,
             inject_household_filter=False,
+            query_params=self._build_transaction_preview_params(filters),
         )
 
     def _serialize_query_result(self, result, row_cap: int) -> QueryResultPreview:
@@ -755,7 +787,11 @@ class NamedQueryService:
             truncated=truncated,
         )
 
-    def _build_transaction_preview_sql(self, sql_query: str) -> str | None:
+    def _build_transaction_preview_sql(
+        self,
+        sql_query: str,
+        filters: TransactionPreviewFilters | None = None,
+    ) -> str | None:
         try:
             stmt = sqlglot.parse_one(sql_query, dialect="postgres")
         except (sqlglot.errors.ParseError, sqlglot.errors.TokenError) as e:
@@ -797,20 +833,128 @@ class NamedQueryService:
             )
         else:
             where_sql = f" WHERE {source_name}.household_id = :_household_id"
+        where_sql = (
+            f"{where_sql}{self._build_transaction_preview_filter_sql(source_name, filters)}"
+        )
 
         return (
-            "SELECT date, merchant, amount, category, pending FROM ("
+            "SELECT date, merchant, amount, category, detailed_category, pending FROM ("
             "SELECT DISTINCT "
             f"{source_name}.id AS transaction_id, "
             f"{source_name}.occurred_at AS date, "
             f"COALESCE(NULLIF({source_name}.merchant_name, ''), {source_name}.original_description) AS merchant, "
             f"{source_name}.amount AS amount, "
             f"{source_name}.category_primary AS category, "
+            f"{source_name}.category_detailed AS detailed_category, "
             f"{source_name}.pending AS pending "
             f"{from_sql}{joins_sql}{where_sql}"
             ") AS _transaction_preview "
-            "ORDER BY date DESC NULLS LAST, transaction_id DESC NULLS LAST"
+            f"{self._build_transaction_preview_order_sql(filters)}"
         )
+
+    def _normalize_transaction_preview_filters(
+        self,
+        filters: TransactionPreviewFilters | None,
+    ) -> TransactionPreviewFilters | None:
+        if filters is None:
+            return None
+
+        search = filters.search.strip() if filters.search else None
+        if search == "":
+            search = None
+
+        if (
+            filters.start_date
+            and filters.end_date
+            and filters.start_date > filters.end_date
+        ):
+            raise ValidationError(detail="start_date must be on or before end_date")
+
+        return TransactionPreviewFilters(
+            account_ids=filters.account_ids,
+            search=search,
+            start_date=filters.start_date,
+            end_date=filters.end_date,
+            order_by=filters.order_by,
+            order_direction=filters.order_direction,
+        )
+
+    def _build_transaction_preview_filter_sql(
+        self,
+        source_name: str,
+        filters: TransactionPreviewFilters | None,
+    ) -> str:
+        if filters is None:
+            return ""
+
+        clauses: list[str] = []
+        if filters.account_ids:
+            clauses.append(
+                f"{source_name}.account_id = ANY(:_transaction_preview_account_ids)"
+            )
+        if filters.search:
+            clauses.append(
+                "("
+                f"COALESCE(NULLIF({source_name}.merchant_name, ''), '') ILIKE :_transaction_preview_search "
+                f"OR COALESCE({source_name}.original_description, '') ILIKE :_transaction_preview_search"
+                ")"
+            )
+        if filters.start_date:
+            clauses.append(
+                f"{source_name}.occurred_at >= :_transaction_preview_start_date"
+            )
+        if filters.end_date:
+            clauses.append(
+                f"{source_name}.occurred_at < :_transaction_preview_end_date_exclusive"
+            )
+
+        if not clauses:
+            return ""
+
+        return " AND " + " AND ".join(clauses)
+
+    def _build_transaction_preview_params(
+        self,
+        filters: TransactionPreviewFilters | None,
+    ) -> dict[str, Any]:
+        if filters is None:
+            return {}
+
+        params: dict[str, Any] = {}
+        if filters.account_ids:
+            params["_transaction_preview_account_ids"] = [
+                str(account_id) for account_id in filters.account_ids
+            ]
+        if filters.search:
+            params["_transaction_preview_search"] = f"%{filters.search}%"
+        if filters.start_date:
+            params["_transaction_preview_start_date"] = filters.start_date
+        if filters.end_date:
+            params["_transaction_preview_end_date_exclusive"] = (
+                self._end_of_day_exclusive(filters.end_date)
+            )
+        return params
+
+    def _build_transaction_preview_order_sql(
+        self,
+        filters: TransactionPreviewFilters | None,
+    ) -> str:
+        order_by = "date"
+        order_direction = "DESC"
+        transaction_id_direction = "DESC"
+
+        if filters is not None:
+            order_by = _TRANSACTION_PREVIEW_ORDER_COLUMNS[filters.order_by]
+            order_direction = filters.order_direction.upper()
+            transaction_id_direction = order_direction
+
+        return (
+            f"ORDER BY {order_by} {order_direction} NULLS LAST, "
+            f"transaction_id {transaction_id_direction} NULLS LAST"
+        )
+
+    def _end_of_day_exclusive(self, value: date) -> date:
+        return value + timedelta(days=1)
 
     def _inject_household_filter(self, sql_query: str) -> str:
         try:

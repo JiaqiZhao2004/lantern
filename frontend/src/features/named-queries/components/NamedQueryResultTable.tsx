@@ -14,7 +14,11 @@ function isSingleValueResult(
   return columns.length === 1 && rows.length === 1;
 }
 
-export function NamedQueryResultTable({ columns, rows, truncated }: Props) {
+export function NamedQueryResultTable({
+  columns,
+  rows,
+  truncated,
+}: Props) {
   if (rows.length === 0) {
     return <p className={styles.empty}>No results.</p>;
   }
@@ -26,12 +30,12 @@ export function NamedQueryResultTable({ columns, rows, truncated }: Props) {
     return (
       <div>
         <div className={styles.singleValue}>
-          <p className={styles.singleValueNumber}>{String(value ?? "")}</p>
+          <p className={styles.singleValueNumber}>{formatCellValue(value)}</p>
           <p className={styles.singleValueLabel}>{label}</p>
         </div>
         {truncated && (
           <p className={styles.truncated}>
-            Showing the first 500 rows — refine your query to see more.
+            Showing the first 50 rows — refine your query to see more.
           </p>
         )}
       </div>
@@ -56,7 +60,7 @@ export function NamedQueryResultTable({ columns, rows, truncated }: Props) {
               <tr key={i}>
                 {columns.map((col) => (
                   <td key={col.name} className={styles.td}>
-                    {String(row[col.name] ?? "")}
+                    {formatCellValue(row[col.name])}
                   </td>
                 ))}
               </tr>
@@ -66,9 +70,25 @@ export function NamedQueryResultTable({ columns, rows, truncated }: Props) {
       </div>
       {truncated && (
         <p className={styles.truncated}>
-          Showing the first 500 rows — refine your query to see more.
+          Showing the first 50 rows — refine your query to see more.
         </p>
       )}
     </div>
   );
+}
+
+function formatCellValue(value: unknown) {
+  if (value == null) {
+    return "";
+  }
+
+  if (typeof value === "string" && isMidnightUtcTimestamp(value)) {
+    return value.slice(0, 10);
+  }
+
+  return String(value);
+}
+
+function isMidnightUtcTimestamp(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T00:00:00(?:\.000)?Z$/.test(value);
 }

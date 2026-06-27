@@ -20,6 +20,8 @@ export type PatchNamedQueryResponse = JsonResponse<typeof NAMED_QUERY_PATH, "pat
 
 export type PreviewNamedQueryRequest = JsonRequest<typeof PREVIEW_NAMED_QUERY_PATH, "post">;
 export type PreviewNamedQueryResponse = JsonResponse<typeof PREVIEW_NAMED_QUERY_PATH, "post">;
+export type TransactionPreviewFilters =
+  PreviewNamedQueryRequest["transaction_preview_filters"];
 
 export type GenerateNamedQueryRequest = JsonRequest<typeof GENERATE_NAMED_QUERY_PATH, "post">;
 export type GenerateNamedQueryResponse = JsonResponse<typeof GENERATE_NAMED_QUERY_PATH, "post">;

@@ -77,6 +77,8 @@ def test_list_transactions_passes_filters_through_to_service():
                 "search": "coffee",
                 "start_date": "2026-06-01",
                 "end_date": "2026-06-30",
+                "order_by": "amount",
+                "order_direction": "asc",
                 "cursor": "abc123",
             },
         )
@@ -92,4 +94,6 @@ def test_list_transactions_passes_filters_through_to_service():
     assert filters.search == "coffee"
     assert str(filters.start_date) == "2026-06-01"
     assert str(filters.end_date) == "2026-06-30"
+    assert filters.order_by == "amount"
+    assert filters.order_direction == "asc"
     assert filters.cursor == "abc123"
