@@ -42,7 +42,7 @@ export function NamedQueryCard({ query }: Props) {
               <span className={styles.chartTypeBadge}>{query.chart_type}</span>
             )}
           </div>
-          <div className={styles.actions}>
+          <div className={styles.headerControls}>
             {chartType && dataQuery.data && (
               <div className={styles.toggle}>
                 <button
@@ -59,19 +59,23 @@ export function NamedQueryCard({ query }: Props) {
                 </button>
               </div>
             )}
-            <Button
-              variant="secondary"
-              onClick={() => navigate(`/queries/${query.id}/edit`)}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              Delete
-            </Button>
+            <div className={styles.actions}>
+              <Button
+                variant="secondary"
+                className={styles.actionButton}
+                onClick={() => navigate(`/queries/${query.id}/edit`)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                className={styles.actionButton}
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
 

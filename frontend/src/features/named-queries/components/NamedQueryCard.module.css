@@ -5,27 +5,31 @@
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.85rem 1rem;
+  align-items: start;
 }
 
 .titleRow {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
   min-width: 0;
 }
 
 .name {
   margin: 0;
   color: var(--text-strong);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.22;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .chartTypeBadge {
@@ -34,17 +38,35 @@
   border-radius: 999px;
   background: var(--surface-muted);
   color: var(--text-muted);
-  padding: 0.18rem 0.5rem;
-  font-size: 0.78rem;
+  padding: 0.16rem 0.48rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.45rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  min-height: 2.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .toggle {
@@ -94,4 +116,24 @@
   color: var(--text-muted);
   font-size: 0.9rem;
   margin: 0;
+}
+
+@media (max-width: 720px) {
+  .header {
+    grid-template-columns: 1fr;
+  }
+
+  .headerControls {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .actionButton {
+    flex: 1 1 7rem;
+  }
 }
