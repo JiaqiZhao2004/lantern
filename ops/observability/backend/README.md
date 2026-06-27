@@ -155,6 +155,14 @@ OBSERVABILITY_STACK_LABEL=public
 docker compose --env-file observability.env -f compose.yml up -d
 ```
 
+If Prometheus was already running before a scrape-config change, recreate it once so Docker refreshes the mounted config inode:
+
+```bash
+docker compose --env-file observability.env -f compose.yml up -d --force-recreate prometheus
+```
+
+Prometheus now mounts the whole `./prometheus/` directory rather than a single file so later edits to `prometheus.yml` and `rules/` propagate cleanly into the container.
+
 7. Open the private UIs through an SSH tunnel from your workstation:
 
 ```bash
