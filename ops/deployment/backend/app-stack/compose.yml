@@ -5,9 +5,9 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "127.0.0.1:${NGINX_BIND_PORT:-8080}:8080"
+      - "127.0.0.1:${NGINX_BIND_PORT:?set NGINX_BIND_PORT in compose.env}:8080"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${APP_STACK_ENV_DIR:?set APP_STACK_ENV_DIR in compose.env}/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/health/live >/dev/null 2>&1 || exit 1"]
       interval: 15s
@@ -24,7 +24,7 @@ services:
     image: ${BACKEND_IMAGE:?set BACKEND_IMAGE in compose.env}
     command: ["uvicorn", "src.server:app", "--host=0.0.0.0", "--port=8000"]
     env_file:
-      - ${APP_STACK_ENV_DIR:-.}/backend.env
+      - ${APP_STACK_ENV_DIR:?set APP_STACK_ENV_DIR in compose.env}/backend.env
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
       AWS_SHARED_CREDENTIALS_FILE: /run/aws/credentials
@@ -56,7 +56,7 @@ services:
     image: ${BACKEND_IMAGE:?set BACKEND_IMAGE in compose.env}
     command: ["python", "-m", "src.transactions_sync_runner"]
     env_file:
-      - ${APP_STACK_ENV_DIR:-.}/backend.env
+      - ${APP_STACK_ENV_DIR:?set APP_STACK_ENV_DIR in compose.env}/backend.env
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-adminsdk.json
       AWS_SHARED_CREDENTIALS_FILE: /run/aws/credentials
@@ -91,7 +91,7 @@ services:
   db:
     image: postgres:18-alpine
     env_file:
-      - ${APP_STACK_ENV_DIR:-.}/db.env
+      - ${APP_STACK_ENV_DIR:?set APP_STACK_ENV_DIR in compose.env}/db.env
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
@@ -108,9 +108,9 @@ services:
 
 volumes:
   postgres-data:
-    name: ${POSTGRES_VOLUME_NAME:-lantern-postgres-data}
+    name: ${POSTGRES_VOLUME_NAME:?set POSTGRES_VOLUME_NAME in compose.env}
 
 networks:
   backend-shared:
     external: true
-    name: ${BACKEND_SHARED_NETWORK:-lantern-backend}
+    name: ${BACKEND_SHARED_NETWORK:?set BACKEND_SHARED_NETWORK in compose.env}

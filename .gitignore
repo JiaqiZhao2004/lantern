@@ -40,6 +40,7 @@ ops/deployment/backend/app-stack/db.env
 ops/deployment/backend/app-stack/env/*/compose.env
 ops/deployment/backend/app-stack/env/*/backend.env
 ops/deployment/backend/app-stack/env/*/db.env
+ops/deployment/backend/app-stack/env/*/nginx
 
 # Ops durability artifacts
 ops/durability/backend/backups/
