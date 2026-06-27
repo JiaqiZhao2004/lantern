@@ -37,13 +37,18 @@ def write_heartbeat(now: float | None = None):
     path = Path(heartbeat_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.suffix == ".prom":
+        stack = os.getenv("SYNC_RUNNER_HEARTBEAT_STACK")
+        labels = ""
+        if stack:
+            escaped_stack = stack.replace("\\", "\\\\").replace('"', '\\"')
+            labels = f'{{stack="{escaped_stack}"}}'
         _write_text_atomically(
             path=path,
             content=(
                 "# HELP lantern_sync_runner_last_heartbeat_timestamp_seconds "
                 "Unix timestamp for the latest sync runner heartbeat.\n"
                 "# TYPE lantern_sync_runner_last_heartbeat_timestamp_seconds gauge\n"
-                f"lantern_sync_runner_last_heartbeat_timestamp_seconds {timestamp:.6f}\n"
+                f"lantern_sync_runner_last_heartbeat_timestamp_seconds{labels} {timestamp:.6f}\n"
             ),
         )
         return

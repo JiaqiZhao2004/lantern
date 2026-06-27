@@ -63,24 +63,29 @@ sudo systemctl start weekly-retention-backup.service
 From `ops/durability/backend/` on the server:
 
 ```bash
-./backup-db.sh
+./backup-db.sh public
+./backup-db.sh prod
 ```
 
-This always writes a timestamped compressed SQL dump under `ops/durability/backend/backups/`.
+This writes an environment-prefixed timestamped compressed SQL dump under
+`ops/durability/backend/backups/`, for example `public-postgres-...sql.gz` or
+`prod-postgres-...sql.gz`.
 
 If `BACKUP_S3_BUCKET` is configured, the same artifact is uploaded to `s3://$BACKUP_S3_BUCKET/$BACKUP_S3_PREFIX/...`.
 
 To promote a recovery point into the weekly retention tier, run:
 
 ```bash
-BACKUP_S3_UPLOAD_WEEKLY_COPY=1 ./backup-db.sh
+BACKUP_S3_UPLOAD_WEEKLY_COPY=1 ./backup-db.sh public
 ```
 
 The deploy flow does not set the weekly flag. Weekly retention comes from a separate service/timer so ordinary deploy backups do not crowd the weekly tier.
 
 ## Local cleanup
 
-After a successful backup and any configured uploads, the script removes local files matching `postgres-*.sql.gz` that are older than `BACKUP_LOCAL_RETENTION_DAYS`.
+After a successful backup and any configured uploads, the script removes local files
+matching `<environment>-postgres-*.sql.gz` that are older than
+`BACKUP_LOCAL_RETENTION_DAYS`.
 
 - cleanup never runs before the current backup succeeds
 - cleanup affects only local files under `backups/`
@@ -98,8 +103,8 @@ The disaster-recovery target for phase one is: restore Lantern onto a fresh Ubun
 4. start only the Postgres service
 5. download the chosen backup from S3 if needed:
    - `aws s3 cp s3://$BACKUP_S3_BUCKET/<chosen-object-key> /tmp/postgres-restore.sql.gz`
-6. load it into Postgres:
-   - `gunzip -c /tmp/postgres-restore.sql.gz | docker compose --env-file ../deployment/backend/app-stack/compose.env -f ../deployment/backend/app-stack/compose.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'`
+6. load it into the intended environment's Postgres:
+   - `gunzip -c /tmp/postgres-restore.sql.gz | docker compose --env-file ../deployment/backend/app-stack/env/prod/compose.env -f ../deployment/backend/app-stack/compose.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'`
 7. run the deploy flow with the intended image tag
 8. verify `/health/ready`
 

@@ -36,12 +36,24 @@ scrape_configs:
     static_configs:
       - targets:
           - postgres-exporter:9187
+        labels:
+          stack: production
+      - targets:
+          - postgres-exporter-public:9187
+        labels:
+          stack: public
 
   - job_name: backend
     metrics_path: /metrics
     static_configs:
       - targets:
-          - backend:8000
+          - lantern-prod-backend:8000
+        labels:
+          stack: production
+      - targets:
+          - lantern-public-backend:8000
+        labels:
+          stack: public
 
   - job_name: blackbox-local-http
     metrics_path: /probe
@@ -50,8 +62,25 @@ scrape_configs:
         - http_2xx
     static_configs:
       - targets:
-          - http://nginx:8080/health/live
-          - http://nginx:8080/health/ready
+          - http://lantern-prod-nginx:8080/health/live
+        labels:
+          stack: production
+          probe: live
+      - targets:
+          - http://lantern-prod-nginx:8080/health/ready
+        labels:
+          stack: production
+          probe: ready
+      - targets:
+          - http://lantern-public-nginx:8080/health/live
+        labels:
+          stack: public
+          probe: live
+      - targets:
+          - http://lantern-public-nginx:8080/health/ready
+        labels:
+          stack: public
+          probe: ready
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

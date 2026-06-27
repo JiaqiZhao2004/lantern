@@ -2,11 +2,23 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TARGET_ENV="${APP_STACK_ENV:-${1:-prod}}"
+if [[ $# -gt 1 ]]; then
+  echo "Usage: $0 [public|prod|<env-name>]" >&2
+  exit 1
+fi
+
+ENV_DIR="$ROOT_DIR/env/$TARGET_ENV"
 COMPOSE_FILE="$ROOT_DIR/compose.yml"
-COMPOSE_ENV="$ROOT_DIR/compose.env"
-BACKEND_ENV="$ROOT_DIR/backend.env"
-DB_ENV="$ROOT_DIR/db.env"
+COMPOSE_ENV="$ENV_DIR/compose.env"
+BACKEND_ENV="$ENV_DIR/backend.env"
+DB_ENV="$ENV_DIR/db.env"
 SQL_FILE="$ROOT_DIR/postgres/create-app-role.sql"
+
+if [[ ! -d "$ENV_DIR" ]]; then
+  echo "Missing environment directory: $ENV_DIR" >&2
+  exit 1
+fi
 
 for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV" "$SQL_FILE"; do
   if [[ ! -f "$required_file" ]]; then

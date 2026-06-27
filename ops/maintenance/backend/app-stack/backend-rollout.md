@@ -3,20 +3,23 @@
 Use this runbook to roll out a new backend image on the backend host.
 
 `ops/deployment/backend/app-stack/deploy.sh` is sufficient for the normal
-single-host backend rollout path. It pulls the configured image, starts Postgres if
-needed, ensures the app DB role exists, creates a pre-deploy database backup, runs
-Alembic migrations, reconciles Plaid webhook URLs, updates `nginx`, `backend`, and
-`worker`, and verifies readiness through the local `nginx` boundary.
+single-host backend rollout path for a specific environment. It pulls the
+configured image, starts Postgres if needed, ensures the app DB role exists,
+creates a pre-deploy database backup, runs Alembic migrations, reconciles Plaid
+webhook URLs, updates `nginx`, `backend`, and `worker`, and verifies readiness
+through the local `nginx` boundary.
 
 ## Preconditions
 
 - You are on the backend host.
 - Docker can pull the image referenced by `BACKEND_IMAGE`.
-- `ops/deployment/backend/app-stack/compose.env`, `backend.env`, and `db.env`
-  are present and current.
-- `BACKEND_IMAGE` in `compose.env` points at the new backend image tag.
+- `ops/deployment/backend/app-stack/env/<environment>/compose.env`,
+  `backend.env`, and `db.env` are present and current.
+- `BACKEND_IMAGE` in the target environment's `compose.env` points at the new
+  backend image tag.
 - The shared Docker network named by `BACKEND_SHARED_NETWORK` exists.
-- The Firebase and AWS credential files referenced by `compose.env` exist.
+- The Firebase and AWS credential files referenced by the target environment's
+  `compose.env` exist.
 - `ops/durability/backend/backup-db.sh` is executable and the backup destination
   is healthy.
 
@@ -25,7 +28,8 @@ Alembic migrations, reconciles Plaid webhook URLs, updates `nginx`, `backend`, a
 From `ops/deployment/backend/app-stack/`:
 
 ```bash
-./deploy.sh
+./deploy.sh public
+./deploy.sh prod
 ```
 
 The script stops at the first failed step. If it completes, it has already checked:
@@ -40,11 +44,13 @@ The script stops at the first failed step. If it completes, it has already check
 Inspect runtime state:
 
 ```bash
-docker compose --env-file compose.env -f compose.yml ps nginx backend worker db
+docker compose --env-file env/public/compose.env -f compose.yml ps nginx backend worker db
 ```
 
+Replace `env/public/compose.env` with the environment you actually rolled out.
+
 If the rollout fails before runtime services are updated, fix the failing
-precondition and rerun `./deploy.sh`.
+precondition and rerun `./deploy.sh <environment>`.
 
 If it fails after migrations, prefer a fix-forward deploy. Application image
 rollback is not automatically safe once schema changes have run. Use the database

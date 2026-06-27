@@ -2,13 +2,26 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_ENV="${1:-${APP_STACK_ENV:-prod}}"
+if [[ $# -gt 1 ]]; then
+  echo "Usage: $0 [public|prod|<env-name>]" >&2
+  exit 1
+fi
+
+ENV_DIR="$ROOT_DIR/env/$TARGET_ENV"
 COMPOSE_FILE="$ROOT_DIR/compose.yml"
-COMPOSE_ENV="$ROOT_DIR/compose.env"
-BACKEND_ENV="$ROOT_DIR/backend.env"
-DB_ENV="$ROOT_DIR/db.env"
+COMPOSE_ENV="$ENV_DIR/compose.env"
+BACKEND_ENV="$ENV_DIR/backend.env"
+DB_ENV="$ENV_DIR/db.env"
 APP_ROLE_SCRIPT="$ROOT_DIR/postgres/create-app-role.sh"
 DURABILITY_DIR="${DURABILITY_DIR:-$ROOT_DIR/../../../durability/backend}"
 BACKUP_SCRIPT="$DURABILITY_DIR/backup-db.sh"
+
+if [[ ! -d "$ENV_DIR" ]]; then
+  echo "Missing environment directory: $ENV_DIR" >&2
+  echo "Create host-local runtime files there, for example from env/$TARGET_ENV/*.example." >&2
+  exit 1
+fi
 
 for required_file in "$COMPOSE_ENV" "$BACKEND_ENV" "$DB_ENV"; do
   if [[ ! -f "$required_file" ]]; then
@@ -61,10 +74,10 @@ echo "Ensuring database is running before backup and migration..."
 compose up -d db
 
 echo "Ensuring backend app database role exists..."
-"$APP_ROLE_SCRIPT"
+APP_STACK_ENV="$TARGET_ENV" "$APP_ROLE_SCRIPT"
 
 echo "Creating pre-deploy backup..."
-"$BACKUP_SCRIPT"
+APP_STACK_ENV="$TARGET_ENV" "$BACKUP_SCRIPT"
 
 echo "Running Alembic migrations..."
 compose run --rm backend alembic upgrade head

@@ -36,22 +36,24 @@ terraform apply
 
 ## Runtime values
 
-After apply, create the backend environment file on the server if it does not
+After apply, create the backend environment file on the server for the target
+stack environment if it does not
 already exist, then review the prefilled AWS runtime settings:
 
 ```bash
 cd ops/deployment/backend/app-stack
-test -f backend.env || cp backend.env.example backend.env
+test -f env/prod/backend.env || cp env/prod/backend.env.example env/prod/backend.env
 ```
 
 The example already contains the expected region, `lantern-app-kms` profile, and KMS
 alias. Keep AWS credential secret values out of this file.
 
 Install the backend app AWS credential into the host file referenced by
-`AWS_SHARED_CREDENTIALS_PATH` in `ops/deployment/backend/app-stack/compose.env`:
+`AWS_SHARED_CREDENTIALS_PATH` in
+`ops/deployment/backend/app-stack/env/prod/compose.env`:
 
 ```bash
-test -f compose.env || cp compose.env.example compose.env
+test -f env/prod/compose.env || cp env/prod/compose.env.example env/prod/compose.env
 
 cd ops/terraform/backend-app-runtime
 app_profile="lantern-app-kms"

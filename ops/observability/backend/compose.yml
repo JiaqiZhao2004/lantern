@@ -18,6 +18,7 @@ services:
       - node-exporter
       - cadvisor
       - postgres-exporter
+      - postgres-exporter-public
       - blackbox-exporter
     networks:
       - observability
@@ -84,7 +85,16 @@ services:
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.16.0
     environment:
-      DATA_SOURCE_NAME: ${DATA_SOURCE_NAME:?set DATA_SOURCE_NAME in observability.env}
+      DATA_SOURCE_NAME: ${PROD_DATA_SOURCE_NAME:?set PROD_DATA_SOURCE_NAME in observability.env}
+    networks:
+      - observability
+      - backend-shared
+    restart: unless-stopped
+
+  postgres-exporter-public:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    environment:
+      DATA_SOURCE_NAME: ${PUBLIC_DATA_SOURCE_NAME:?set PUBLIC_DATA_SOURCE_NAME in observability.env}
     networks:
       - observability
       - backend-shared

@@ -146,6 +146,7 @@ def test_run_forever_sleeps_when_no_work_is_due(monkeypatch):
 def test_write_heartbeat_writes_prometheus_text_atomically(monkeypatch, tmp_path):
     heartbeat_path = tmp_path / "worker-heartbeat.prom"
     monkeypatch.setenv("SYNC_RUNNER_HEARTBEAT_PATH", str(heartbeat_path))
+    monkeypatch.setenv("SYNC_RUNNER_HEARTBEAT_STACK", "production")
 
     write_heartbeat(now=1782412345.25)
 
@@ -153,7 +154,7 @@ def test_write_heartbeat_writes_prometheus_text_atomically(monkeypatch, tmp_path
         "# HELP lantern_sync_runner_last_heartbeat_timestamp_seconds "
         "Unix timestamp for the latest sync runner heartbeat.\n"
         "# TYPE lantern_sync_runner_last_heartbeat_timestamp_seconds gauge\n"
-        "lantern_sync_runner_last_heartbeat_timestamp_seconds 1782412345.250000\n"
+        'lantern_sync_runner_last_heartbeat_timestamp_seconds{stack="production"} 1782412345.250000\n'
     )
     assert not (tmp_path / ".worker-heartbeat.prom.tmp").exists()
 

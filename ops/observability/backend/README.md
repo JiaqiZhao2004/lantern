@@ -1,6 +1,7 @@
 # Backend Observability
 
-This component owns Slice 5: first-pass monitoring for the production backend host.
+This component owns Slice 5: first-pass monitoring for the backend host and both backend
+runtime stacks on that host.
 
 ## Boundary
 
@@ -10,15 +11,16 @@ existing backend app stack instead of editing `ops/deployment/backend/app-stack/
 as part of the app rollout path.
 
 This keeps monitoring deployable and restartable on its own while still watching the same
-host, containers, Postgres database, backend service, and backup posture.
+host, both app stacks, both Postgres databases, both backend services, and the shared
+backup posture.
 
 ## Initial Scope
 
 - Prometheus
 - Grafana
 - metrics for the host
-- metrics for backend app stack containers
-- metrics for Postgres
+- metrics for both backend app stack instances
+- metrics for both Postgres instances
 - app-native backend HTTP metrics and backend availability probes
 - transaction sync worker heartbeat and aggregate SyncJob metrics
 - backup freshness and failure alerting
@@ -48,6 +50,29 @@ host, containers, Postgres database, backend service, and backup posture.
 - [postgres/create-monitoring-role.sh](../../observability/backend/postgres/create-monitoring-role.sh)
 - [postgres/create-monitoring-role.sql](../../observability/backend/postgres/create-monitoring-role.sql)
 
+## Runtime Model
+
+The backend host runs three observability views at once:
+
+- `production`: the protected `prod` app stack
+- `public`: the public `public` app stack, which uses Plaid Sandbox today
+- shared host metrics: node exporter, cAdvisor, and backup freshness
+
+Grafana provisions one overview dashboard with:
+
+- production panels on the left
+- public panels on the right
+- shared host and backup panels across the bottom
+
+Prometheus reaches both app stacks through the shared Docker network by explicit
+per-environment DNS aliases:
+
+- `lantern-prod-nginx`, `lantern-prod-backend`, `lantern-prod-db`
+- `lantern-public-nginx`, `lantern-public-backend`, `lantern-public-db`
+
+The app stack Compose project names create those aliases, so do not rename
+`COMPOSE_PROJECT_NAME` without updating Prometheus targets too.
+
 ## First-Time Setup
 
 Run these steps from `ops/observability/backend/` on the backend host.
@@ -67,17 +92,22 @@ test -f observability.env || cp observability.env.example observability.env
 Fill in `observability.env`, including:
 
 - Grafana admin password
-- `DATA_SOURCE_NAME` for the dedicated `lantern_monitor` Postgres role
+- `PROD_DATA_SOURCE_NAME` for the dedicated `lantern_monitor` role against
+  `lantern-prod-db`
+- `PUBLIC_DATA_SOURCE_NAME` for the dedicated `lantern_monitor` role against
+  `lantern-public-db`
 - SMTP settings for Alertmanager
 
-3. Create or rotate the dedicated Postgres monitoring role:
+3. Create or rotate the dedicated Postgres monitoring role in both app stacks:
 
 ```bash
-./postgres/create-monitoring-role.sh
+./postgres/create-monitoring-role.sh public
+./postgres/create-monitoring-role.sh prod
 ```
 
-The helper reads the `lantern_monitor` password from `DATA_SOURCE_NAME` in
-`observability.env` so the exporter connection string is the single source of truth.
+The helper reads the `lantern_monitor` password from
+`PUBLIC_DATA_SOURCE_NAME` or `PROD_DATA_SOURCE_NAME` in `observability.env`, so each
+exporter connection string stays the single source of truth for its environment.
 
 4. Render the host-local Alertmanager config:
 
@@ -98,12 +128,25 @@ path for this directory, usually:
 BACKUP_PROM_TEXTFILE_DIR=/srv/lantern/ops/observability/backend/textfile_collector
 ```
 
-Set `OBSERVABILITY_TEXTFILE_COLLECTOR_PATH` in
-`ops/deployment/backend/app-stack/compose.env` to the same absolute path so the
-worker can write its heartbeat metric:
+Set `OBSERVABILITY_TEXTFILE_COLLECTOR_PATH` in both app stack `compose.env` files to the
+same absolute path so each worker can write its own heartbeat metric file:
 
 ```bash
 OBSERVABILITY_TEXTFILE_COLLECTOR_PATH=/srv/lantern/ops/observability/backend/textfile_collector
+```
+
+Also set the per-environment Grafana label in each app stack env file:
+
+- `ops/deployment/backend/app-stack/env/prod/compose.env`
+
+```bash
+OBSERVABILITY_STACK_LABEL=production
+```
+
+- `ops/deployment/backend/app-stack/env/public/compose.env`
+
+```bash
+OBSERVABILITY_STACK_LABEL=public
 ```
 
 6. Start observability:
@@ -135,39 +178,42 @@ be committed to the repository.
 
 Slice 5 includes a checked-in, rerunnable SQL/script path for creating or updating the
 monitoring role. The helper reads the role password from the host-local
-`DATA_SOURCE_NAME`; the password is never embedded in checked-in SQL.
+`PROD_DATA_SOURCE_NAME` or `PUBLIC_DATA_SOURCE_NAME`; the password is never embedded in
+checked-in SQL.
 
 ## Grafana Provisioning
 
 Slice 5 should provision baseline Grafana datasources and dashboards from repo-owned files
 instead of relying on dashboards built manually in the Grafana UI.
 
-Baseline dashboards should stay small:
+Baseline dashboards should stay small and reproducible:
 
-- host health
-- container health
-- Postgres health
-- backup freshness
-- API availability
+- production backend health
+- public backend health
+- shared host health
+- shared backup freshness
 
 Manual dashboards can still be used for exploration, but replacement-host recovery should
 not depend on unreproducible Grafana UI state.
 
 ## Runtime Integration
 
-The observability stack should scrape backend app stack services over a shared named Docker
-network. The backend app stack Compose file and the observability Compose file should agree
-on one external network name so Prometheus can use stable container DNS names for backend,
-nginx, db, and exporter targets. Prometheus scrapes app-native backend metrics directly
-from `backend:8000/metrics` on this private network.
+The observability stack should scrape both backend app stack services over a shared named
+Docker network. The backend app stack Compose file and the observability Compose file
+should agree on one external network name so Prometheus can use stable per-environment DNS
+names for backend, nginx, db, and exporter targets. Prometheus scrapes app-native backend
+metrics directly from `lantern-prod-backend:8000/metrics` and
+`lantern-public-backend:8000/metrics` on this private network.
 
 The shared network should be host-owned, not owned by either Compose project:
 
 - default name: `lantern-backend`
 - env knob: `BACKEND_SHARED_NETWORK`
 - host setup command: `docker network inspect lantern-backend >/dev/null 2>&1 || docker network create lantern-backend`
-- app stack services attached: `nginx`, `backend`, `worker`, and `db`
-- observability services attached: Prometheus, `blackbox_exporter`, and `postgres_exporter`
+- app stack services attached: `nginx`, `backend`, `worker`, and `db` for both `prod` and
+  `public`
+- observability services attached: Prometheus, `blackbox_exporter`,
+  `postgres_exporter`, and `postgres_exporter-public`
 
 Because the network is external, `docker compose down` for either stack should not remove
 the shared app/monitoring connectivity.
@@ -202,10 +248,10 @@ it through nginx, Cloudflare Tunnel, CloudFront, or the public app origin.
 
 ### Backend Availability
 
-- backend `/health/live` status
-- backend `/health/ready` status through local `nginx`
+- backend `/health/live` status for both stacks
+- backend `/health/ready` status through each stack's local `nginx`
 - app-native backend request count, 5xx count, latency, and in-progress requests from
-  `backend:8000/metrics`
+  both `/metrics` endpoints
 - production same-origin API synthetic check through `lantern.royzhao.dev/api/*`, deferred
   until there is a safe non-human token strategy
 
@@ -215,8 +261,8 @@ low-volume API error signals.
 
 ### Worker
 
-- worker container health
-- worker heartbeat freshness
+- worker container health for both stacks
+- worker heartbeat freshness for both stacks
 - stale queued or running SyncJobs
 - aggregate SyncJob counts by status
 - due queued SyncJobs
@@ -305,9 +351,9 @@ lantern_sync_jobs_by_status
 lantern_sync_jobs_metrics_collection_success
 ```
 
-Trigger a controlled backend 500 in a non-production environment and confirm
-`lantern_http_requests_total{status_code="500"}` increases. Also confirm `/metrics` is
-not reachable through nginx or any public route.
+Trigger a controlled backend 500 in the public stack and confirm
+`lantern_http_requests_total{stack="public",status_code="500"}` increases. Also confirm
+`/metrics` is not reachable through nginx or any public route.
 
 ## Deferred Metrics
 

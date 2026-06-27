@@ -2,48 +2,68 @@ groups:
   - name: backend-availability
     rules:
       - alert: LanternBackendReadinessDown
-        expr: probe_success{instance="http://nginx:8080/health/ready"} == 0
+        expr: probe_success{job="blackbox-local-http",probe="ready"} == 0
         for: 5m
         labels:
           severity: critical
         annotations:
           summary: "Lantern backend readiness is down"
-          description: "The local nginx /health/ready probe has failed for at least 5 minutes."
+          description: "The {{ $labels.stack }} nginx /health/ready probe has failed for at least 5 minutes."
 
       - alert: LanternBackendLivenessDown
-        expr: probe_success{instance="http://nginx:8080/health/live"} == 0
+        expr: probe_success{job="blackbox-local-http",probe="live"} == 0
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "Lantern backend liveness is down"
-          description: "The local nginx /health/live probe has failed for at least 5 minutes."
+          description: "The {{ $labels.stack }} nginx /health/live probe has failed for at least 5 minutes."
 
       - alert: LanternBackend5xxResponses
-        expr: sum(increase(lantern_http_requests_total{status_code=~"5.."}[5m])) > 0
+        expr: sum by (stack) (increase(lantern_http_requests_total{status_code=~"5.."}[5m])) > 0
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "Lantern backend is returning 5xx responses"
-          description: "At least one backend API request returned a 5xx response over the last 5 minutes."
+          description: "At least one {{ $labels.stack }} backend API request returned a 5xx response over the last 5 minutes."
 
       - alert: LanternBackendRepeated5xxResponses
-        expr: sum(increase(lantern_http_requests_total{status_code=~"5.."}[10m])) >= 5
+        expr: sum by (stack) (increase(lantern_http_requests_total{status_code=~"5.."}[10m])) >= 5
         labels:
           severity: critical
         annotations:
           summary: "Lantern backend is repeatedly returning 5xx responses"
-          description: "At least 5 backend API requests returned 5xx responses over the last 10 minutes."
+          description: "At least 5 {{ $labels.stack }} backend API requests returned 5xx responses over the last 10 minutes."
 
       - alert: LanternSyncRunnerHeartbeatStale
-        expr: (time() - lantern_sync_runner_last_heartbeat_timestamp_seconds > 120) or absent(lantern_sync_runner_last_heartbeat_timestamp_seconds)
+        expr: max by (stack) (time() - lantern_sync_runner_last_heartbeat_timestamp_seconds{stack=~"production|public"}) > 120
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "Lantern sync runner heartbeat is stale"
-          description: "The transaction sync runner heartbeat has been missing or older than 2 minutes."
+          description: "The {{ $labels.stack }} transaction sync runner heartbeat is older than 2 minutes."
+
+      - alert: LanternProductionSyncRunnerHeartbeatMissing
+        expr: absent(lantern_sync_runner_last_heartbeat_timestamp_seconds{stack="production"})
+        for: 2m
+        labels:
+          severity: critical
+          stack: production
+        annotations:
+          summary: "Lantern sync runner heartbeat is missing"
+          description: "The production transaction sync runner heartbeat metric is missing."
+
+      - alert: LanternPublicSyncRunnerHeartbeatMissing
+        expr: absent(lantern_sync_runner_last_heartbeat_timestamp_seconds{stack="public"})
+        for: 2m
+        labels:
+          severity: critical
+          stack: public
+        annotations:
+          summary: "Lantern sync runner heartbeat is missing"
+          description: "The public transaction sync runner heartbeat metric is missing."
 
       - alert: LanternSyncJobMetricsCollectionFailing
         expr: lantern_sync_jobs_metrics_collection_success == 0

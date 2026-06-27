@@ -2,13 +2,25 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_ENV="${APP_STACK_ENV:-${1:-prod}}"
+if [[ $# -gt 1 ]]; then
+  echo "Usage: $0 [public|prod|<env-name>]" >&2
+  exit 1
+fi
+
 DEPLOYMENT_DIR="${DEPLOYMENT_DIR:-$ROOT_DIR/../../deployment/backend/app-stack}"
+ENV_DIR="$DEPLOYMENT_DIR/env/$TARGET_ENV"
 COMPOSE_FILE="$DEPLOYMENT_DIR/compose.yml"
-COMPOSE_ENV="$DEPLOYMENT_DIR/compose.env"
+COMPOSE_ENV="$ENV_DIR/compose.env"
 BACKUP_ENV="$ROOT_DIR/backup.env"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
 BACKUP_LOCAL_RETENTION_DAYS="${BACKUP_LOCAL_RETENTION_DAYS:-7}"
 BACKUP_TIER="${BACKUP_TIER:-six-hourly}"
+
+if [[ ! -d "$ENV_DIR" ]]; then
+  echo "Missing environment directory: $ENV_DIR" >&2
+  exit 1
+fi
 
 if [[ -f "$BACKUP_ENV" ]]; then
   set -a
@@ -21,7 +33,7 @@ mkdir -p "$BACKUP_DIR"
 
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 started_at_epoch="$(date +%s)"
-backup_path="$BACKUP_DIR/postgres-$timestamp.sql.gz"
+backup_path="$BACKUP_DIR/${TARGET_ENV}-postgres-$timestamp.sql.gz"
 
 write_prom_marker() {
   local tier="$1"
@@ -36,13 +48,13 @@ write_prom_marker() {
 
   mkdir -p "$BACKUP_PROM_TEXTFILE_DIR"
 
-  local marker_path="$BACKUP_PROM_TEXTFILE_DIR/lantern-backup-${tier}-${stage}.prom"
+  local marker_path="$BACKUP_PROM_TEXTFILE_DIR/lantern-backup-${TARGET_ENV}-${tier}-${stage}.prom"
   local tmp_path="${marker_path}.$$"
 
   {
-    printf 'lantern_backup_last_success_timestamp_seconds{tier="%s",stage="%s"} %s\n' "$tier" "$stage" "$succeeded_at_epoch"
-    printf 'lantern_backup_last_success_duration_seconds{tier="%s",stage="%s"} %s\n' "$tier" "$stage" "$duration_seconds"
-    printf 'lantern_backup_last_success_size_bytes{tier="%s",stage="%s"} %s\n' "$tier" "$stage" "$size_bytes"
+    printf 'lantern_backup_last_success_timestamp_seconds{environment="%s",tier="%s",stage="%s"} %s\n' "$TARGET_ENV" "$tier" "$stage" "$succeeded_at_epoch"
+    printf 'lantern_backup_last_success_duration_seconds{environment="%s",tier="%s",stage="%s"} %s\n' "$TARGET_ENV" "$tier" "$stage" "$duration_seconds"
+    printf 'lantern_backup_last_success_size_bytes{environment="%s",tier="%s",stage="%s"} %s\n' "$TARGET_ENV" "$tier" "$stage" "$size_bytes"
   } > "$tmp_path"
 
   mv "$tmp_path" "$marker_path"
@@ -120,7 +132,7 @@ fi
 if [[ "$BACKUP_LOCAL_RETENTION_DAYS" =~ ^[0-9]+$ ]] && [[ "$BACKUP_LOCAL_RETENTION_DAYS" -gt 0 ]]; then
   find "$BACKUP_DIR" \
     -type f \
-    -name 'postgres-*.sql.gz' \
+    -name "${TARGET_ENV}-postgres-*.sql.gz" \
     -mtime +"$BACKUP_LOCAL_RETENTION_DAYS" \
     -delete
   echo "Removed local backups older than ${BACKUP_LOCAL_RETENTION_DAYS} days."
