@@ -1,54 +1,86 @@
 # Lantern
 
-Lantern is a household finance app for bringing clarity and control to shared financial life.
+<p align="center">
+  <img src="home-v1.jpg" alt="Lantern dashboard screenshot" width="1200">
+</p>
 
-| Directory   | Description                                                  |
-| ----------- | ------------------------------------------------------------ |
-| `backend/`  | FastAPI backend, Alembic migrations, PostgreSQL, sync worker |
-| `frontend/` | React + TypeScript frontend built with Vite                  |
-| `docs/adr/` | Architecture Decision Records                                |
-| `ops/`      | Deployment and observability configuration                   |
+<p align="center">
+  <a href="https://lantern-public.royzhao.dev/"><strong>Open the live public app</strong></a>
+  <br />
+  Public entrypoint: <a href="https://lantern-public.royzhao.dev/">https://lantern-public.royzhao.dev/</a>
+</p>
 
-## Development Runbook
+<p align="center">
+  <a href="https://lantern-public.royzhao.dev/">
+    <img alt="Live app" src="https://img.shields.io/badge/live-lantern--public.royzhao.dev-0f766e?style=for-the-badge">
+  </a>
+  <img alt="Frontend" src="https://img.shields.io/badge/frontend-React%20%2B%20TypeScript-0ea5e9?style=for-the-badge">
+  <img alt="Backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20Postgres-334155?style=for-the-badge">
+  <img alt="Bank linking" src="https://img.shields.io/badge/bank%20linking-Plaid%20Sandbox-111827?style=for-the-badge">
+</p>
+
+Lantern is a household finance app for shared financial visibility. It lets a household link bank accounts, inspect transactions together, and save reusable SQL-backed views over that data instead of treating personal finance as a pile of disconnected account screens.
+
+The repo contains the full product surface: React frontend, FastAPI backend, background sync worker, deployment material, and architecture decisions. The public environment is intended as the main entrypoint for exploring the project.
+
+## What the public app shows
+
+- Live authentication and household setup flows.
+- Shared household transaction visibility across linked accounts.
+- Plaid Sandbox institution linking in the public environment.
+- A transaction ledger for browsing synced financial activity.
+- Named Queries: saved SQL-backed charts and tables over household data.
+- AI-assisted drafting for Named Queries, with validation and preview before saving.
+
+## Public entrypoint
+
+Use the live public app here:
+
+```text
+https://lantern-public.royzhao.dev/
+```
+
+That public environment emphasizes the real product flow while keeping external financial connectivity safe through Plaid Sandbox.
+
+## Architecture
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React, TypeScript, Vite |
+| Backend | FastAPI, SQLAlchemy, Alembic |
+| Data | PostgreSQL |
+| Bank connectivity | Plaid |
+| Auth | Firebase |
+| Async work | Background sync worker |
+| Ops | Docker Compose, deployment and observability docs under `ops/` |
+
+Lantern is organized around a **household** as the access-control boundary. Members of the same household can see the same linked financial data, and the main product payoff is reusable analysis over that shared transaction history.
+
+## Repository
+
+```text
+.
+|-- backend/          # FastAPI app, Alembic migrations, worker, pytest suite
+|-- frontend/         # React + TypeScript app built with Vite
+|-- docs/adr/         # Architecture Decision Records
+|-- ops/              # Deployment and observability configuration
+|-- docker-compose.yml
+`-- README.md
+```
+
+## Local development
 
 ### Prerequisites
 
-- Docker and Docker Compose for the full local stack.
-- Python 3 for backend-only development.
-- Node.js and npm for frontend-only development.
-- `ngrok` or another HTTPS tunnel when testing Plaid webhooks locally.
-- A Firebase Admin SDK JSON file for backend authentication.
+- Docker and Docker Compose for the full stack.
+- Python 3 for backend development.
+- Node.js and npm for frontend development.
+- A populated `backend/.env` file for local backend secrets.
+- `ngrok` or another HTTPS tunnel if you need to test Plaid webhooks locally.
 
-### 1. Configure the backend environment
+### Run the full stack
 
-Create the local backend environment file:
-
-```sh
-test -f backend/.env || cp backend/.env.example backend/.env
-```
-
-Fill in `backend/.env`. Keep secrets in this file only; do not expose backend secrets in the frontend.
-
-Key values for local development:
-
-- `DATABASE_URL`: use `postgresql+psycopg://postgres:password@localhost:5432/lantern` when running the backend directly on the host. Docker Compose overrides this to use the `db` service.
-- `GOOGLE_APPLICATION_CREDENTIALS`: path to your Firebase Admin SDK JSON file when running directly on the host. Docker Compose mounts a local secret file at `/run/secrets/firebase-adminsdk.json`.
-- `OPENAI_API_KEY`: required for AI-assisted Named Query generation.
-- `OPENAI_MODEL`: optional; defaults can be overridden, for example `gpt-4.1-mini`.
-- `PLAID_CLIENT_ID`, `PLAID_SECRET`, `SIGNAL_RULESET_KEY`, and related Plaid values for Plaid flows.
-- `PLAID_WEBHOOK_URL`: public webhook URL when testing webhooks.
-
-The root `docker-compose.yml` currently expects the Firebase Admin SDK JSON at:
-
-```text
-~/.secrets/lantern-firebase-adminsdk.json
-```
-
-Update the compose mount or place the file there before using the full stack.
-
-### 2. Start the full stack
-
-From the repository root:
+From the repo root:
 
 ```sh
 docker compose up --build
@@ -58,72 +90,45 @@ This starts:
 
 - Postgres on `localhost:5432`
 - Backend API on `http://localhost:8000`
-- Backend sync worker
+- Backend worker
 - Frontend on `http://localhost:3000`
 
-### 3. Run migrations
+### Run services directly
 
-After the database is running, apply migrations from the repository root:
-
-```sh
-docker compose run --rm backend alembic upgrade head
-```
-
-For host-based backend development, run the same command from `backend/` after activating the virtualenv:
+Backend:
 
 ```sh
-alembic upgrade head
-```
-
-### 4. Test Plaid webhooks locally
-
-Start an HTTPS tunnel to the backend:
-
-```sh
-ngrok http 8000
-```
-
-Set `PLAID_WEBHOOK_URL` in `backend/.env` to:
-
-```text
-https://<your-ngrok-domain>/api/v1/plaid/webhooks
-```
-
-Restart the backend after changing the env file. Keep the `backend-worker` service running so webhook-created sync jobs are processed.
-
-## Running Services Without Compose
-
-### Backend API
-
-From `backend/`:
-
-```sh
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Backend worker
-
-From `backend/` with the virtualenv active:
+Worker:
 
 ```sh
+cd backend
+source .venv/bin/activate
 python -m src.transactions_sync_runner
 ```
 
-### Frontend
-
-From `frontend/`:
+Frontend:
 
 ```sh
+cd frontend
 npm install
 npm start
 ```
 
-The Vite dev server listens on `http://localhost:3000` and proxies `/api` to `VITE_BACKEND_HOST`, defaulting to `http://127.0.0.1:8000`.
+## Environment notes
 
-## Verification Commands
+- Keep secrets in `backend/.env` only.
+- Do not expose backend credentials in the frontend.
+- When working with generated frontend API types, start the backend first and then run `npm run generate-api-types` from `frontend/` against `http://localhost:8000/openapi.json`.
+- The local backend also expects Firebase admin credentials and Plaid-related configuration in `backend/.env`.
+
+## Testing
 
 Backend:
 
@@ -141,18 +146,10 @@ npm run typecheck
 npm run build
 ```
 
-Regenerate frontend API types after changing backend schemas or routes. Start the backend first, then run:
+## Design and operations docs
 
-```sh
-cd frontend
-npm run generate-api-types
-```
+- Architecture decisions live in `docs/adr/`.
+- Deployment material lives under `ops/deployment/`.
+- Observability material lives under `ops/observability/`.
 
-## Backend Docker Image
-
-To build and run only the backend container from `backend/`:
-
-```sh
-docker build . -t lantern-backend
-docker run --rm --env-file .env -p 8000:8000 lantern-backend
-```
+If you are evaluating the project, start with the live public app at `https://lantern-public.royzhao.dev/`, then use the ADRs and ops docs to inspect the technical decisions behind it.
