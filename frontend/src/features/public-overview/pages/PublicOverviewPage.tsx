@@ -15,6 +15,8 @@ type WalkthroughStep = {
   eyebrow: string;
   title: string;
   description: string;
+  imageSrc: string;
+  imageAlt: string;
   slotTitle: string;
   slotNote: string;
   annotations?: Array<{
@@ -85,12 +87,29 @@ function ClosingAction() {
   );
 }
 
+function GitHubMark() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.actionIcon}
+      viewBox="0 0 24 24"
+      focusable="false"
+    >
+      <path
+        fill="currentColor"
+        d="M12 1.5A10.5 10.5 0 0 0 8.68 22c.53.1.72-.23.72-.51l-.01-1.98c-2.94.64-3.56-1.24-3.56-1.24-.48-1.2-1.17-1.51-1.17-1.51-.96-.66.07-.65.07-.65 1.06.08 1.61 1.08 1.61 1.08.95 1.61 2.48 1.14 3.09.87.09-.67.37-1.14.67-1.4-2.35-.26-4.83-1.16-4.83-5.18 0-1.15.41-2.09 1.08-2.83-.11-.27-.47-1.35.1-2.81 0 0 .88-.28 2.89 1.08a10.08 10.08 0 0 1 5.26 0c2.01-1.36 2.89-1.08 2.89-1.08.57 1.46.21 2.54.1 2.81.68.74 1.08 1.68 1.08 2.83 0 4.03-2.48 4.91-4.84 5.17.38.32.72.94.72 1.89l-.01 2.8c0 .28.19.61.73.5A10.5 10.5 0 0 0 12 1.5Z"
+      />
+    </svg>
+  );
+}
+
 const quickPath = [
   "Sign in with Google or email",
   "Create a household",
   "Link a Plaid Sandbox institution",
   "Inspect shared transaction history",
   "Open a reusable named query",
+  "View results in dashboard",
 ];
 
 const capabilityChips = [
@@ -108,6 +127,8 @@ const walkthroughSteps: WalkthroughStep[] = [
     title: "Sign in with Google or email",
     description:
       "Authentication is live in the public environment, so the first step uses the same account flow as the rest of the app.",
+    imageSrc: "/step-1.jpg",
+    imageAlt: "Lantern sign-in page with Google and email authentication options.",
     slotTitle: "Sign-in screen",
     slotNote: "Google and email auth",
   },
@@ -117,6 +138,8 @@ const walkthroughSteps: WalkthroughStep[] = [
     title: "Create a household",
     description:
       "Household setup is the first product boundary, because the app is organized around who can see and analyze shared financial data.",
+    imageSrc: "/step-2.jpg",
+    imageAlt: "Lantern household setup page for naming a household and choosing a default currency.",
     slotTitle: "Household setup screen",
     slotNote: "Real household workflow",
   },
@@ -126,6 +149,8 @@ const walkthroughSteps: WalkthroughStep[] = [
     title: "Link a Plaid Sandbox institution",
     description:
       "Public financial institution linking uses Plaid Sandbox, which keeps the public environment safe while preserving the real app flow.",
+    imageSrc: "/step-3.jpg",
+    imageAlt: "Lantern account connection page showing Plaid Sandbox institutions available to link.",
     slotTitle: "Plaid Link flow",
     slotNote: "Sandbox institution linking",
   },
@@ -135,25 +160,42 @@ const walkthroughSteps: WalkthroughStep[] = [
     title: "Inspect transaction history",
     description:
       "Once data is linked, the ledger becomes the calm observability surface: search, filter, and inspect household transaction history without leaving the app.",
+    imageSrc: "/step-4.jpg",
+    imageAlt: "Lantern transactions page with ledger filters and synced household transactions.",
     slotTitle: "Transactions screen",
     slotNote: "Search, filters, and sorting",
   },
   {
     number: "05",
-    eyebrow: "Payoff",
+    eyebrow: "Queries",
     title: "Open a reusable named query",
     description:
-      "The payoff is reusable analysis over household data rather than one-off browsing. This is where linked accounts turn into saved views you can revisit.",
+      "Named queries are authored and previewed against live household data, so you can refine the draft before deciding what should become a saved reusable view.",
+    imageSrc: "/step-5.jpg",
+    imageAlt: "Lantern named query editor showing AI-assisted query drafting and a live preview panel.",
+    slotTitle: "Named query editor",
+    slotNote: "Draft, preview, and validate",
+    annotations: [
+      {
+        label: "Why it is credible",
+        text: "The queries are SQL-backed, previewable, and validated before execution, with AI-assisted drafting kept as a secondary aid.",
+      },
+    ],
+  },
+  {
+    number: "06",
+    eyebrow: "Payoff",
+    title: "View results in dashboard",
+    description:
+      "The payoff is reusable analysis over household data rather than one-off browsing. Saved query results stay available in the dashboard as views you can reopen as charts or tables.",
+    imageSrc: "/step-6.jpg",
+    imageAlt: "Lantern dashboard showing a saved named query result rendered as a table.",
     slotTitle: "Named query result",
-    slotNote: "Chart or table output",
+    slotNote: "Reusable dashboard view",
     annotations: [
       {
         label: "Why it matters",
         text: "Saved queries turn linked household transactions into reusable views you can reopen as charts or tables.",
-      },
-      {
-        label: "Why it is credible",
-        text: "The queries are SQL-backed, previewable, and validated before execution, with AI-assisted drafting kept as a secondary aid.",
       },
     ],
   },
@@ -274,6 +316,15 @@ export default function PublicOverviewPage() {
             <a className={styles.secondaryAction} href="#walkthrough">
               See walkthrough
             </a>
+            <a
+              className={styles.codeAction}
+              href={REPO_BASE_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <GitHubMark />
+              Lookup code
+            </a>
           </div>
 
           <p className={styles.pathNote}>
@@ -317,8 +368,8 @@ export default function PublicOverviewPage() {
           <p className={styles.sectionEyebrow}>Public walkthrough</p>
           <h2>Follow the app from entry to payoff</h2>
           <p>
-            This sequence mirrors the real app flow. The layout is ready for
-            production screenshots; these slots mark the app states to capture.
+            This sequence mirrors the real app flow using the actual public-app
+            screens.
           </p>
         </div>
 
@@ -348,19 +399,14 @@ export default function PublicOverviewPage() {
                 ) : null}
               </div>
 
-              <figure className={styles.visualSlot}>
-                <div className={styles.visualChrome}>
-                  <span className={styles.chromeDot} />
-                  <span className={styles.chromeDot} />
-                  <span className={styles.chromeDot} />
-                  <p>Capture state</p>
-                </div>
-                <div className={styles.visualSurface}>
-                  <p className={styles.slotLabel}>Screenshot slot</p>
-                  <strong className={styles.slotTitle}>{step.slotTitle}</strong>
-                  <span className={styles.slotNote}>{step.slotNote}</span>
-                </div>
-              </figure>
+              <div className={styles.visualSlot}>
+                <img
+                  className={styles.stepImage}
+                  src={step.imageSrc}
+                  alt={step.imageAlt}
+                  loading="lazy"
+                />
+              </div>
             </Card>
           ))}
         </div>

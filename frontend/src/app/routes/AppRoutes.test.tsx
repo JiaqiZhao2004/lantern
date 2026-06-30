@@ -80,10 +80,17 @@ describe("AppRoutes", () => {
     expect(
       screen.getByRole("link", { name: "See walkthrough" })
     ).toHaveAttribute("href", "#walkthrough");
+    expect(screen.getByRole("link", { name: "Lookup code" })).toHaveAttribute(
+      "href",
+      "https://github.com/JiaqiZhao2004/lantern"
+    );
     expect(
       screen.getByText(
         "Lantern supports real sign-in, household setup, and app workflows; the public environment uses Plaid Sandbox for financial institution linking."
       )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "View results in dashboard" })
     ).toBeInTheDocument();
     expect(mockedUseViewerQuery).not.toHaveBeenCalled();
     expect(mockedUseMembershipQuery).not.toHaveBeenCalled();
