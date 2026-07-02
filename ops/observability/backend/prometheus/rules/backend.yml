@@ -99,3 +99,21 @@ groups:
         annotations:
           summary: "Lantern has recent dead-letter SyncJob activity"
           description: "A SyncJob entered dead-letter state within the last 24 hours."
+
+      - alert: LanternSyncJobCompletionStale
+        expr: lantern_sync_jobs_last_completed_age_hours > 72
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lantern has not completed a SyncJob in more than 3 days"
+          description: "The most recent succeeded SyncJob is older than 72 hours."
+
+      - alert: LanternSyncJobCompletionVeryStale
+        expr: lantern_sync_jobs_last_completed_age_hours > 120
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lantern has not completed a SyncJob in more than 5 days"
+          description: "The most recent succeeded SyncJob is older than 120 hours."

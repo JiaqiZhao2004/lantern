@@ -49,6 +49,8 @@ class FakeDb:
                 self.now - timedelta(minutes=30),
                 2,
                 self.now - timedelta(hours=3),
+                4,
+                self.now - timedelta(minutes=5),
             )
         )
 
@@ -72,6 +74,8 @@ def test_sync_job_metrics_collects_aggregate_gauges(monkeypatch):
     assert "lantern_sync_jobs_oldest_queued_age_seconds 5400.0" in output
     assert "lantern_sync_jobs_oldest_running_age_seconds 1800.0" in output
     assert "lantern_sync_jobs_due_queued_total 2.0" in output
+    assert "lantern_sync_jobs_completed_total 4.0" in output
+    assert "lantern_sync_jobs_last_completed_age_hours 0.08333333333333333" in output
     assert "lantern_sync_jobs_metrics_collection_success 1.0" in output
 
 

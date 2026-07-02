@@ -159,6 +159,8 @@ lantern_sync_jobs_oldest_queued_age_seconds
 lantern_sync_jobs_oldest_running_age_seconds
 lantern_sync_jobs_due_queued_total
 lantern_sync_jobs_last_dead_letter_timestamp_seconds
+lantern_sync_jobs_completed_total
+lantern_sync_jobs_last_completed_age_hours
 lantern_sync_jobs_metrics_collection_success
 ```
 
@@ -186,6 +188,8 @@ warning: SyncJob metrics collection failing for 5 minutes
 warning: oldest queued SyncJob age > 1 hour for 10 minutes
 critical: oldest running SyncJob age > 2 hours for 10 minutes
 warning: dead-letter SyncJob activity within the last 24 hours
+warning: no succeeded SyncJob for more than 3 days
+critical: no succeeded SyncJob for more than 5 days
 ```
 
 Use recent dead-letter activity rather than permanent dead-letter count to avoid

@@ -18,7 +18,8 @@ node_exporter textfile collector rather than running its own HTTP metrics
 server. Aggregate SyncJob state will be collected by the backend `/metrics`
 endpoint with bounded database queries over `sync_jobs`. SyncJob metrics will
 include counts by status, oldest queued/running age, due queued count, last
-dead-letter timestamp, and collection success. If SyncJob collection fails,
+dead-letter timestamp, succeeded-job count, last succeeded-job age, and
+collection success. If SyncJob collection fails,
 `/metrics` will still return other metrics and mark SyncJob collection as
 unsuccessful rather than making the queue appear empty.
 
@@ -45,4 +46,4 @@ Alternatives considered:
 The first alert set is tuned for low traffic. HTTP 5xx critical alerting uses
 counts over time rather than percentages. Worker alerts focus on stale
 heartbeat, failed SyncJob metric collection, old queued jobs, old running jobs,
-and recent dead-letter activity.
+stale succeeded-job freshness, and recent dead-letter activity.

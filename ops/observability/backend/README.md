@@ -329,8 +329,8 @@ Backup freshness alerts should fire only after the expected interval plus a grac
 Because Lantern has low initial traffic, backend 5xx critical alerting is count-based
 rather than percentage-based. The first critical HTTP alert fires when at least five 5xx
 responses occur in ten minutes. Worker alerts are age-based: stale heartbeat, old queued
-SyncJobs, old running SyncJobs, failed SyncJob metric collection, and recent dead-letter
-activity.
+SyncJobs, old running SyncJobs, failed SyncJob metric collection, stale successful SyncJob
+freshness, and recent dead-letter activity.
 
 Production-path alerting should wait until Lantern has a safe non-human credential for a
 synthetic API request. Do not store a personal Firebase token or manually copied browser

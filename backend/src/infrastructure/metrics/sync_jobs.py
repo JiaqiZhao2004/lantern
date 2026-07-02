@@ -35,6 +35,16 @@ class SyncJobMetrics:
             "Unix timestamp for the most recently dead-lettered SyncJob.",
             registry=registry,
         )
+        self.completed_total = Gauge(
+            "lantern_sync_jobs_completed_total",
+            "Succeeded SyncJobs.",
+            registry=registry,
+        )
+        self.last_completed_age_hours = Gauge(
+            "lantern_sync_jobs_last_completed_age_hours",
+            "Age in hours of the most recently succeeded SyncJob.",
+            registry=registry,
+        )
         self.collection_success = Gauge(
             "lantern_sync_jobs_metrics_collection_success",
             "Whether SyncJob metrics collection succeeded on the last scrape.",
@@ -56,7 +66,14 @@ class SyncJobMetrics:
                 ):
                     status_counts[str(status.value if hasattr(status, "value") else status)] = count
 
-                oldest_queued_at, oldest_running_at, due_queued_total, last_dead_letter_at = (
+                (
+                    oldest_queued_at,
+                    oldest_running_at,
+                    due_queued_total,
+                    last_dead_letter_at,
+                    completed_total,
+                    last_completed_at,
+                ) = (
                     db.query(
                         func.min(
                             case(
@@ -89,6 +106,21 @@ class SyncJobMetrics:
                                 else_=None,
                             )
                         ),
+                        func.count(
+                            case(
+                                (SyncJob.status == JobStatus.SUCCEEDED, SyncJob.id),
+                                else_=None,
+                            )
+                        ),
+                        func.max(
+                            case(
+                                (
+                                    SyncJob.status == JobStatus.SUCCEEDED,
+                                    SyncJob.finished_at,
+                                ),
+                                else_=None,
+                            )
+                        ),
                     ).one()
                 )
 
@@ -104,6 +136,10 @@ class SyncJobMetrics:
             self.last_dead_letter_timestamp_seconds.set(
                 _timestamp_seconds(last_dead_letter_at)
             )
+            self.completed_total.set(completed_total)
+            self.last_completed_age_hours.set(
+                _age_hours(now=now, timestamp=last_completed_at)
+            )
             self.collection_success.set(1)
         except Exception:
             self.collection_success.set(0)
@@ -115,6 +151,10 @@ def _age_seconds(now: datetime, timestamp: datetime | None) -> float:
     if timestamp.tzinfo is None:
         timestamp = timestamp.replace(tzinfo=timezone.utc)
     return max(0, (now - timestamp.astimezone(timezone.utc)).total_seconds())
+
+
+def _age_hours(now: datetime, timestamp: datetime | None) -> float:
+    return _age_seconds(now=now, timestamp=timestamp) / 3600
 
 
 def _timestamp_seconds(timestamp: datetime | None) -> float:
