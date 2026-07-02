@@ -1,3 +1,4 @@
+import logging
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -94,6 +95,35 @@ def test_invalid_webhook_signature_returns_unauthorized():
         app.dependency_overrides.clear()
 
     assert response.status_code == 401
+
+
+def test_invalid_webhook_signature_logs_request_details(caplog):
+    caplog.set_level(logging.WARNING)
+    app.dependency_overrides[get_db] = _override_db
+    app.dependency_overrides[get_plaid_webhook_verifier] = lambda: RejectingVerifier()
+    app.dependency_overrides[get_plaid_webhook_service] = lambda: RecordingWebhookService()
+
+    try:
+        TestClient(app).post(
+            "/api/v1/plaid/webhooks",
+            headers={"Plaid-Verification": "bad"},
+            json={
+                "webhook_type": "TRANSACTIONS",
+                "webhook_code": "SYNC_UPDATES_AVAILABLE",
+                "item_id": "item-1",
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert "Rejected Plaid webhook request: bad signature" in caplog.text
+    assert any(
+        getattr(record, "webhook_type", None) == "TRANSACTIONS"
+        and getattr(record, "webhook_code", None) == "SYNC_UPDATES_AVAILABLE"
+        and getattr(record, "item_id", None) == "item-1"
+        and getattr(record, "has_plaid_verification_header", None) is True
+        for record in caplog.records
+    )
 
 
 def test_unknown_valid_webhook_returns_accepted():
